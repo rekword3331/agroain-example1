@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>एग्रोएन - पैकेज मेकर (प्रकार + ड्रॉपडाउन + विवरण)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f4f6f9; padding: 15px; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        header { background: #2e7d32; color: white; padding: 15px; border-radius: 12px; text-align: center; font-size: 1.3rem; font-weight: bold; margin-bottom: 20px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        label { font-size: 0.9rem; font-weight: bold; color: #1b5e20; display: block; margin-bottom: 5px; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1.5px solid #c8e6c9; border-radius: 10px; font-size: 0.95rem; outline: none; }
+        textarea { resize: vertical; min-height: 60px; }
+        .btn-add, .btn-auto, .btn-save { color: white; border: none; padding: 12px; border-radius: 10px; font-size: 1rem; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; margin-bottom: 10px; }
+        .btn-add { background: #2e7d32; }
+        .btn-auto { background: #1976d2; }
+        .btn-save { background: #e65100; margin-top: 15px; font-size: 1.1rem; }
+        .btn-delete-pkg { background: #d32f2f; }
+        .search-box { background: #fff3e0; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #ff9800; }
+        .table-wrapper { overflow-x: auto; border: 1px solid #c8e6c9; border-radius: 12px; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 1000px; }
+        th { background: #c8e6c9; color: #1b5e20; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #e8f5e9; vertical-align: top; }
+        .del-btn { background: #ffeb3b; color: #d32f2f; border: 1px solid #d32f2f; padding: 5px 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .del-btn:hover { background: #ffc107; }
+        hr { margin: 20px 0; }
+        .button-group { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        .button-group button { margin-top: 0; }
+        .medicine-section { background: #f9f9f9; padding: 15px; border-radius: 12px; margin-top: 15px; }
+        .success-message { background: #c8e6c9; color: #1b5e20; padding: 10px; border-radius: 8px; margin: 10px 0; display: none; }
+        .success-message.show { display: block; }
+        .sticky-fields { background: #e8f5e9; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 2px solid #2e7d32; }
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 15px; flex-wrap: wrap; padding: 10px; }
+        .pagination-summary { width: 100%; text-align: center; margin-bottom: 5px; font-size: 0.8rem; color: #666; font-weight: 500; }
+        .page-btn { background: white; color: #333; border: 2px solid #e0e0e0; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; min-width: 35px; font-size: 0.8rem; }
+        .page-btn:hover:not(:disabled):not(.active) { background: #e8f5e9; border-color: #2e7d32; }
+        .page-btn.active { background: #2e7d32; color: white; border-color: #1b5e20; pointer-events: none; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .page-btn.nav-btn { background: #e8f5e9; color: #1b5e20; font-weight: 700; }
+        .page-jump { display: flex; align-items: center; gap: 5px; margin-left: 8px; }
+        .page-jump input { width: 45px; padding: 6px; text-align: center; border-radius: 6px; border: 2px solid #e0e0e0; font-size: 0.8rem; font-weight: 600; }
+        .page-jump button { padding: 6px 10px; margin-top: 0; font-size: 0.75rem; background: #0288d1; width: auto; }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <header>🛠 एग्रोएन - पैकेज मेकर (प्रकार + ड्रॉपडाउन विधि)</header>
+
+    <div class="search-box">
+        <h3 style="color: #e65100; margin-bottom: 10px;">🔍 पुराना पैकेज खोजें (फसल + उम्र)</h3>
+        <div class="form-grid">
+            <input type="text" id="searchCrop" placeholder="फसल (उदा. सोयाबीन, lasun)">
+            <input type="number" id="searchAge" placeholder="उम्र (दिन)">
+            <button class="btn-auto" onclick="findPackagesByCrop()">खोजें</button>
+        </div>
+        <div id="searchResults"></div>
+        <div id="searchPagination" class="pagination"></div>
+    </div>
+
+    <hr>
+
+    <div class="sticky-fields">
+        <h4 style="color: #1b5e20; margin-bottom: 15px;">📌 पैकेज की मुख्य जानकारी (ये सेव रहेंगे)</h4>
+        <div class="form-grid">
+            <div><label>📄 पैकेज नंबर *</label><input type="text" id="inpPkgNo" placeholder="जैसे: PKG-001"></div>
+            <div><label>🌾 फसल *</label><input type="text" id="inpCrop" placeholder="जैसे: सोयाबीन, lasun"></div>
+        </div>
+    </div>
+
+    <div class="form-grid" id="otherPackageFields">
+        <div><label>🔬 टेक्निकल नाम</label><input type="text" id="inpPkgTechnical" placeholder="उदा. Kit for Growth"></div>
+        <div><label>🏢 कंपनी</label><input type="text" id="inpPkgCompany" placeholder="उदा. Agroain"></div>
+        <div><label>💰 कुल कीमत (Price)</label><input type="number" id="inpPkgPrice" placeholder="0.00"></div>
+        <div><label>📦 पैकिंग</label><input type="text" id="inpPkgPacking" placeholder="उदा. 1 Kit / 500gm"></div>
+        <div><label>📅 Min उम्र</label><input type="number" id="inpAgeMin" placeholder="0"></div>
+        <div><label>📅 Max उम्र</label><input type="number" id="inpAgeMax" placeholder="999"></div>
+        <div><label>📌 पैकेज का प्रकार</label>
+            <select id="inpPackageType">
+                <option value="बुवाई से पहले">🌱 बुवाई से पहले (Seed Treatment)</option>
+                <option value="बुवाई के बाद">🌿 बुवाई के बाद (Post-sowing)</option>
+            </select>
+        </div>
+        <div style="grid-column: span 2;">
+            <label>🖼️ फोटो URL (Image URL)</label>
+            <input type="text" id="inpPkgImg" placeholder="https://image-link.com/photo.jpg">
+        </div>
+    </div>
+
+    <div class="medicine-section">
+        <h4 style="color: #2e7d32; margin-bottom: 15px;">💊 नई दवाई जोड़ें</h4>
+        <div class="form-grid">
+            <div style="grid-column: span 2; position: relative;">
+                <label>💊 दवाई का नाम / तकनीकी नाम *</label>
+                <input type="text" id="inpProdName" list="productList" placeholder="नाम लिखें या चुनें" autocomplete="off">
+                <datalist id="productList"></datalist>
+            </div>
+            <div><label>💧 डोज़ (मात्रा) *</label><input type="text" id="inpDose" placeholder="जैसे 200ml/एकड़"></div>
+            <div>
+                <label>🌱 उपचार विधि</label>
+                <select id="treatmentMethodSelect">
+                    <option value="स्प्रे">स्प्रे</option>
+                    <option value="बीज उपचार">बीज उपचार</option>
+                    <option value="खाद/मिट्टी">खाद/मिट्टी</option>
+                    <option value="बीज शोधन">बुवाई से पहले</option>
+                </select>
+            </div>
+            <div><label>📄 विवरण (Details)</label><textarea id="inpDetails" rows="2" placeholder="दवाई की पूरी जानकारी"></textarea></div>
+            <div><label>📢 सलाह/निर्देश</label><textarea id="inpAdvice" rows="2" placeholder="किसान को विशेष सलाह"></textarea></div>
+            <div><label>⚠️ नोट/अलर्ट</label><textarea id="inpNoteAlert" rows="2" placeholder="एक्सपायरी, स्टॉक कम आदि"></textarea></div>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn-auto" onclick="autoFillFromInventory()">🔍 ऑटो-फिल (इन्वेंट्री से भरें)</button>
+            <button class="btn-add" onclick="addItemToPackage()">➕ पैकेज में जोड़ें</button>
+            <button class="btn-add" style="background: #6a1b9a;" onclick="refreshProductList()">🔄 लिस्ट रिफ्रेश करें</button>
+        </div>
+        <div id="addMessage" class="success-message"></div>
+    </div>
+
+    <div class="table-wrapper">
+        <table id="medicineTable">
+            <thead>
+                <tr><th>दवाई का नाम</th><th>डोज़</th><th>उपचार विधि</th><th>विवरण</th><th>सलाह</th><th>नोट/अलर्ट</th><th>हटाएं</th></tr>
+            </thead>
+            <tbody id="medicineTableBody">
+                <tr><td colspan="7" style="text-align:center">कोई दवाई नहीं जोड़ी गई</td></tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="button-group">
+        <button class="btn-save" onclick="savePackageToFirebase()">💾 पैकेज सेव करें</button>
+        <button class="btn-save btn-delete-pkg" onclick="deleteFullPackage()">🗑️ पैकेज डिलीट करें</button>
+    </div>
+</div>
+
+<script>
+    // Firebase Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyAOQp4Ez6omxSL5MDh_cGzzUy1gcf4KkEo",
+        authDomain: "agroain.firebaseapp.com",
+        databaseURL: "https://agroain-default-rtdb.firebaseio.com",
+        projectId: "agroain",
+        storageBucket: "agroain.firebasestorage.app",
+        messagingSenderId: "837977852518",
+        appId: "1:837977852518:web:eebd9baaec310f03e0bba7"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let currentPackageList = [];
+    let allProducts = [];
+    let searchResultsData = [];
+    let currentSearchPage = 1;
+    const searchItemsPerPage = 5;
+
+    // ============ PRODUCT LIST REFRESH ============
+    function refreshProductList() {
+        const productList = document.getElementById('productList');
+        productList.innerHTML = "";
+        const uniqueNames = new Set();
+        const uniqueTech = new Set();
+        allProducts.forEach(p => {
+            if (p.name && !uniqueNames.has(p.name)) {
+                uniqueNames.add(p.name);
+                let opt = document.createElement('option');
+                opt.value = p.name;
+                productList.appendChild(opt);
+            }
+            if (p.technical && !uniqueTech.has(p.technical)) {
+                uniqueTech.add(p.technical);
+                let opt2 = document.createElement('option');
+                opt2.value = p.technical;
+                productList.appendChild(opt2);
+            }
+        });
+        console.log(`✅ Product list refreshed: ${uniqueNames.size} names, ${uniqueTech.size} technical names`);
+    }
+
+    // ============ LOAD INVENTORY ============
+    async function loadInventory() {
+        try {
+            const snap = await db.ref('inventory').once('value');
+            const data = snap.val();
+            if (data) {
+                allProducts = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+            } else {
+                allProducts = [];
+            }
+            refreshProductList();
+            console.log(`📦 Loaded ${allProducts.length} products from inventory`);
+        } catch (error) { 
+            console.error("Error loading inventory:", error); 
+        }
+    }
+
+    // ============ AUTO-FILL FROM INVENTORY ============
+    function autoFillFromInventory() {
+        let inputField = document.getElementById('inpProdName');
+        let searchName = inputField.value.trim().toLowerCase();
+        if (!searchName) return alert("दवाई का नाम या तकनीकी नाम लिखें!");
+
+        let prod = allProducts.find(p => 
+            (p.name && p.name.toLowerCase() === searchName) ||
+            (p.technical && p.technical.toLowerCase() === searchName)
+        );
+        if (!prod) {
+            prod = allProducts.find(p => 
+                (p.name && p.name.toLowerCase().includes(searchName)) ||
+                (p.technical && p.technical.toLowerCase().includes(searchName))
+            );
+        }
+
+        if (prod) {
+            let method = document.getElementById('treatmentMethodSelect').value;
+            let dose = '';
+            if (method === 'स्प्रे') dose = prod.doseSpray || prod.dose || '';
+            else if (method === 'बीज उपचार') dose = prod.doseSeed || '';
+            else if (method === 'खाद/मिट्टी') dose = prod.doseSoil || '';
+            else if (method === 'बीज शोधन') dose = prod.doseSeed || '';
+            document.getElementById('inpDose').value = dose;
+            document.getElementById('inpDetails').value = prod.extraDetails || prod.details || '';
+            document.getElementById('inpAdvice').value = prod.extraDetails || '';
+
+            let alertMsg = '';
+            if (prod.expiry && prod.expiry !== 'N/A') {
+                const today = new Date();
+                const expDate = new Date(prod.expiry);
+                const diffDays = (expDate - today) / (1000*60*60*24);
+                if (diffDays < 0) alertMsg = `⚠️ एक्सपायरी हो चुकी है (${prod.expiry})`;
+                else if (diffDays <= 30) alertMsg = `⚠️ एक्सपायरी निकट (${Math.ceil(diffDays)} दिन बचे)`;
+            }
+            if (prod.qty <= (prod.minStock || 0)) alertMsg += (alertMsg? ' | ' : '') + `📉 स्टॉक कम (${prod.qty} शेष)`;
+            document.getElementById('inpNoteAlert').value = alertMsg;
+
+            if (!document.getElementById('inpPkgCompany').value) document.getElementById('inpPkgCompany').value = prod.company || "";
+            if (!document.getElementById('inpPkgPrice').value || document.getElementById('inpPkgPrice').value == "0") document.getElementById('inpPkgPrice').value = prod.price || 0;
+            if (!document.getElementById('inpPkgImg').value) document.getElementById('inpPkgImg').value = prod.img || "";
+            if (!document.getElementById('inpPkgPacking').value) document.getElementById('inpPkgPacking').value = prod.packSize || "";
+            if (!document.getElementById('inpPkgTechnical').value) document.getElementById('inpPkgTechnical').value = prod.technical || "";
+
+            inputField.style.borderColor = "#2e7d32";
+            console.log("✅ Data Loaded for:", prod.name, "| Price:", prod.price);
+            showMessage(`✅ "${prod.name || prod.technical}" की जानकारी भर दी गई!`, true);
+        } else {
+            alert("❌ इन्वेंटरी में यह दवाई नहीं मिली!");
+            inputField.style.borderColor = "#d32f2f";
+        }
+    }
+
+    // ============ CLEAR FUNCTIONS ============
+    function clearOtherPackageFields() {
+        // ✅ PkgNo aur Crop CLEAR NAHI honge
+        document.getElementById('inpPkgTechnical').value = '';
+        document.getElementById('inpPkgCompany').value = '';
+        document.getElementById('inpPkgPrice').value = '';
+        document.getElementById('inpPkgPacking').value = '';
+        document.getElementById('inpAgeMin').value = '';
+        document.getElementById('inpAgeMax').value = '';
+        document.getElementById('inpPackageType').value = 'बुवाई से पहले';
+        document.getElementById('inpPkgImg').value = '';
+    }
+
+    function clearMedicineForm() {
+        document.getElementById('inpProdName').value = "";
+        document.getElementById('inpDose').value = "";
+        document.getElementById('inpDetails').value = "";
+        document.getElementById('inpAdvice').value = "";
+        document.getElementById('inpNoteAlert').value = "";
+        document.getElementById('treatmentMethodSelect').value = "स्प्रे";
+        document.getElementById('inpProdName').style.borderColor = "#c8e6c9";
+    }
+
+    function clearAllForms() {
+        document.getElementById('inpPkgNo').value = '';
+        document.getElementById('inpCrop').value = '';
+        clearOtherPackageFields();
+        currentPackageList = [];
+        renderPackageTable();
+        clearMedicineForm();
+    }
+
+    function showMessage(message, isSuccess = true) {
+        const msgEl = document.getElementById('addMessage');
+        msgEl.textContent = message;
+        msgEl.style.background = isSuccess ? '#c8e6c9' : '#ffcdd2';
+        msgEl.style.color = isSuccess ? '#1b5e20' : '#c62828';
+        msgEl.classList.add('show');
+        setTimeout(() => msgEl.classList.remove('show'), 2000);
+    }
+
+    // ============ ADD ITEM TO PACKAGE ============
+    function addItemToPackage() {
+        const name = document.getElementById('inpProdName').value.trim();
+        const dose = document.getElementById('inpDose').value.trim();
+        const details = document.getElementById('inpDetails').value.trim();
+        const advice = document.getElementById('inpAdvice').value.trim();
+        const noteAlert = document.getElementById('inpNoteAlert').value.trim();
+        const treatmentMethod = document.getElementById('treatmentMethodSelect').value;
+        
+        if(name === "" || dose === "") {
+            alert("❌ कृपया दवाई का नाम और डोज़ भरें");
+            return;
+        }
+
+        currentPackageList.push({ 
+            id: Date.now() + Math.random(), 
+            prodName: name, 
+            dose: dose,
+            treatmentMethod: treatmentMethod,
+            details: details,
+            advice: advice,
+            noteAlert: noteAlert
+        });
+        
+        clearMedicineForm();
+        clearOtherPackageFields();  // ✅ Package fields clear (except PkgNo & Crop)
+        renderPackageTable();
+        showMessage(`✅ "${name}" पैकेज में जुड़ गया! (कुल: ${currentPackageList.length} दवाइयाँ)`);
+    }
+
+    // ============ RENDER TABLE ============
+    function renderPackageTable() {
+        const tbody = document.getElementById('medicineTableBody');
+        tbody.innerHTML = "";
+        if (currentPackageList.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='7' style='text-align:center'>कोई दवाई नहीं जोड़ी गई</td></tr>";
+            return;
+        }
+        currentPackageList.forEach((item) => {
+            const row = tbody.insertRow();
+            row.insertCell(0).innerHTML = `<b>${escapeHtml(item.prodName)}</b>`;
+            row.insertCell(1).innerHTML = escapeHtml(item.dose);
+            row.insertCell(2).innerHTML = escapeHtml(item.treatmentMethod || '—');
+            row.insertCell(3).innerHTML = escapeHtml(item.details || '—');
+            row.insertCell(4).innerHTML = escapeHtml(item.advice || '—');
+            row.insertCell(5).innerHTML = escapeHtml(item.noteAlert || '—');
+            const delBtn = document.createElement('button');
+            delBtn.textContent = "✖ हटाएं";
+            delBtn.className = "del-btn";
+            delBtn.onclick = () => deleteItemById(item.id);
+            row.insertCell(6).appendChild(delBtn);
+        });
+    }
+
+    function deleteItemById(id) {
+        currentPackageList = currentPackageList.filter(i => i.id != id);
+        renderPackageTable();
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // ============ SAVE PACKAGE ============
+    async function savePackageToFirebase() {
+        const pkgNo = document.getElementById('inpPkgNo').value.trim();
+        if(pkgNo === "") { alert("❌ कृपया पैकेज नंबर डालें"); return; }
+        if(currentPackageList.length === 0) { alert("❌ कम से कम एक दवाई जोड़ें"); return; }
+        
+        const cropValue = document.getElementById('inpCrop').value.trim();
+        if(!cropValue) { alert("⚠️ कृपया फसल का नाम डालें"); return; }
+
+        const data = {
+            pkgNo: pkgNo,
+            crop: cropValue,
+            ageMin: parseInt(document.getElementById('inpAgeMin').value) || 0,
+            ageMax: parseInt(document.getElementById('inpAgeMax').value) || 999,
+            technical: document.getElementById('inpPkgTechnical').value.trim() || "मिश्रण उपचार",
+            company: document.getElementById('inpPkgCompany').value.trim() || "Agroain",
+            price: parseFloat(document.getElementById('inpPkgPrice').value) || 0,
+            packing: document.getElementById('inpPkgPacking').value.trim() || "1 Kit",
+            img: document.getElementById('inpPkgImg').value.trim() || "",
+            packageType: document.getElementById('inpPackageType').value,
+            items: currentPackageList,
+            dType: "पैकेज"
+        };
+        
+        console.log("💾 Saving:", JSON.stringify(data, null, 2));
+
+        const confirmMsg = `पैकेज सेव करें?\n\n📦 पैकेज: ${pkgNo}\n🌾 फसल: ${cropValue}\n🔬 टेक्निकल: ${data.technical}\n🏢 कंपनी: ${data.company}\n💰 कीमत: ₹${data.price}\n📦 पैकिंग: ${data.packing}\n📅 उम्र: ${data.ageMin}-${data.ageMax} दिन\n📌 प्रकार: ${data.packageType}\n💊 दवाइयाँ: ${data.items.length}\n🖼️ इमेज: ${data.img ? 'हाँ' : 'नहीं'}`;
+        
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            await db.ref('packages/' + pkgNo).set(data);
+            alert(`✅ पैकेज "${pkgNo}" (${cropValue}) सफलतापूर्वक सेव हो गया!\n📋 Total Items: ${currentPackageList.length}`);
+        } catch (error) {
+            console.error("Save error:", error);
+            alert("❌ एरर: " + error.message);
+        }
+    }
+
+    // ============ DELETE PACKAGE ============
+    async function deleteFullPackage() {
+        const pkgNo = document.getElementById('inpPkgNo').value;
+        if(!pkgNo) return alert("❌ पहले पैकेज नंबर भरिए!");
+        if(confirm(`⚠️ क्या आप Package Number ${pkgNo} को DELETE करना चाहते हैं?`)) {
+            try {
+                await db.ref('packages/' + pkgNo).remove();
+                alert("✅ पैकेज डिलीट हो गया!");
+                clearAllForms();
+            } catch (error) { alert("❌ एरर: " + error.message); }
+        }
+    }
+
+    // ============ SEARCH WITH PAGINATION ============
+    function renderSearchPagination() {
+        const totalPages = Math.ceil(searchResultsData.length / searchItemsPerPage);
+        const paginationDiv = document.getElementById('searchPagination');
+        if (totalPages <= 1) {
+            paginationDiv.innerHTML = searchResultsData.length > 0 ? `<div class="pagination-summary">📄 कुल ${searchResultsData.length} पैकेज मिले</div>` : '';
+            return;
+        }
+        const startItem = (currentSearchPage - 1) * searchItemsPerPage + 1;
+        const endItem = Math.min(currentSearchPage * searchItemsPerPage, searchResultsData.length);
+        let btns = `<div class="pagination-summary">📄 ${startItem}-${endItem} दिख रहे हैं (कुल ${searchResultsData.length} में से) · पेज ${currentSearchPage}/${totalPages}</div>`;
+        btns += `<button class="page-btn nav-btn" onclick="goToSearchPage(${currentSearchPage - 1})" ${currentSearchPage === 1 ? 'disabled' : ''}>« पिछला</button>`;
+        if (currentSearchPage > 3) { btns += `<button class="page-btn" onclick="goToSearchPage(1)">1</button>`; if (currentSearchPage > 4) btns += `<button class="page-btn" disabled>…</button>`; }
+        for (let i = Math.max(1, currentSearchPage - 2); i <= Math.min(totalPages, currentSearchPage + 2); i++) {
+            btns += `<button class="page-btn ${i === currentSearchPage ? 'active' : ''}" onclick="goToSearchPage(${i})" ${i === currentSearchPage ? 'disabled' : ''}>${i}</button>`;
+        }
+        if (currentSearchPage < totalPages - 2) { if (currentSearchPage < totalPages - 3) btns += `<button class="page-btn" disabled>…</button>`; btns += `<button class="page-btn" onclick="goToSearchPage(${totalPages})">${totalPages}</button>`; }
+        btns += `<button class="page-btn nav-btn" onclick="goToSearchPage(${currentSearchPage + 1})" ${currentSearchPage === totalPages ? 'disabled' : ''}>अगला »</button>`;
+        btns += `<div class="page-jump"><input type="number" id="searchJumpInput" min="1" max="${totalPages}" placeholder="${currentSearchPage}" onkeypress="if(event.key==='Enter')jumpToSearchPage(${totalPages})"><button onclick="jumpToSearchPage(${totalPages})">जाएं</button></div>`;
+        paginationDiv.innerHTML = btns;
+    }
+    
+    function goToSearchPage(page) { currentSearchPage = page; renderSearchResultsPage(); document.getElementById('searchResults').scrollIntoView({ behavior: 'smooth' }); }
+    
+    function jumpToSearchPage(totalPages) {
+        const inputEl = document.getElementById('searchJumpInput');
+        const pageNum = parseInt(inputEl.value);
+        if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) { alert(`⚠️ कृपया 1 से ${totalPages} के बीच पेज नंबर डालें`); inputEl.value = ''; inputEl.focus(); return; }
+        goToSearchPage(pageNum);
+    }
+    
+    function renderSearchResultsPage() {
+        const resDiv = document.getElementById('searchResults');
+        const start = (currentSearchPage - 1) * searchItemsPerPage;
+        const end = start + searchItemsPerPage;
+        const pageItems = searchResultsData.slice(start, end);
+        let html = '';
+        pageItems.forEach(item => { html += item.html; });
+        resDiv.innerHTML = html;
+        renderSearchPagination();
+    }
+
+    async function findPackagesByCrop() {
+        const sCrop = document.getElementById('searchCrop').value.trim().toLowerCase();
+        const sAge = parseInt(document.getElementById('searchAge').value);
+        const resDiv = document.getElementById('searchResults');
+        const paginationDiv = document.getElementById('searchPagination');
+        if(!sCrop || isNaN(sAge)) { resDiv.innerHTML = "⚠️ कृपया फसल और उम्र दोनों भरें"; paginationDiv.innerHTML = ""; return; }
+        resDiv.innerHTML = "खोज रहे हैं..."; paginationDiv.innerHTML = "";
+        const snap = await db.ref('packages').once('value');
+        const data = snap.val();
+        searchResultsData = [];
+        for (let id in data) {
+            let p = data[id];
+            if (p.crop && p.crop.toLowerCase().includes(sCrop) && sAge >= (p.ageMin || 0) && sAge <= (p.ageMax || 999)) {
+                searchResultsData.push({
+                    id: id,
+                    html: `<div style="background:white; padding:10px; margin:5px; border-radius:5px; border-left:5px solid green; cursor:pointer" onclick="loadPkg('${id}')"><b>📦 पैकेज ${p.pkgNo}</b> - ${p.crop} (${p.ageMin || 0}-${p.ageMax || 999} दिन) - ${p.items ? p.items.length : 0} दवाइयाँ<br><small>🏢 ${p.company || 'Agroain'} | 💰 ₹${p.price || 0} | 📦 ${p.packing || '1 Kit'}</small></div>`
+                });
+            }
+        }
+        currentSearchPage = 1;
+        if (searchResultsData.length === 0) { resDiv.innerHTML = "❌ कोई मैच नहीं मिला"; paginationDiv.innerHTML = ""; }
+        else { renderSearchResultsPage(); }
+    }
+
+    function loadPkg(id) {
+        db.ref('packages/' + id).once('value', snap => {
+            const p = snap.val();
+            if (!p) return;
+            document.getElementById('inpPkgNo').value = p.pkgNo || '';
+            document.getElementById('inpCrop').value = p.crop || '';
+            document.getElementById('inpAgeMin').value = p.ageMin || 0;
+            document.getElementById('inpAgeMax').value = p.ageMax || 999;
+            document.getElementById('inpPkgTechnical').value = p.technical || '';
+            document.getElementById('inpPkgCompany').value = p.company || '';
+            document.getElementById('inpPkgPrice').value = p.price || 0;
+            document.getElementById('inpPkgPacking').value = p.packing || '';
+            document.getElementById('inpPkgImg').value = p.img || '';
+            document.getElementById('inpPackageType').value = p.packageType || "बुवाई से पहले";
+            currentPackageList = (p.items || []).map(item => ({
+                id: item.id || Date.now() + Math.random(),
+                prodName: item.prodName, dose: item.dose,
+                treatmentMethod: item.treatmentMethod || "स्प्रे",
+                details: item.details || '', advice: item.advice || '', noteAlert: item.noteAlert || ''
+            }));
+            renderPackageTable(); clearMedicineForm();
+            document.getElementById('searchResults').innerHTML = '';
+            document.getElementById('searchPagination').innerHTML = '';
+        });
+    }
+
+    // ============ INIT ============
+    window.onload = async () => {
+        await loadInventory();
+        document.getElementById('treatmentMethodSelect').addEventListener('change', function() {
+            const prodName = document.getElementById('inpProdName').value.trim();
+            if (prodName) autoFillFromInventory();
+        });
+    };
+</script>
+</body>
+</html>

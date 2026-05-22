@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agroain - Digital Bill Book</title>
+    <style>
+        /* सामान्य स्टाइल और मोबाइल रिस्पॉन्सिवनेस */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* बिल क्रिएशन सेक्शन का हेडर */
+        header {
+            background-color: #2e7d32;
+            color: white;
+            padding: 15px 0;
+            text-align: center;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .shop-info {
+            display: flex;
+            flex-direction: column; 
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+        
+        .shop-details, .customer-details {
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .shop-details {
+            background-color: #fff;
+        }
+        
+        .customer-details {
+            background-color: #e8f5e9;
+        }
+        
+        .bill-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .bill-number input, .bill-date input, 
+        .customer-details input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        
+        /* उत्पाद टेबल */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            overflow-x: auto; 
+            display: block; 
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            min-width: 80px; 
+        }
+        
+        th {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .product-row input {
+            width: 100%;
+            padding: 5px;
+            border: none;
+            background: transparent;
+        }
+        
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 10px 15px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            flex-grow: 1; 
+        }
+        
+        button:hover {
+            background-color: #388e3c;
+        }
+        
+        .payment-section {
+            display: flex;
+            flex-direction: column; 
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .payment-type select, .total-amount input {
+            padding: 8px;
+            margin-top: 5px;
+        }
+        
+        .terms {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .signatures {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+        }
+        
+        .customer-sign, .shop-sign {
+            text-align: center;
+        }
+        
+        .signature-line {
+            width: 150px;
+            height: 1px;
+            background-color: #333;
+            margin: 10px auto;
+        }
+        
+        /* सेव्ड बिल लिस्ट और बिल डिस्प्ले स्टाइल */
+        #savedBillsList {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        
+        #savedBillsList li {
+            padding: 10px;
+            border-bottom: 1px dashed #eee;
+            display: flex; 
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #billsListUl li span:first-child {
+            cursor: pointer;
+            font-weight: bold;
+            flex-grow: 1;
+        }
+        
+        /* Delete button styling in the list */
+        #savedBillsList button {
+            padding: 5px 10px;
+            background-color: #dc3545; 
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            flex-grow: 0;
+            margin-left: 10px; 
+        }
+
+        #savedBillsList button:hover {
+            background-color: #c82333;
+        }
+
+        /* सेव किए गए बिल को बिल की तरह दिखाने के लिए स्टाइल */
+        .full-bill-display {
+            border: 2px solid #2e7d32;
+            padding: 15px;
+            margin-top: 15px;
+            background-color: #fff;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .bill-products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .bill-products-table th, .bill-products-table td {
+            border: 1px solid #ddd;
+            padding: 5px;
+            text-align: left;
+        }
+        
+        /* प्रिंटिंग स्टाइल */
+        @media print {
+            body {
+                background-color: white;
+            }
+            
+            button, .actions, #savedBillsList, .share-button-container { /* share-button-container को भी छिपाएं */
+                display: none;
+            }
+            
+            .container {
+                max-width: 100%;
+                padding: 0;
+            }
+            
+            .full-bill-display, .bill-for-print {
+                display: block !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                border: none !important; /* प्रिंट में बॉर्डर हटा दें */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Agroain</h1>
+            <p>सभी प्रकार की कृषि दवाईयों के विक्रेता</p>
+            <p>Lic No: 1/8/910/25 | सचिन यादव: 8139489418 | दिनेश यादव: 9424511303</p>
+        </header>
+        
+        <div class="shop-info">
+            <div class="shop-details">
+                <h3>दुकान विवरण</h3>
+                <p><strong>Lic No:</strong> 1/8/910/25</p>
+                <p><strong>सचिन यादव</strong> - मो. 8139489418</p>
+                <p><strong>दिनेश यादव</strong> - मो. 9424511303</p>
+                <p>बरोदा चौराहा, चिकली रोड़ ग्राम निम्बोदा</p>
+            </div>
+            
+            <div class="customer-details">
+                <h3>ग्राहक विवरण</h3>
+                <div class="form-group">
+                    <label for="customerName">श्रीमान:</label>
+                    <input type="text" id="customerName" placeholder="ग्राहक का नाम">
+                </div>
+                <div class="form-group">
+                    <label for="customerVillage">ग्राम:</label>
+                    <input type="text" id="customerVillage" placeholder="ग्राम का नाम">
+                </div>
+                <div class="form-group">
+                    <label for="customerContact">कॉन्टैक्ट नंबर:</label>
+                    <input type="text" id="customerContact" placeholder="कॉन्टैक्ट नंबर">
+                </div>
+                </div>
+        </div>
+        
+        <div class="bill-header">
+            <div class="bill-number">
+                <label for="billNo">क्रमांक:</label>
+                <input type="text" id="billNo" value="001">
+            </div>
+            <div class="bill-date">
+                <label for="billDate">दिनांक:</label>
+                <input type="date" id="billDate">
+            </div>
+        </div>
+        
+        <table id="productTable">
+            <thead>
+                <tr>
+                    <th>क्र.</th>
+                    <th>विवरण</th>
+                    <th>उत्पादन एवं समाप्ति दिनांक</th>
+                    <th>बेच नंबर</th>
+                    <th>नग</th>
+                    <th>दर (रु.)</th>
+                    <th>रकम</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="product-row">
+                    <td>1</td>
+                    <td><input type="text" placeholder="उत्पाद का नाम" class="description"></td>
+                    <td><input type="text" placeholder="उत्पादन/समाप्ति दिनांक" class="mfgexp"></td>
+                    <td><input type="text" placeholder="बेच नंबर" class="batchno"></td>
+                    <td><input type="number" placeholder="नग" class="quantity" min="1" value="1"></td>
+                    <td><input type="number" placeholder="दर" class="rate" min="0" step="0.01" value="0"></td>
+                    <td><input type="text" class="amount" readonly value="0"></td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="actions">
+            <button id="addProduct">+ उत्पाद जोड़ें</button>
+            <button id="removeProduct">- उत्पाद हटाएं</button>
+        </div>
+        
+        <div class="payment-section">
+            <div class="payment-type">
+                <label for="paymentType">Payment Type:</label>
+                <select id="paymentType">
+                    <option value="नकद">नकद</option>
+                    <option value="कार्ड">कार्ड</option>
+                    <option value="UPI">UPI</option>
+                    <option value="उधार">उधार</option>
+                </select>
+            </div>
+            <div class="total-amount">
+                <label for="totalAmount">टोटल:</label>
+                <input type="text" id="totalAmount" readonly value="0">
+            </div>
+        </div>
+        
+        <div class="terms">
+            <h3>हमारी शर्ते:</h3>
+            <p>हम विक्रेता है उत्पादक नहीं, दवाई पैक देखकर ही लेवें।</p>
+            <p>* किसी भी प्रकार की दवाई की ग्यारंटी कम्पनी की रहेगी, हमारी कोई जवाबदारी नहीं बेचा हुआ माल वापस नहीं होगा। बिल पर हस्ताक्षर लेना या न लेना हमारी मीं पर होगा।</p>
+            <p>* कृषि दवाईयों के दुरूपयोग व बीज प्रतिकूल परिथितियों में न उगने पर हमारी कोई जवाबदारी नही रहेगी।</p>
+            <p>* भूल-चूक, लेनी-देनी किसी भी प्रकार का विवाद होने पर न्यायक्षेत्र उज्जैन रहेगा।</p>
+        </div>
+        
+        <div class="signatures">
+            <div class="customer-sign">
+                <p>हस्ताक्षर किसान</p>
+                <div class="signature-line"></div>
+            </div>
+            <div class="shop-sign">
+                <p>हस्ताक्षर</p>
+                <div class="signature-line"></div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button id="printBill">बिल प्रिंट करें</button>
+            <button id="saveBill" style="background-color: #007bff;">बिल सेव करें</button>
+            <button id="viewBills" style="background-color: #ff9800;">सेव बिल देखें</button>
+            <button id="newBill">नया बिल</button>
+        </div>
+        
+        <div id="savedBillsList" style="display: none;">
+            <h3>✅ सेव किए गए बिल</h3>
+            <ul id="billsListUl"></ul>
+            <div id="billDetailContainer"></div>
+        </div>
+    </div>
+
+<script>
+    // --- नया ग्लोबल फ़ंक्शन: बिल को प्रिंट/PDF के लिए खोलना ---
+    function printBillContent(element) {
+        const printWindow = window.open('', '', 'height=600,width=800');
+        printWindow.document.write('<html><head><title>Agroain Bill</title>');
+        // बिल के लिए आवश्यक स्टाइल को कॉपी करें
+        printWindow.document.write('<style>');
+        printWindow.document.write(`
+            /* प्रिंट मीडिया स्टाइल */
+            @media print {
+                body { background-color: white; margin: 0; padding: 0; }
+                .bill-for-print { 
+                    display: block !important; 
+                    width: 100%;
+                    margin: 0; 
+                    padding: 15px; 
+                    box-sizing: border-box;
+                    border: none !important;
+                    background-color: #fff !important;
+                }
+                button { display: none; }
+            }
+            /* सामान्य बिल स्टाइल */
+            .bill-products-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            .bill-products-table th, .bill-products-table td { border: 1px solid #ddd; padding: 5px; text-align: left; }
+            .signatures { display: flex; justify-content: space-around; margin-top: 30px; }
+            .signature-line { width: 150px; height: 1px; background-color: #333; margin: 10px auto; }
+            
+        `);
+        printWindow.document.write('</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(element.outerHTML); // बिल कंटेंट
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print(); // प्रिंट डायलॉग खोलें
+    }
+    // --- /नया ग्लोबल फ़ंक्शन ---
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- प्रारंभिक सेटअप और स्थायी चर ---
+        const billDateInput = document.getElementById('billDate');
+        const productTableBody = document.getElementById('productTable').getElementsByTagName('tbody')[0];
+        const totalAmountInput = document.getElementById('totalAmount');
+        const billsListUl = document.getElementById('billsListUl');
+        const savedBillsListDiv = document.getElementById('savedBillsList');
+        const billDetailContainer = document.getElementById('billDetailContainer');
+        
+        // तारीख सेट करें
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0];
+        billDateInput.value = formattedDate;
+
+        // दुकान की स्थायी जानकारी (प्रिंट के लिए)
+        const SHOP_DETAILS_HTML = `
+            <div style="margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 10px; text-align: center;">
+                <h2 style="margin: 5px 0 10px; color: #2e7d32; font-size: 24px;">Agroain</h2>
+                
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; font-size: 14px;">
+                    <div style="text-align: left; padding-left: 5px;">
+                        <p style="margin: 2px 0;"><strong>Lic No:</strong> 1/8/910/25</p>
+                    </div>
+                    <div style="text-align: right; padding-right: 5px;">
+                        <p style="margin: 2px 0;"><strong>सचिन यादव:</strong> 8139489418</p>
+                        <p style="margin: 2px 0;"><strong>दिनेश यादव:</strong> 9424511303</p>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 5px;">
+                    <p style="margin: 3px 0; font-size: 14px;">सभी प्रकार की कृषि दवाईयों के विक्रेता</p>
+                    <p style="margin: 3px 0; font-size: 14px;">बरोदा चौराहा, चिकली रोड़ ग्राम निम्बोदा</p>
+                </div>
+            </div>
+        `;
+        
+        // शर्तों का विवरण (प्रिंट के लिए)
+        const TERMS_HTML = `
+            <div style="background-color: #f9f9f9; padding: 10px; border-radius: 3px; margin-top: 15px; font-size: 12px; border: 1px solid #eee;">
+                <h4 style="margin-bottom: 5px; color: #4caf50;">हमारी शर्ते:</h4>
+                <p style="margin: 2px 0;">हम विक्रेता है उत्पादक नहीं, दवाई पैक देखकर ही लेवें।</p>
+                <p style="margin: 2px 0;">* किसी भी प्रकार की दवाई की ग्यारंटी कम्पनी की रहेगी, हमारी कोई जवाबदारी नहीं बेचा हुआ माल वापस नहीं होगा।</p>
+                <p style="margin: 2px 0;">* कृषि दवाईयों के दुरूपयोग व बीज प्रतिकूल परिथितियों में न उगने पर हमारी कोई जवाबदारी नही रहेगी।</p>
+                <p style="margin: 2px 0;">* भूल-चूक, लेनी-देनी किसी भी प्रकार का विवाद होने पर न्यायक्षेत्र उज्जैन रहेगा।</p>
+            </div>
+        `;
+
+        // --- हेल्पर फंक्शन्स (अपरिवर्तित) ---
+        
+        function calculateAmount() {
+            const row = this.closest('tr');
+            const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+            const rate = parseFloat(row.querySelector('.rate').value) || 0;
+            const amount = quantity * rate;
+            row.querySelector('.amount').value = amount.toFixed(2);
+            calculateTotal();
+        }
+        
+        function calculateTotal() {
+            const amountInputs = document.querySelectorAll('.amount');
+            let total = 0;
+            amountInputs.forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+            totalAmountInput.value = total.toFixed(2);
+        }
+        
+        function updateRowNumbers() {
+            const rows = document.querySelectorAll('#productTable tbody tr');
+            rows.forEach((row, index) => {
+                row.cells[0].textContent = index + 1;
+            });
+        }
+        
+        function addProductRow() {
+            const rowCount = productTableBody.rows.length;
+            const newRow = productTableBody.insertRow();
+            newRow.className = 'product-row';
+            newRow.innerHTML = `
+                <td>${rowCount + 1}</td>
+                <td><input type="text" placeholder="उत्पाद का नाम" class="description"></td>
+                <td><input type="text" placeholder="उत्पादन/समाप्ति दिनांक" class="mfgexp"></td>
+                <td><input type="text" placeholder="बेच नंबर" class="batchno"></td>
+                <td><input type="number" placeholder="नग" class="quantity" min="1" value="1"></td>
+                <td><input type="number" placeholder="दर" class="rate" min="0" step="0.01" value="0"></td>
+                <td><input type="text" class="amount" readonly value="0"></td>
+            `;
+            
+            const quantityInput = newRow.querySelector('.quantity');
+            const rateInput = newRow.querySelector('.rate');
+            quantityInput.addEventListener('input', calculateAmount);
+            rateInput.addEventListener('input', calculateAmount);
+            updateRowNumbers();
+        }
+        
+        // --- बिल सेविंग, डिस्प्ले और डिलीट लॉजिक ---
+
+        function saveBill() {
+            const billNo = document.getElementById('billNo').value;
+            const customerName = document.getElementById('customerName').value.trim();
+            const customerVillage = document.getElementById('customerVillage').value.trim();
+            const customerContact = document.getElementById('customerContact').value.trim(); 
+
+            const billDate = billDateInput.value;
+            const totalAmount = totalAmountInput.value;
+            const paymentType = document.getElementById('paymentType').value;
+
+            if (!customerName || totalAmount === '0.00' || !billNo) {
+                alert('कृपया ग्राहक का नाम भरें और कम से कम एक उत्पाद जोड़ें।');
+                return;
+            }
+
+            const products = [];
+            const rows = document.querySelectorAll('#productTable tbody tr');
+            rows.forEach(row => {
+                products.push({
+                    description: row.querySelector('.description').value,
+                    mfgexp: row.querySelector('.mfgexp').value,
+                    batchno: row.querySelector('.batchno').value,
+                    quantity: row.querySelector('.quantity').value,
+                    rate: row.querySelector('.rate').value,
+                    amount: row.querySelector('.amount').value
+                });
+            });
+
+            const billData = {
+                billNo: billNo,
+                date: billDate,
+                customer: { name: customerName, village: customerVillage, contact: customerContact },
+                total: totalAmount,
+                payment: paymentType,
+                products: products,
+                savedAt: new Date().toLocaleString('hi-IN')
+            };
+
+            try {
+                localStorage.setItem('agroain_bill_' + billNo, JSON.stringify(billData));
+                alert(`बिल क्र. ${billNo} सफलतापूर्वक सेव हो गया है!`);
+                
+                document.getElementById('newBill').click(); 
+                const currentBillNo = parseInt(billNo);
+                document.getElementById('billNo').value = (currentBillNo + 1).toString().padStart(3, '0');
+            } catch (e) {
+                alert('बिल सेव करने में त्रुटि हुई।');
+            }
+        }
+        
+        function displayBillDetails(billData) {
+            let productRows = billData.products.map((p, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${p.description}</td>
+                    <td>${p.mfgexp}</td>
+                    <td>${p.batchno}</td>
+                    <td>${p.quantity}</td>
+                    <td>${p.rate}</td>
+                    <td>${p.amount}</td>
+                </tr>
+            `).join('');
+
+            // कॉन्टैक्ट नंबर तभी दिखाएं जब वह मौजूद हो
+            const customerContactHTML = billData.customer.contact ? `<p style="margin: 2px 0;"><strong>कॉन्टैक्ट नंबर:</strong> ${billData.customer.contact}</p>` : '';
+
+            const htmlContent = `
+                <div class="full-bill-display bill-for-print" style="margin-top: 20px;">
+                    
+                    ${SHOP_DETAILS_HTML} <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px dashed #ddd; padding-bottom: 5px;">
+                        <p><strong>क्रमांक:</strong> ${billData.billNo}</p>
+                        <p><strong>दिनांक:</strong> ${billData.date}</p>
+                    </div>
+
+                    <div style="margin-bottom: 15px; background-color: #e8f5e9; padding: 10px; border-radius: 3px;">
+                        <p style="margin: 2px 0;"><strong>श्रीमान:</strong> ${billData.customer.name}</p>
+                        <p style="margin: 2px 0;"><strong>ग्राम:</strong> ${billData.customer.village}</p>
+                        ${customerContactHTML}
+                        </div>
+
+                    <table class="bill-products-table">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 30px;">क्र.</th>
+                                <th>विवरण</th>
+                                <th style="min-width: 80px;">उत्पादन/समाप्ति</th>
+                                <th style="min-width: 80px;">बेच नंबर</th>
+                                <th style="min-width: 40px;">नग</th>
+                                <th style="min-width: 60px;">दर (रु.)</th>
+                                <th style="min-width: 70px;">रकम</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${productRows}
+                        </tbody>
+                    </table>
+                    
+                    <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: 10px;">
+                        <span style="font-size: 16px; margin-right: 20px;">भुगतान: <strong>${billData.payment}</strong></span>
+                        <span style="font-size: 18px; padding: 5px 10px; background-color: #2e7d32; color: white; border-radius: 4px;">कुल योग: ₹${billData.total}</span>
+                    </div>
+
+                    ${TERMS_HTML} <div class="signatures" style="margin-top: 30px; padding-top: 15px;">
+                        <div class="customer-sign">
+                            <p style="margin-bottom: 5px;">हस्ताक्षर किसान</p>
+                            <div class="signature-line" style="width: 150px;"></div>
+                        </div>
+                        <div class="shop-sign">
+                            <p style="margin-bottom: 5px;">हस्ताक्षर (Agroain)</p>
+                            <div class="signature-line" style="width: 150px;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="share-button-container" style="text-align: center; margin-top: 20px;">
+                    <button onclick="printBillContent(this.closest('.share-button-container').previousElementSibling)" 
+                            style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; flex-grow: 0;">
+                        📥 बिल शेयर/प्रिंट करें
+                    </button>
+                </div>
+                `;
+            billDetailContainer.innerHTML = htmlContent;
+        }
+
+        function deleteBill(billNo) {
+            const key = 'agroain_bill_' + billNo;
+            if (confirm(`क्या आप वाकई बिल क्र. ${billNo} को डिलीट करना चाहते हैं?`)) {
+                localStorage.removeItem(key);
+                alert(`बिल क्र. ${billNo} डिलीट हो गया है।`);
+                viewBills(); 
+                billDetailContainer.innerHTML = ''; 
+            }
+        }
+        
+        function viewBills() {
+            billDetailContainer.innerHTML = '';
+            savedBillsListDiv.style.display = savedBillsListDiv.style.display === 'none' ? 'block' : 'none';
+
+            if (savedBillsListDiv.style.display === 'block') {
+                billsListUl.innerHTML = ''; 
+                let billKeys = Object.keys(localStorage).filter(key => key.startsWith('agroain_bill_'));
+
+                if (billKeys.length === 0) {
+                    billsListUl.innerHTML = '<li>कोई सेव्ड बिल नहीं मिला।</li>';
+                    return;
+                }
+
+                billKeys.sort((a, b) => {
+                    const numA = parseInt(a.replace('agroain_bill_', ''));
+                    const numB = parseInt(b.replace('agroain_bill_', ''));
+                    return numB - numA; 
+                });
+
+                billKeys.forEach(key => {
+                    try {
+                        const billData = JSON.parse(localStorage.getItem(key));
+                        const listItem = document.createElement('li');
+                        
+                        // बिल देखने के लिए क्लिकेबल स्पैन
+                        const viewSpan = document.createElement('span');
+                        viewSpan.innerHTML = `<strong>क्र. ${billData.billNo}</strong> - ${billData.customer.name} (₹${billData.total})`;
+                        viewSpan.addEventListener('click', function() {
+                            displayBillDetails(billData);
+                        });
+
+                        // बिल डिलीट करने के लिए बटन
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = 'Delete';
+                        deleteButton.addEventListener('click', function(e) {
+                            e.stopPropagation(); 
+                            deleteBill(billData.billNo);
+                        });
+
+                        listItem.appendChild(viewSpan);
+                        listItem.appendChild(deleteButton);
+                        billsListUl.appendChild(listItem);
+
+                    } catch (e) {
+                        console.error('Error parsing bill data:', key, e);
+                    }
+                });
+            }
+        }
+
+        // --- इवेंट लिसनर ---
+        
+        document.getElementById('addProduct').addEventListener('click', addProductRow);
+        document.getElementById('removeProduct').addEventListener('click', function() {
+            if (productTableBody.rows.length > 1) {
+                productTableBody.deleteRow(productTableBody.rows.length - 1);
+                updateRowNumbers();
+                calculateTotal();
+            }
+        });
+        
+        document.getElementById('printBill').addEventListener('click', function() {
+            window.print();
+        });
+        
+        document.getElementById('saveBill').addEventListener('click', saveBill); 
+        document.getElementById('viewBills').addEventListener('click', viewBills); 
+        
+        document.getElementById('newBill').addEventListener('click', function() {
+            if (confirm('क्या आप नया बिल बनाना चाहते हैं? वर्तमान डेटा खो जाएगा।')) {
+                document.getElementById('customerName').value = '';
+                document.getElementById('customerVillage').value = '';
+                document.getElementById('customerContact').value = ''; 
+                
+                const table = document.getElementById('productTable').getElementsByTagName('tbody')[0];
+                while (table.rows.length > 1) {
+                    table.deleteRow(1);
+                }
+                
+                const firstRow = table.rows[0];
+                firstRow.querySelectorAll('input').forEach(input => {
+                     if (input.classList.contains('quantity')) input.value = 1;
+                     else if (input.classList.contains('rate') || input.classList.contains('amount')) input.value = 0;
+                     else input.value = '';
+                });
+                
+                document.getElementById('totalAmount').value = '0';
+                updateRowNumbers();
+            }
+        });
+        
+        document.querySelector('.quantity').addEventListener('input', calculateAmount);
+        document.querySelector('.rate').addEventListener('input', calculateAmount);
+
+        calculateTotal(); 
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGROAIN - Pesticide Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2e7d32;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab.active {
+            background-color: #4caf50;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4caf50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+            display: none;
+        }
+        .result-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #c8e6c9;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .action-buttons {
+            margin-top: 10px;
+        }
+        .action-buttons button {
+            margin-right: 10px;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+        .total-payment {
+            font-weight: bold;
+            font-size: 18px;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 2px solid #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>AGROAIN</h1>
+        <p>Pesticide Calculator for Farmers</p>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="openTab('insecticide')">Insecticide</div>
+        <div class="tab" onclick="openTab('herbicide')">Herbicide</div>
+    </div>
+
+    <div id="insecticide" class="tab-content active">
+        <div class="form-group">
+            <label for="insecticide-biga">Enter Number of Biga:</label>
+            <input type="number" id="insecticide-biga" min="1" placeholder="Enter biga count">
+        </div>
+        
+        <div class="form-group">
+            <label>Select Insecticide:</label>
+            <select id="insecticide-type">
+                <option value="">-- Select Insecticide --</option>
+                <option value="thiamethoxam">Thiamethoxam 12.6% + Lambda Cyhalothrin 9.5% Zc</option>
+                <option value="emamectin">Emamectin Benzoat 5% Sg</option>
+                <option value="both">Thiamethoxam + Lambda Cyhalothrin + Emamectin Benzoat</option>
+                <option value="chipko">Chipko</option>
+            </select>
+        </div>
+        
+        <button onclick="calculateInsecticide()">Submit</button>
+        
+        <div id="insecticide-result" class="result"></div>
+    </div>
+
+    <div id="herbicide" class="tab-content">
+        <div class="form-group">
+            <label for="herbicide-biga">Enter Number of Biga:</label>
+            <input type="number" id="herbicide-biga" min="1" placeholder="Enter biga count">
+        </div>
+        
+        <div class="form-group">
+            <label>Select Herbicide Combination:</label>
+            <select id="herbicide-type">
+                <option value="">-- Select Herbicide --</option>
+                <option value="imazethapyr">Imazethapyr 10% SL</option>
+                <option value="iris">IRIS</option>
+                <option value="centurion">Centurion</option>
+                <option value="clobin">Clobin</option>
+                <option value="all">Imazethapyr + IRIS + Centurion + Clobin</option>
+            </select>
+        </div>
+        
+        <button onclick="calculateHerbicide()">Submit</button>
+        
+        <div id="herbicide-result" class="result"></div>
+    </div>
+
+    <script>
+        function openTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+            
+            // Remove active class from all tabs
+            const tabs = document.getElementsByClassName('tab');
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove('active');
+            }
+            
+            // Show the selected tab content and mark tab as active
+            document.getElementById(tabName).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function calculateInsecticide() {
+            const biga = parseFloat(document.getElementById('insecticide-biga').value);
+            const insecticideType = document.getElementById('insecticide-type').value;
+            
+            if (!biga || biga <= 0 || !insecticideType) {
+                alert('Please enter valid values for Biga and select an insecticide');
+                return;
+            }
+            
+            let resultHTML = '';
+            let totalPayment = 0;
+            
+            if (insecticideType === 'thiamethoxam' || insecticideType === 'both') {
+                const amountPerBiga = insecticideType === 'thiamethoxam' ? 65 : 50;
+                const totalAmount = biga * amountPerBiga;
+                
+                let package = '';
+                let packagePrice = 0;
+                
+                if (totalAmount >= 1000) {
+                    package = '1 liter (1850 Rs)';
+                    packagePrice = 1850;
+                } else if (totalAmount >= 500) {
+                    package = '500 ml (950 Rs)';
+                    packagePrice = 950;
+                } else {
+                    package = '250 ml (320 Rs)';
+                    packagePrice = 320;
+                }
+                
+                const itemHTML = `
+                    <div class="result-item">
+                        <h3>Thiamethoxam 12.6% + Lambda Cyhalothrin 9.5% Zc</h3>
+                        <p>Total required: ${totalAmount} ml</p>
+                        <p>Recommended package: ${package}</p>
+                        <p>Usage: ${amountPerBiga} ml per biga</p>
+                        <p>Payment: ${packagePrice} Rs</p>
+                        <div class="action-buttons">
+                            <button onclick="undoCalculation('insecticide')">Undo</button>
+                            <button onclick="cancelItem(this)">Cancel</button>
+                        </div>
+                    </div>
+                `;
+                
+                resultHTML += itemHTML;
+                totalPayment += packagePrice;
+            }
+            
+            if (insecticideType === 'emamectin' || insecticideType === 'both') {
+                const amountPerBiga = insecticideType === 'emamectin' ? 75 : 50;
+                const totalAmount = biga * amountPerBiga;
+                
+                let package = '';
+                let packagePrice = 0;
+                
+                if (totalAmount >= 1000) {
+                    package = '1 kg (1900 Rs)';
+                    packagePrice = 1900;
+                } else if (totalAmount >= 500) {
+                    package = '500 gm (950 Rs)';
+                    packagePrice = 950;
+                } else {
+                    package = '250 gm (480 Rs)';
+                    packagePrice = 480;
+                }
+                
+                const itemHTML = `
+                    <div class="result-item">
+                        <h3>Emamectin Benzoat 5% Sg</h3>
+                        <p>Total required: ${totalAmount} gm</p>
+                        <p>Recommended package: ${package}</p>
+                        <p>Usage: ${amountPerBiga} gm per biga</p>
+                        <p>Payment: ${packagePrice} Rs</p>
+                        <div class="action-buttons">
+                            <button onclick="undoCalculation('insecticide')">Undo</button>
+                            <button onclick="cancelItem(this)">Cancel</button>
+                        </div>
+                    </div>
+                `;
+                
+                resultHTML += itemHTML;
+                totalPayment += packagePrice;
+            }
+            
+            if (insecticideType === 'chipko') {
+                const amountPerBiga = 15;
+                const totalAmount = biga * amountPerBiga;
+                
+                let package = '';
+                let packagePrice = 0;
+                
+                if (totalAmount >= 250) {
+                    package = '250 ml (550 Rs)';
+                    packagePrice = 550;
+                } else {
+                    package = '100 ml (220 Rs)';
+                    packagePrice = 220;
+                }
+                
+                const itemHTML = `
+                    <div class="result-item">
+                        <h3>Chipko</h3>
+                        <p>Total required: ${totalAmount} ml</p>
+                        <p>Recommended package: ${package}</p>
+                        <p>Usage: ${amountPerBiga} ml per biga</p>
+                        <p>Payment: ${packagePrice} Rs</p>
+                        <div class="action-buttons">
+                            <button onclick="undoCalculation('insecticide')">Undo</button>
+                            <button onclick="cancelItem(this)">Cancel</button>
+                        </div>
+                    </div>
+                `;
+                
+                resultHTML += itemHTML;
+                totalPayment += packagePrice;
+            }
+            
+            if (insecticideType === 'both') {
+                // For the combination, we've already calculated both above
+            }
+            
+            resultHTML += `<div class="total-payment">Total Payment: ${totalPayment} Rs</div>`;
+            
+            const resultDiv = document.getElementById('insecticide-result');
+            resultDiv.innerHTML = resultHTML;
+            resultDiv.style.display = 'block';
+        }
+
+        function calculateHerbicide() {
+            const biga = parseFloat(document.getElementById('herbicide-biga').value);
+            const herbicideType = document.getElementById('herbicide-type').value;
+            
+            if (!biga || biga <= 0 || !herbicideType) {
+                alert('Please enter valid values for Biga and select a herbicide');
+                return;
+            }
+            
+            let resultHTML = '';
+            let totalPayment = 0;
+            
+            if (herbicideType === 'imazethapyr' || herbicideType === 'all') {
+                const amountPerBiga = herbicideType === 'imazethapyr' ? 200 : 160;
+                const totalAmount = biga * amountPerBiga;
+                
+                let package = '';
+                let packagePrice = 0;
+                
+                if (totalAmount >= 1000) {
+                    package = '1 liter (900 Rs)';
+                    packagePrice = 900;
+                } else {
+                    package = '500 ml (450 Rs)';
+                    packagePrice = 450;
+                }
+                
+                const itemHTML = `
+                    <div class="result-item">
+                        <h3>Imazethapyr 10% SL</h3>
+                        <p>Total required: ${totalAmount} ml</p>
+                        <p>Recommended package: ${package}</p>
+                        <p>Usage: ${amountPerBiga} ml per biga</p>
+                        <p>Payment: ${packagePrice} Rs</p>
+                        <div class="action-buttons">
+                            <button onclick="undoCalculation('herbicide')">Undo</button>
+                            <button onclick="cancelItem(this)">Cancel</button>
+                        </div>
+                    </div>
+                `;
+                
+                resultHTML += itemHTML;
+                totalPayment += packagePrice;
+            }
+            
+            if (herbicideType === 'iris' || herbicideType === 'all') {
+                const amountPerBiga = herbicideType === 'iris' ? 90 : 80;
+                const totalAmount = biga * amountPerBiga;
+                
+                let package = '';
+                let packagePrice = 0;
+                
+                if (totalAmount >= 800) {
+                    package = '800 ml (1450 Rs)';
+                    packagePrice = 1450;
+                } else {
+                    package = '400 ml (750 Rs)';
+                    packagePrice = 750;
+                }
+                
+                const itemHTML = `
+                    <div class="result-item">
+                        <h3>IRIS</h3>
+                        <p>Total required: ${totalAmount} ml</p>
+                        <p>Recommended package: ${package}</p>
+                        <p>Usage: ${amountPerBiga} ml per biga</p>
+                        <p>Payment: ${packagePrice} Rs</p>
+                        <div class="action-buttons">
+                            <button onclick="undoCalculation('herbicide')">Undo</button>
+                            <button onclick="cancelItem(this)">Cancel</button>
+                        </div>
+                    </div>
+                `;
+                
+                resultHTML += itemHTML;
+                totalPayment += packagePrice;
+            }
+            
+            if (herbicideType === 'centurion' || herbicideType === 'all') {
+                // Centurion is always packaged with Imazethapyr
+                if (herbicideType === 'all' || herbicideType === 'centurion') {
+                    const package = '400 ml (650 Rs)';
+                    const packagePrice = 650;
+                    
+                    const itemHTML = `
+                        <div class="result-item">
+                            <h3>Centurion</h3>
+                            <p>Recommended package: ${package}</p>
+                            <p>Payment: ${packagePrice} Rs</p>
+                            <div class="action-buttons">
+                                <button onclick="undoCalculation('herbicide')">Undo</button>
+                                <button onclick="cancelItem(this)">Cancel</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    resultHTML += itemHTML;
+                    totalPayment += packagePrice;
+                }
+            }
+            
+            if (herbicideType === 'clobin' || herbicideType === 'all') {
+                // Clobin is always packaged with Imazethapyr
+                if (herbicideType === 'all' || herbicideType === 'clobin') {
+                    const package = '1 pack (140 Rs)';
+                    const packagePrice = 140;
+                    
+                    const itemHTML = `
+                        <div class="result-item">
+                            <h3>Clobin</h3>
+                            <p>Recommended package: ${package}</p>
+                            <p>Payment: ${packagePrice} Rs</p>
+                            <div class="action-buttons">
+                                <button onclick="undoCalculation('herbicide')">Undo</button>
+                                <button onclick="cancelItem(this)">Cancel</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    resultHTML += itemHTML;
+                    totalPayment += packagePrice;
+                }
+            }
+            
+            resultHTML += `<div class="total-payment">Total Payment: ${totalPayment} Rs</div>`;
+            
+            const resultDiv = document.getElementById('herbicide-result');
+            resultDiv.innerHTML = resultHTML;
+            resultDiv.style.display = 'block';
+        }
+
+        function undoCalculation(tab) {
+            document.getElementById(`${tab}-result`).style.display = 'none';
+        }
+
+        function cancelItem(button) {
+            const item = button.closest('.result-item');
+            item.remove();
+            
+            // Recalculate total payment
+            const resultDiv = item.closest('.result');
+            const items = resultDiv.querySelectorAll('.result-item');
+            let totalPayment = 0;
+            
+            items.forEach(item => {
+                const paymentText = item.querySelector('p:last-child').textContent;
+                const payment = parseInt(paymentText.match(/\d+/)[0]);
+                totalPayment += payment;
+            });
+            
+            // Update total payment
+            const totalPaymentDiv = resultDiv.querySelector('.total-payment');
+            if (totalPaymentDiv) {
+                totalPaymentDiv.textContent = `Total Payment: ${totalPayment} Rs`;
+            } else if (items.length === 0) {
+                resultDiv.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

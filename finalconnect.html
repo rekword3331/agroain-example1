@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Agroain - सोयाबीन फसल सुरक्षा</title>
+    <style>
+        :root { 
+            --primary: #2e7d32; 
+            --secondary: #8bc34a; 
+            --dark: #1b5e20; 
+            --light: #f1f8e9; 
+            --accent: #ff9800; 
+            --danger: #d32f2f; 
+            --info: #0288d1; 
+        }
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background-color: #f4f7f4; 
+            margin: 0; 
+            padding: 10px; 
+        }
+        /* AGRO FAST SPINNER - स्प्लैश स्क्रीन */
+        .page-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            transition: opacity 0.5s ease, visibility 0.5s;
+        }
+        .page-loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .page-spinner {
+            width: 80px;
+            height: 80px;
+            border: 8px solid #e0e0e0;
+            border-top: 8px solid #2e7d32;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* स्टेगर्ड फेड-इन एनिमेशन */
+        .fade-up {
+            animation: fadeInUp 0.6s ease forwards;
+            opacity: 0;
+        }
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .header-animate { animation-delay: 0.1s; }
+        .section1-animate { animation-delay: 0.3s; }
+
+        .container { 
+            max-width: 600px; 
+            width: 100%; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
+            margin: auto; 
+            box-sizing: border-box; 
+        }
+        header { 
+            text-align: center; 
+            margin-bottom: 20px; 
+            border-bottom: 2px solid var(--primary); 
+            padding-bottom: 10px; 
+        }
+        h1 { 
+            color: var(--primary); 
+            margin: 0; 
+            font-size: 2rem; 
+        }
+        .section { 
+            border: 1px solid #e0e0e0; 
+            padding: 15px; 
+            border-radius: 12px; 
+            margin-bottom: 20px; 
+            background: #fafafa; 
+        }
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: bold; 
+            color: var(--dark); 
+            font-size: 0.95rem; 
+        }
+        input, select { 
+            padding: 12px; 
+            border: 2px solid #ddd; 
+            border-radius: 10px; 
+            box-sizing: border-box; 
+            font-size: 16px; 
+            width: 100%; 
+        }
+        button { 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 12px 20px; 
+            border-radius: 10px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            width: auto; 
+        }
+        #result { 
+            margin-top: 20px; 
+            display: none; 
+            border-top: 2px solid var(--secondary); 
+            padding-top: 15px; 
+        }
+        .alert-warning { 
+            background: #ffebee; 
+            border-left: 5px solid var(--danger); 
+            padding: 15px; 
+            color: var(--danger); 
+            margin-top: 10px; 
+            font-weight: bold; 
+        }
+        .success-box { 
+            background: var(--light); 
+            padding: 15px; 
+            border-radius: 10px; 
+            border: 1px solid var(--secondary); 
+        }
+
+        /* नई प्रोडक्ट कार्ड स्टाइल - सिर्फ जरूरी फील्ड */
+        .product-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+        .product-name {
+            color: var(--primary);
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            border-bottom: 2px dashed var(--secondary);
+            padding-bottom: 10px;
+        }
+        .product-photo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .product-photo img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 4px solid var(--primary);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            align-items: center;
+        }
+        .info-label {
+            width: 120px;
+            font-weight: bold;
+            color: var(--dark);
+        }
+        .info-value {
+            flex: 1;
+            color: #333;
+        }
+        .price-tag {
+            background: var(--accent);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .type-badge {
+            background: var(--info);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            display: inline-block;
+        }
+
+        /* सर्च सेक्शन */
+        .label-row { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 5px; 
+        }
+        .label-row label { 
+            flex: 1; 
+            margin-bottom: 0; 
+        }
+        .label-row label:first-child { 
+            max-width: 100px; 
+        }
+        .search-row { 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+        }
+        #bigha { 
+            width: 100px; 
+            flex-shrink: 0; 
+        }
+        #smartSearch { 
+            flex: 1; 
+        }
+        .search-row button { 
+            width: auto; 
+            flex-shrink: 0; 
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 15px; }
+            h1 { font-size: 1.8rem; }
+            .label-row { flex-direction: column; gap: 5px; }
+            .label-row label { max-width: none !important; width: 100%; }
+            .search-row { flex-direction: column; align-items: stretch; }
+            #bigha { width: 100% !important; }
+            #smartSearch { width: 100%; }
+            .search-row button { width: 100%; margin-top: 5px; }
+            .info-row { flex-direction: column; align-items: flex-start; }
+            .info-label { width: 100%; margin-bottom: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- AGRO FAST SPINNER - स्प्लैश स्क्रीन -->
+    <div class="page-loader" id="pageLoader">
+        <div class="page-spinner"></div>
+    </div>
+
+    <div class="container">
+        <header id="header">
+            <h1>🌾 Agroain</h1>
+            <p>सही डोज · सही मात्रा · बेहतरीन क्वालिटी</p>
+        </header>
+
+        <!-- स्मार्ट सर्च सेक्शन -->
+        <div class="section" id="section1">
+            <div class="label-row">
+                <label for="bigha">🧾 बीघा</label>
+                <label for="smartSearch">🔍 उत्पाद खोजें</label>
+            </div>
+            <div class="search-row">
+                <input type="number" id="bigha" min="0" step="0.01" placeholder="बीघा" value="1">
+                <input type="text" id="smartSearch" placeholder="नाम, कंपनी, तकनीकी नाम...">
+                <button onclick="handleSmartSearch()">खोजें</button>
+            </div>
+            <small style="color: #666; display: block; margin-top: 5px;">💡 दिन संख्या या उत्पाद का नाम लिखें</small>
+        </div>
+
+        <!-- परिणाम दिखाने वाला डिव -->
+        <div id="result">
+            <h3 id="resTitle"></h3>
+            <div id="resContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // ---------- Firebase Configuration ----------
+        const DB_URL = "https://agroain-default-rtdb.firebaseio.com/";
+
+        // ---------- AGRO FAST SPINNER ----------
+        window.onload = function() {
+            setTimeout(() => {
+                document.getElementById('pageLoader').classList.add('hidden');
+                document.getElementById('header').classList.add('fade-up', 'header-animate');
+                document.getElementById('section1').classList.add('fade-up', 'section1-animate');
+            }, 3000);
+        };
+
+        let currentCropDays = 0;
+
+        function handleSmartSearch() {
+            const query = document.getElementById('smartSearch').value.trim();
+            if (query === '') {
+                alert('कृपया कुछ लिखें');
+                return;
+            }
+            
+            if (!isNaN(query) && query !== '') {
+                const days = parseInt(query);
+                if (days >= 0) {
+                    currentCropDays = days;
+                    checkStage(days);
+                } else {
+                    alert('दिन सही नहीं है');
+                }
+            } else {
+                searchProductInFirebase(query);
+            }
+        }
+
+        // ---------- Firebase में प्रोडक्ट सर्च (अपडेटेड डिस्प्ले) ----------
+        async function searchProductInFirebase(searchTerm) {
+            searchTerm = searchTerm.toLowerCase().trim();
+            const res = document.getElementById('result');
+            const resTitle = document.getElementById('resTitle');
+            const resContent = document.getElementById('resContent');
+            
+            res.style.display = "block";
+            resTitle.innerText = "🔍 खोज जारी है...";
+            resContent.innerHTML = `<div class="success-box">कृपया प्रतीक्षा करें... ⏳</div>`;
+
+            try {
+                const response = await fetch(`${DB_URL}inventory.json`);
+                const data = await response.json();
+                
+                let foundProducts = [];
+                
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        const product = data[key];
+                        if (
+                            (product.name && product.name.toLowerCase().includes(searchTerm)) ||
+                            (product.technical && product.technical.toLowerCase().includes(searchTerm)) ||
+                            (product.company && product.company.toLowerCase().includes(searchTerm)) ||
+                            (product.dType && product.dType.toLowerCase().includes(searchTerm))
+                        ) {
+                            foundProducts.push({ ...product, id: key });
+                        }
+                    });
+                }
+
+                if (foundProducts.length > 0) {
+                    resTitle.innerText = `✅ ${foundProducts.length} उत्पाद मिले`;
+                    let html = '';
+                    
+                    foundProducts.forEach(p => {
+                        // प्रोडक्ट कार्ड - सिर्फ जरूरी फील्ड के साथ
+                        html += `
+                            <div class="product-card">
+                                <!-- 1. सबसे पहले नाम -->
+                                <div class="product-name">${p.name || '—'}</div>
+                                
+                                <!-- 2. फिर फोटो -->
+                                <div class="product-photo">
+                                    <img src="${p.img || 'https://via.placeholder.com/150?text=No+Image'}" 
+                                         onerror="this.src='https://via.placeholder.com/150?text=No+Image'">
+                                </div>
+                                
+                                <!-- 3. कंपनी का नाम -->
+                                <div class="info-row">
+                                    <span class="info-label">🏭 कंपनी</span>
+                                    <span class="info-value">${p.company || '—'}</span>
+                                </div>
+                                
+                                <!-- 4. तकनीकी नाम -->
+                                <div class="info-row">
+                                    <span class="info-label">🔬 तकनीकी नाम</span>
+                                    <span class="info-value">${p.technical || '—'}</span>
+                                </div>
+                                
+                                <!-- 5. कीमत -->
+                                <div class="info-row">
+                                    <span class="info-label">💰 कीमत</span>
+                                    <span class="info-value"><span class="price-tag">₹ ${p.price || 0}</span></span>
+                                </div>
+                                
+                                <!-- 6. दवाई का प्रकार -->
+                                <div class="info-row">
+                                    <span class="info-label">📋 प्रकार</span>
+                                    <span class="info-value">
+                                        <span class="type-badge">${p.dType || (p.cat === 'dawai' ? 'दवाई' : 'हार्डवेयर')}</span>
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    resContent.innerHTML = html;
+                } else {
+                    resTitle.innerText = "❌ कोई उत्पाद नहीं मिला";
+                    resContent.innerHTML = `
+                        <div class="alert-warning">
+                            <strong>"${searchTerm}"</strong> से मेल खाता कोई उत्पाद नहीं मिला।
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                resTitle.innerText = "⚠️ त्रुटि";
+                resContent.innerHTML = `
+                    <div class="alert-warning">
+                        डेटा लोड नहीं हो पाया। Firebase URL चेक करें।
+                    </div>
+                `;
+            }
+        }
+
+        // ---------- फसल अवस्था जाँच (पुराना कोड) ----------
+        function checkStage(days) {
+            const res = document.getElementById('result');
+            const resTitle = document.getElementById('resTitle');
+            const resContent = document.getElementById('resContent');
+
+            res.style.display = "block";
+            resContent.innerHTML = "";
+
+            if (days === 0) {
+                resTitle.innerText = "🌱 बुवाई से पहले (बीज उपचार)";
+                resContent.innerHTML = `<div class="success-box">✅ सबसे पहले <b>बीज उपचार</b> करें (ज़ायलोरा/साफ/थायोमेथोक्सम)।</div>`;
+            }
+            else if (days > 0 && days <= 3) {
+                resTitle.innerText = "🌱 बुवाई के 72 घंटे के भीतर";
+                resContent.innerHTML = `<div class="success-box">✅ बुवाई के 72 घंटे के भीतर <b>अथॉरिटी</b> या <b>मेघमनी पाउच</b> का स्प्रे करें।</div>`;
+            }
+            else if (days >= 4 && days <= 13) {
+                resTitle.innerText = "📦 तैयारी का समय (4-13 दिन)";
+                resContent.innerHTML = `
+                    <div class="success-box">
+                        <p>🌿 खरपतवार नाशक का समय आने वाला है।</p>
+                        <div class="alert-info">⚠️ स्प्रे 14 दिन पूरे होने पर ही करें।</div>
+                    </div>`;
+            }
+            else if (days >= 14 && days <= 70) {
+                resTitle.innerText = `🌿 फसल सुरक्षा अवस्था (${days} दिन)`;
+                let content = `<div class="success-box">`;
+                
+                if (days <= 45) {
+                    if (days < 25) {
+                        content += `<p>✅ आप <b>खरपतवार नाशक</b> का उपयोग कर सकते हैं।</p>`;
+                    } else {
+                        content += `<p>✅ आप <b>खरपतवार नाशक</b> या <b>इल्ली नियंत्रण</b> कर सकते हैं।</p>`;
+                    }
+                } else {
+                    content += `<p>⚠️ अब केवल <b>इल्ली नियंत्रण</b> संभव है।</p>`;
+                }
+                
+                content += `</div>`;
+                resContent.innerHTML = content;
+            }
+            else if (days > 70) {
+                resTitle.innerText = "🌾 अंतिम सुरक्षा (71-120 दिन)";
+                resContent.innerHTML = `
+                    <div class="success-box">
+                        <p>⚠️ अब केवल <b>भारी इल्ली की दवा</b> + <b>चिपको</b> का छिड़काव करें।</p>
+                    </div>`;
+            }
+        }
+
+        // एंटर की से सर्च
+        document.getElementById('smartSearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleSmartSearch();
+            }
+        });
+    </script>
+</body>
+</html>

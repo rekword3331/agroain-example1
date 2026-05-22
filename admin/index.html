@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌾 एग्रोएन - उन्नत स्टॉक व बिक्री प्रबंधन (पूर्ण विवरण सहित)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="page-loader" id="pageLoader">
+        <div class="page-spinner"></div>
+    </div>
+
+    <div class="container" id="mainContainer">
+        <div class="loader-overlay" id="loaderOverlay">
+            <div class="spinner"></div>
+        </div>
+
+        <header id="header">
+            🌾 एग्रोएन · स्टॉक एवं बिक्री कमांड सेंटर
+            <button class="backup-btn" onclick="backupData()">💾 बैकअप डाउनलोड करें</button>
+        </header>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card" style="background:#2e7d32"><span id="statProd">0</span> कुल आइटम</div>
+            <div class="stat-card" style="background:#1976d2"><span id="statStock">0</span> कुल स्टॉक</div>
+            <div class="stat-card" style="background:#d32f2f"><span id="statDues">0</span> कुल बकाया (₹)</div>
+        </div>
+
+        <div class="section-box" id="formSection">
+            <input type="hidden" id="editId">
+            
+            <input type="hidden" id="sourceProductId">
+
+            <div class="info-banner" id="copyBanner">
+                ⚡ आप एक मौजूदा प्रोडक्ट का डेटा देख रहे हैं। "नया वर्जन जोड़ें" बटन से नई एंट्री बनाएं।
+            </div>
+
+           <div>
+    <label>🖼️ फोटो URL (Direct Link):</label>
+    <input type="text" id="pImgURL" class="form-control" placeholder="Yahan photo ka link paste karein..." oninput="previewFromURL(this.value)">
+    <img id="previewImg" alt="preview" style="max-width: 200px; max-height: 200px; margin-top: 10px; display: none;">
+</div>
+
+
+            <div class="form-grid">
+                <div class="suggestions-wrapper">
+                    <label>उत्पाद नाम *</label>
+                    <input type="text" id="pName" placeholder="जैसे बीज, कीटनाशक" autocomplete="off">
+                    <div id="pNameSuggestions" class="suggestions-box"></div>
+                </div>
+                <div><label>श्रेणी</label>
+                    <select id="pCat" onchange="toggleFields()">
+                        <option value="hardware">हार्डवेयर / बीज / उर्वरक</option>
+                        <option value="dawai">दवाई (कीटनाशक/फफूंदनाशक)</option>
+                    </select>
+                </div>
+                <div class="suggestions-wrapper">
+                    <label>कंपनी</label>
+                    <input type="text" id="pComp" placeholder="बायर, सिनजेंटा..." autocomplete="off">
+                    <div id="pCompSuggestions" class="suggestions-box"></div>
+                </div>
+                <div class="suggestions-wrapper">
+                    <label>डिस्ट्रिब्यूटर</label>
+                    <input type="text" id="pDist" placeholder="विक्रेता का नाम" autocomplete="off">
+                    <div id="pDistSuggestions" class="suggestions-box"></div>
+                </div>
+                <div><label>खरीद तिथि</label><input type="date" id="pBuyDate"></div>
+                <div><label>एक्सपायरी तिथि</label><input type="date" id="pExpiry"></div>
+                <div><label>मौजूदा स्टॉक</label><input type="number" id="pQty" value="0"></div>
+                <div><label>बिक्री मूल्य (₹)</label><input type="number" id="pPrice" value="0"></div>
+                <div><label>बिल राशि (₹)</label><input type="number" id="pBill" value="0"></div>
+                <div><label>भुगतान राशि (₹)</label><input type="number" id="pPaid" value="0"></div>
+
+                <div id="dawaiBox" class="dawai-fields">
+                    <div class="form-grid">
+                        <div><label>दवाई का प्रकार</label>
+                            <select id="dType">
+                                <option value="">—चुनें—</option>
+                                <option value="बीज उपचार">बीज उपचार</option>
+                                <option value="Harbicide">हर्बीसाइड</option>
+                                <option value="Insecticide">इन्सेक्टिसाइड</option>
+                                <option value="Fungicide">फफूंदनाशक</option>
+                                <option value="Growth">ग्रोथ / पोषक</option>
+                                <option value="Chipko">चिपको / स्टिकी</option>
+                            </select>
+                        </div>
+                        <div class="suggestions-wrapper">
+                            <label>तकनीकी नाम</label>
+                            <input type="text" id="dTech" placeholder="उदा. इमिडाक्लोप्रिड" autocomplete="off">
+                            <div id="dTechSuggestions" class="suggestions-box"></div>
+                        </div>
+                        <div><label>बैच / सीरियल नं.</label><input type="text" id="dSerial" placeholder="SN-2425-01"></div>
+                        <div><label>न्यूनतम स्टॉक सीमा</label><input type="number" id="dMinStock" value="0" placeholder="जैसे 10"></div>
+                        <div><label>फसलें (जिनमें उपयोग होती है)</label><input type="text" id="dCrops" placeholder="सोयाबीन, मूंगफली, गेहूं ..."></div>
+                        <div><label>पैक आकार</label>
+                            <select id="dPack">
+                                <option value="">—चुनें—</option>
+                                <option value="100ml">100 ml</option>
+                                <option value="250ml">250 ml</option>
+                                <option value="500ml">500 ml</option>
+                                <option value="1L">1 लीटर</option>
+                                <option value="1kg">1 किलो</option>
+                                <option value="5kg">5 किलो</option>
+                                <option value="10kg">10 किलो</option>
+                                <option value="other">अन्य (लिखें)</option>
+                            </select>
+                            <input type="text" id="dPackOther" placeholder="अन्य पैक आकार" style="margin-top:5px; display:none;">
+                        </div>
+                        <div><label>प्रकार</label>
+                            <select id="dCombineType">
+                                <option value="single">एकल (अकेली)</option>
+                                <option value="multiple">मिश्रण (कई के साथ)</option>
+                            </select>
+                        </div>
+                        <div><label>मिश्रण में किनके साथ?</label>
+                            <input type="text" id="dCombineWith" placeholder="नाम लिखें, अल्पविराम से">
+                        </div>
+                    </div>
+                    <div style="grid-column: 1 / -1; background: #fff; padding: 15px; border-radius: 20px; border: 1px solid #c8e6c9; margin-top: 15px;">
+                        <label style="color: #2e7d32; font-weight: bold; margin-bottom: 10px; display: block;">💉 डोज़ विवरण (प्रति बीघा या किलो)</label>
+                        <div class="form-grid">
+                            <div><label>बीज उपचार डोज़</label><input type="text" id="dDoseSeed" placeholder="2gm/kg"></div>
+                            <div><label>स्प्रे डोज़ (प्रति बीघा)</label><input type="text" id="dDoseSpray" placeholder="200ml"></div>
+                            <div><label>मिट्टी/खाद डोज़</label><input type="text" id="dDoseSoil" placeholder="500gm"></div>
+                        </div>
+                        <div style="margin-top: 10px; border-top: 1px dashed #2e7d32; padding-top: 10px;">
+                            <label>🤝 पार्टनर प्रोडक्ट (किसके साथ देना है?)</label>
+                            <input type="text" id="dPartner" placeholder="जैसे: Imeza, Kloben, या चिपको">
+                            <label style="margin-top:10px;">📊 स्पेशल कॉम्बिनेशन डोज़ (Centurion/Kloben जैसे केस के लिए)</label>
+                            <textarea id="dSpecialLogic" rows="2" placeholder="उदाहरण: 1L Imeza के साथ 400ml = 5 बीघा | 500ml के साथ 400ml = 2 बीघा"></textarea>
+                            
+                            <label style="margin-top:10px;">📄 दवाई की सारी जानकारी (विवरण)</label>
+                            <textarea id="dExtraDetails" rows="2" placeholder="यहाँ दवाई की अतिरिक्त जानकारी लिखें जैसे उपयोग निर्देश, सावधानियाँ, आदि..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="addBtn" class="btn btn-add" onclick="saveProduct()">➕ स्टॉक में जोड़ें</button>
+                <button id="updateBtn" class="btn btn-update" onclick="updateProduct()">⚡ अपडेट करें</button>
+                <button id="newVersionBtn" class="btn btn-new-version" onclick="saveAsNewVersion()">🆕 नया वर्जन जोड़ें</button>
+                <button id="cancelBtn" class="btn btn-cancel" onclick="cancelEdit()">✖ रद्द करें</button>
+            </div>
+        </div>
+
+        <input type="text" id="search" class="search-bar" placeholder="🔍 ढूँढ़ें: नाम, बैच, तकनीकी, पार्टनर, 'low stock', 'near expiry', 'expired', फसल, विवरण...">
+
+        <div class="table-wrapper" id="tableWrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>फोटो</th>
+                        <th>उत्पाद / तकनीकी</th>
+                        <th>डोज़ / पार्टनर / स्पेशल / विवरण</th>
+                        <th>फसलें</th>
+                        <th>कंपनी / एक्सपायरी</th>
+                        <th>स्टॉक (न्यूनतम)</th>
+                        <th>मूल्य (₹)</th>
+                        <th>बकाया (₹)</th>
+                        <th>कार्रवाई</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <h3>📋 उत्पाद विवरण</h3>
+            <div id="modalDetailContent"></div>
+            <button class="close-btn" onclick="closeModal()">बंद करें</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

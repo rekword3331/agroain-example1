@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGROAIN - Pesticide Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2e7d32;
+            margin-bottom: 30px;
+        }
+        .option-selector {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        .option-btn {
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 16px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .option-btn:hover {
+            background-color: #388e3c;
+        }
+        .option-btn.active {
+            background-color: #2e7d32;
+        }
+        .calculator-section {
+            display: none;
+        }
+        .calculator-section.active {
+            display: block;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #388e3c;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .action-btn {
+            padding: 5px 10px;
+            margin: 0 5px;
+            font-size: 14px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .cancel-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+        }
+        .undo-btn {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #e8f5e9 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AGROAIN</h1>
+        
+        <div class="option-selector">
+            <button class="option-btn active" onclick="showSection('insecticide')">Insecticide</button>
+            <button class="option-btn" onclick="showSection('herbicide')">Herbicide</button>
+        </div>
+        
+        <!-- Insecticide Calculator -->
+        <div id="insecticide-calculator" class="calculator-section active">
+            <div class="input-group">
+                <label for="insecticide-biga">Enter Biga:</label>
+                <input type="number" id="insecticide-biga" placeholder="Enter number of biga">
+            </div>
+            
+            <div class="input-group">
+                <label for="insecticide-type">Select Insecticide:</label>
+                <select id="insecticide-type">
+                    <option value="">-- Select Insecticide --</option>
+                    <option value="thiamethoxam">Thiameethoxam+Lambda Cyhalothrin 9.5% ZC</option>
+                    <option value="emamectin">Emamectin Benzoat 5% SG</option>
+                    <option value="both">Thiameethoxam+Lambda Cyhalothrin 9.5% ZC + Emamectin Benzoat 5% SG</option>
+                    <option value="chipko">Chipko</option>
+                </select>
+            </div>
+            
+            <button onclick="calculateInsecticide()">Submit</button>
+            
+            <div id="insecticide-results"></div>
+        </div>
+        
+        <!-- Herbicide Calculator -->
+        <div id="herbicide-calculator" class="calculator-section">
+            <div class="input-group">
+                <label for="herbicide-biga">Enter Biga:</label>
+                <input type="number" id="herbicide-biga" placeholder="Enter number of biga">
+            </div>
+            
+            <div class="input-group">
+                <label>Select Herbicides:</label>
+                <div>
+                    <input type="checkbox" id="imizathayper" name="herbicide" value="imizathayper">
+                    <label for="imizathayper">Imizathayper 10% SL</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="iris" name="herbicide" value="iris">
+                    <label for="iris">IRIS</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="centurion" name="herbicide" value="centurion">
+                    <label for="centurion">Centurion</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="clobin" name="herbicide" value="clobin">
+                    <label for="clobin">Clobin</label>
+                </div>
+            </div>
+            
+            <button onclick="calculateHerbicide()">Submit</button>
+            
+            <div id="herbicide-results"></div>
+        </div>
+    </div>
+
+    <script>
+        function showSection(section) {
+            // Hide all sections
+            document.querySelectorAll('.calculator-section').forEach(sec => {
+                sec.classList.remove('active');
+            });
+            
+            // Deactivate all buttons
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected section and activate button
+            document.getElementById(section + '-calculator').classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function calculateInsecticide() {
+            const biga = parseFloat(document.getElementById('insecticide-biga').value);
+            const type = document.getElementById('insecticide-type').value;
+            
+            if (!biga || !type) {
+                alert('Please enter biga and select insecticide type');
+                return;
+            }
+            
+            let results = [];
+            
+            switch(type) {
+                case 'thiamethoxam':
+                    const thiaPerBiga = 65;
+                    const totalThia = biga * thiaPerBiga;
+                    
+                    let thiaPackages = [];
+                    let thiaPrice = 0;
+                    
+                    if (totalThia >= 1000) {
+                        const liters = Math.floor(totalThia / 1000);
+                        if (liters > 0) {
+                            thiaPackages.push(`${liters} liter (${liters * 1000} ml)`);
+                            thiaPrice += liters * 1850;
+                        }
+                        const remaining = totalThia % 1000;
+                        
+                        if (remaining >= 500) {
+                            thiaPackages.push(`1 500ml`);
+                            thiaPrice += 950;
+                            if (remaining - 500 > 0) {
+                                thiaPackages.push(`1 250ml`);
+                                thiaPrice += 320;
+                            }
+                        } else if (remaining > 0) {
+                            thiaPackages.push(`1 250ml`);
+                            thiaPrice += 320;
+                        }
+                    } else if (totalThia >= 500) {
+                        thiaPackages.push(`1 500ml`);
+                        thiaPrice += 950;
+                        if (totalThia - 500 > 0) {
+                            thiaPackages.push(`1 250ml`);
+                            thiaPrice += 320;
+                        }
+                    } else {
+                        const needed250 = Math.ceil(totalThia / 250);
+                        thiaPackages.push(`${needed250} 250ml`);
+                        thiaPrice += needed250 * 320;
+                    }
+                    
+                    results.push({
+                        name: 'Thiamethoxam 12.6% + Lambda Cyhalothrin 9.5% ZC',
+                        total: `${totalThia} ml`,
+                        packages: thiaPackages.join(' + '),
+                        perBiga: `${thiaPerBiga} ml`,
+                        price: thiaPrice
+                    });
+                    break;
+                    
+                case 'emamectin':
+                    const emaPerBiga = 75;
+                    const totalEma = biga * emaPerBiga;
+                    
+                    let emaPackages = [];
+                    let emaPrice = 0;
+                    
+                    if (totalEma >= 1000) {
+                        const kgs = Math.floor(totalEma / 1000);
+                        if (kgs > 0) {
+                            emaPackages.push(`${kgs} kg (${kgs * 1000} gm)`);
+                            emaPrice += kgs * 1900;
+                        }
+                        const remaining = totalEma % 1000;
+                        
+                        if (remaining >= 500) {
+                            emaPackages.push(`1 500gm`);
+                            emaPrice += 950;
+                            if (remaining - 500 > 0) {
+                                emaPackages.push(`1 250gm`);
+                                emaPrice += 480;
+                            }
+                        } else if (remaining > 0) {
+                            emaPackages.push(`1 250gm`);
+                            emaPrice += 480;
+                        }
+                    } else if (totalEma >= 500) {
+                        emaPackages.push(`1 500gm`);
+                        emaPrice += 950;
+                        if (totalEma - 500 > 0) {
+                            emaPackages.push(`1 250gm`);
+                            emaPrice += 480;
+                        }
+                    } else {
+                        const needed250 = Math.ceil(totalEma / 250);
+                        emaPackages.push(`${needed250} 250gm`);
+                        emaPrice += needed250 * 480;
+                    }
+                    
+                    results.push({
+                        name: 'Emamectin Benzoat 5% SG',
+                        total: `${totalEma} gm`,
+                        packages: emaPackages.join(' + '),
+                        perBiga: `${emaPerBiga} gm`,
+                        price: emaPrice
+                    });
+                    break;
+                    
+                case 'both':
+                    const bothThiaPerBiga = 50;
+                    const bothEmaPerBiga = 50;
+                    const totalBothThia = biga * bothThiaPerBiga;
+                    const totalBothEma = biga * bothEmaPerBiga;
+                    
+                    // Calculate Thiamethoxam packages
+                    let bothThiaPackages = [];
+                    let bothThiaPrice = 0;
+                    
+                    if (totalBothThia >= 1000) {
+                        const liters = Math.floor(totalBothThia / 1000);
+                        if (liters > 0) {
+                            bothThiaPackages.push(`${liters} liter (${liters * 1000} ml)`);
+                            bothThiaPrice += liters * 1850;
+                        }
+                        const remaining = totalBothThia % 1000;
+                        
+                        if (remaining >= 500) {
+                            bothThiaPackages.push(`1 500ml`);
+                            bothThiaPrice += 950;
+                            if (remaining - 500 > 0) {
+                                bothThiaPackages.push(`1 250ml`);
+                                bothThiaPrice += 320;
+                            }
+                        } else if (remaining > 0) {
+                            bothThiaPackages.push(`1 250ml`);
+                            bothThiaPrice += 320;
+                        }
+                    } else if (totalBothThia >= 500) {
+                        bothThiaPackages.push(`1 500ml`);
+                        bothThiaPrice += 950;
+                        if (totalBothThia - 500 > 0) {
+                            bothThiaPackages.push(`1 250ml`);
+                            bothThiaPrice += 320;
+                        }
+                    } else {
+                        const needed250 = Math.ceil(totalBothThia / 250);
+                        bothThiaPackages.push(`${needed250} 250ml`);
+                        bothThiaPrice += needed250 * 320;
+                    }
+                    
+                    // Calculate Emamectin packages
+                    let bothEmaPackages = [];
+                    let bothEmaPrice = 0;
+                    
+                    if (totalBothEma >= 1000) {
+                        const kgs = Math.floor(totalBothEma / 1000);
+                        if (kgs > 0) {
+                            bothEmaPackages.push(`${kgs} kg (${kgs * 1000} gm)`);
+                            bothEmaPrice += kgs * 1900;
+                        }
+                        const remaining = totalBothEma % 1000;
+                        
+                        if (remaining >= 500) {
+                            bothEmaPackages.push(`1 500gm`);
+                            bothEmaPrice += 950;
+                            if (remaining - 500 > 0) {
+                                bothEmaPackages.push(`1 250gm`);
+                                bothEmaPrice += 480;
+                            }
+                        } else if (remaining > 0) {
+                            bothEmaPackages.push(`1 250gm`);
+                            bothEmaPrice += 480;
+                        }
+                    } else if (totalBothEma >= 500) {
+                        bothEmaPackages.push(`1 500gm`);
+                        bothEmaPrice += 950;
+                        if (totalBothEma - 500 > 0) {
+                            bothEmaPackages.push(`1 250gm`);
+                            bothEmaPrice += 480;
+                        }
+                    } else {
+                        const needed250 = Math.ceil(totalBothEma / 250);
+                        bothEmaPackages.push(`${needed250} 250gm`);
+                        bothEmaPrice += needed250 * 480;
+                    }
+                    
+                    results.push({
+                        name: 'Thiamethoxam 12.6% + Lambda Cyhalothrin 9.5% ZC',
+                        total: `${totalBothThia} ml`,
+                        packages: bothThiaPackages.join(' + '),
+                        perBiga: `${bothThiaPerBiga} ml`,
+                        price: bothThiaPrice
+                    });
+                    
+                    results.push({
+                        name: 'Emamectin Benzoat 5% SG',
+                        total: `${totalBothEma} gm`,
+                        packages: bothEmaPackages.join(' + '),
+                        perBiga: `${bothEmaPerBiga} gm`,
+                        price: bothEmaPrice
+                    });
+                    break;
+                    
+                case 'chipko':
+                    const chipkoPerBiga = 15;
+                    const totalChipko = biga * chipkoPerBiga;
+                    
+                    let chipkoPackages = [];
+                    let chipkoPrice = 0;
+                    
+                    if (totalChipko >= 250) {
+                        const packs250 = Math.floor(totalChipko / 250);
+                        if (packs250 > 0) {
+                            chipkoPackages.push(`${packs250} 250ml`);
+                            chipkoPrice += packs250 * 550;
+                        }
+                        const remaining = totalChipko % 250;
+                        
+                        if (remaining > 0) {
+                            chipkoPackages.push(`1 100ml`);
+                            chipkoPrice += 220;
+                        }
+                    } else {
+                        const needed100 = Math.ceil(totalChipko / 100);
+                        chipkoPackages.push(`${needed100} 100ml`);
+                        chipkoPrice += needed100 * 220;
+                    }
+                    
+                    results.push({
+                        name: 'Chipko',
+                        total: `${totalChipko} ml`,
+                        packages: chipkoPackages.join(' + '),
+                        perBiga: `${chipkoPerBiga} ml`,
+                        price: chipkoPrice
+                    });
+                    break;
+            }
+            
+            displayInsecticideResults(results);
+        }
+        
+        function displayInsecticideResults(results) {
+            let html = '<h2>Results</h2>';
+            html += '<table>';
+            html += '<tr><th>Dawai Name</th><th>Total Dawai</th><th>Recommended Package</th><th>Use per Biga</th><th>Total Payment</th><th>Actions</th></tr>';
+            
+            let totalPayment = 0;
+            
+            results.forEach((item, index) => {
+                totalPayment += item.price;
+                html += `<tr>
+                    <td>${item.name}</td>
+                    <td>${item.total}</td>
+                    <td>${item.packages}</td>
+                    <td>${item.perBiga}</td>
+                    <td>${item.price} Rs</td>
+                    <td>
+                        <button class="action-btn cancel-btn" onclick="cancelItem(${index}, 'insecticide')">Cancel</button>
+                        <button class="action-btn undo-btn" onclick="undoItem(${index}, 'insecticide')">Undo</button>
+                    </td>
+                </tr>`;
+            });
+            
+            html += `<tr class="total-row">
+                <td colspan="4">Total</td>
+                <td>${totalPayment} Rs</td>
+                <td></td>
+            </tr>`;
+            
+            html += '</table>';
+            
+            document.getElementById('insecticide-results').innerHTML = html;
+        }
+        
+        function calculateHerbicide() {
+            const biga = parseFloat(document.getElementById('herbicide-biga').value);
+            const selectedHerbicides = [];
+            
+            document.querySelectorAll('input[name="herbicide"]:checked').forEach(checkbox => {
+                selectedHerbicides.push(checkbox.value);
+            });
+            
+            if (!biga || selectedHerbicides.length === 0) {
+                alert('Please enter biga and select at least one herbicide');
+                return;
+            }
+            
+            let results = [];
+            let totalPayment = 0;
+            
+            // Check if all 4 herbicides are selected
+            const allSelected = selectedHerbicides.length === 4;
+            
+            selectedHerbicides.forEach(herbicide => {
+                switch(herbicide) {
+                    case 'imizathayper':
+                        const imizaPerBiga = allSelected ? 160 : 200;
+                        const totalImiza = biga * imizaPerBiga;
+                        
+                        let imizaPackages = [];
+                        let imizaPrice = 0;
+                        
+                        if (totalImiza >= 1000) {
+                            const liters = Math.floor(totalImiza / 1000);
+                            if (liters > 0) {
+                                imizaPackages.push(`${liters} liter (${liters * 1000} ml)`);
+                                imizaPrice += liters * 900;
+                            }
+                            const remaining = totalImiza % 1000;
+                            
+                            if (remaining >= 500) {
+                                imizaPackages.push(`1 500ml`);
+                                imizaPrice += 450;
+                            }
+                        } else if (totalImiza >= 500) {
+                            imizaPackages.push(`1 500ml`);
+                            imizaPrice += 450;
+                        } else {
+                            // Minimum package is 500ml
+                            imizaPackages.push(`1 500ml`);
+                            imizaPrice += 450;
+                        }
+                        
+                        results.push({
+                            name: 'Imizathayper 10% SL',
+                            total: `${totalImiza} ml`,
+                            packages: imizaPackages.join(' + '),
+                            perBiga: `${imizaPerBiga} ml`,
+                            price: imizaPrice
+                        });
+                        break;
+                        
+                    case 'iris':
+                        const irisPerBiga = 90;
+                        const totalIris = biga * irisPerBiga;
+                        
+                        let irisPackages = [];
+                        let irisPrice = 0;
+                        
+                        if (totalIris >= 800) {
+                            const packs800 = Math.floor(totalIris / 800);
+                            if (packs800 > 0) {
+                                irisPackages.push(`${packs800} 800ml`);
+                                irisPrice += packs800 * 1450;
+                            }
+                            const remaining = totalIris % 800;
+                            
+                            if (remaining >= 400) {
+                                irisPackages.push(`1 400ml`);
+                                irisPrice += 750;
+                            } else if (remaining > 0) {
+                                // Minimum package is 400ml
+                                irisPackages.push(`1 400ml`);
+                                irisPrice += 750;
+                            }
+                        } else if (totalIris >= 400) {
+                            irisPackages.push(`1 400ml`);
+                            irisPrice += 750;
+                        } else {
+                            // Minimum package is 400ml
+                            irisPackages.push(`1 400ml`);
+                            irisPrice += 750;
+                        }
+                        
+                        results.push({
+                            name: 'IRIS',
+                            total: `${totalIris} ml`,
+                            packages: irisPackages.join(' + '),
+                            perBiga: `${irisPerBiga} ml`,
+                            price: irisPrice
+                        });
+                        break;
+                        
+                    case 'centurion':
+                        // Centurion is only added if Imizathayper is selected and in 1L or 500ml packages
+                        const imizaSelected = selectedHerbicides.includes('imizathayper');
+                        if (imizaSelected) {
+                            const centurionPerBiga = 0; // Not per biga, but per package
+                            
+                            // Count how many 1L or 500ml Imizathayper packages
+                            let centurionNeeded = 0;
+                            const imizaResult = results.find(r => r.name === 'Imizathayper 10% SL');
+                            if (imizaResult) {
+                                if (imizaResult.packages.includes('liter')) {
+                                    const liters = parseInt(imizaResult.packages.split(' ')[0]);
+                                    centurionNeeded += liters;
+                                }
+                                if (imizaResult.packages.includes('500ml')) {
+                                    centurionNeeded += 1;
+                                }
+                            }
+                            
+                            if (centurionNeeded > 0) {
+                                const centurionPrice = centurionNeeded * 650;
+                                results.push({
+                                    name: 'Centurion',
+                                    total: `${centurionNeeded * 400} ml`,
+                                    packages: `${centurionNeeded} 400ml`,
+                                    perBiga: 'With Imizathayper',
+                                    price: centurionPrice
+                                });
+                            }
+                        }
+                        break;
+                        
+                    case 'clobin':
+                        // Clobin is only added if Imizathayper is selected and in 1L or 500ml packages
+                        const imizaSelectedForClobin = selectedHerbicides.includes('imizathayper');
+                        if (imizaSelectedForClobin) {
+                            let clobinNeeded = 0;
+                            const imizaResult = results.find(r => r.name === 'Imizathayper 10% SL');
+                            if (imizaResult) {
+                                if (imizaResult.packages.includes('liter')) {
+                                    const liters = parseInt(imizaResult.packages.split(' ')[0]);
+                                    clobinNeeded += liters;
+                                }
+                                if (imizaResult.packages.includes('500ml')) {
+                                    clobinNeeded += 1;
+                                }
+                            }
+                            
+                            if (clobinNeeded > 0) {
+                                const clobinPrice = clobinNeeded * 140;
+                                results.push({
+                                    name: 'Clobin',
+                                    total: `${clobinNeeded} pack`,
+                                    packages: `${clobinNeeded} pack`,
+                                    perBiga: 'With Imizathayper',
+                                    price: clobinPrice
+                                });
+                            }
+                        }
+                        break;
+                }
+            });
+            
+            displayHerbicideResults(results);
+        }
+        
+        function displayHerbicideResults(results) {
+            let html = '<h2>Results</h2>';
+            html += '<table>';
+            html += '<tr><th>Dawai Name</th><th>Total Dawai</th><th>Recommended Package</th><th>Use per Biga</th><th>Total Payment</th><th>Actions</th></tr>';
+            
+            let totalPayment = 0;
+            
+            results.forEach((item, index) => {
+                totalPayment += item.price;
+                html += `<tr>
+                    <td>${item.name}</td>
+                    <td>${item.total}</td>
+                    <td>${item.packages}</td>
+                    <td>${item.perBiga}</td>
+                    <td>${item.price} Rs</td>
+                    <td>
+                        <button class="action-btn cancel-btn" onclick="cancelItem(${index}, 'herbicide')">Cancel</button>
+                        <button class="action-btn undo-btn" onclick="undoItem(${index}, 'herbicide')">Undo</button>
+                    </td>
+                </tr>`;
+            });
+            
+            html += `<tr class="total-row">
+                <td colspan="4">Total</td>
+                <td>${totalPayment} Rs</td>
+                <td></td>
+            </tr>`;
+            
+            html += '</table>';
+            
+            document.getElementById('herbicide-results').innerHTML = html;
+        }
+        
+        function cancelItem(index, type) {
+            // In a real app, you would remove the item from the results array
+            alert(`Item ${index} will be cancelled from ${type} results`);
+        }
+        
+        function undoItem(index, type) {
+            // In a real app, you would undo the cancellation
+            alert(`Cancellation of item ${index} will be undone for ${type} results`);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Agroain · Dynamic Search</title>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root { --primary: #2e7d32; --secondary: #8bc34a; --dark: #1b5e20; --light: #f1f8e9; --accent: #ff9800; --danger: #d32f2f; --info: #0288d1; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f7f4; margin: 0; padding: 10px; }
+        
+        /* Loader */
+        .page-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; align-items: center; justify-content: center; z-index: 2000; transition: 0.5s; }
+        .page-loader.hidden { opacity: 0; visibility: hidden; }
+        .page-spinner { width: 50px; height: 50px; border: 5px solid #ddd; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        header { text-align: center; border-bottom: 2px solid var(--primary); margin-bottom: 20px; padding-bottom: 10px; }
+        
+        .section { border: 1px solid #ddd; padding: 15px; border-radius: 12px; background: #fafafa; margin-bottom: 15px; }
+        input, button { padding: 12px; border-radius: 10px; border: 2px solid #ddd; font-size: 16px; width: 100%; box-sizing: border-box; }
+        button { background: var(--primary); color: white; font-weight: bold; border: none; cursor: pointer; margin-top: 10px; }
+
+        .search-row { display: flex; gap: 10px; margin-top: 10px; }
+        #bigha { width: 100px; }
+
+        #result { display: none; margin-top: 20px; }
+        .success-box { background: var(--light); padding: 15px; border-radius: 10px; border: 1px solid var(--secondary); margin-bottom: 10px; border-left: 5px solid var(--primary); }
+        .alert-info { background: #e3f2fd; border-left: 5px solid var(--info); padding: 10px; color: var(--info); font-weight: bold; margin-top: 10px; border-radius: 5px; }
+        .med-card { background: #fff; border: 1px solid #c8e6c9; border-radius: 10px; padding: 12px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="page-loader" id="pageLoader"><div class="page-spinner"></div></div>
+
+    <div class="container">
+        <header>
+            <h1>Agroain</h1>
+            <p>स्मार्ट सुरक्षा · डेटाबेस संचालित</p>
+        </header>
+
+        <div class="section">
+            <label>🧾 कितने बीघा और क्या खोजना है?</label>
+            <div class="search-row">
+                <input type="number" id="bigha" value="1" placeholder="बीघा">
+                <input type="text" id="smartSearch" placeholder="दिन (जैसे 15) या दवा का नाम">
+            </div>
+            <button onclick="handleSmartSearch()">दवाई और स्टेज देखें</button>
+        </div>
+
+        <div id="result">
+            <h3 id="resTitle">🔍 परिणाम</h3>
+            <div id="resContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIG ---
+        const firebaseConfig = {
+            databaseURL: "https://agroain-default-rtdb.firebaseio.com/", // 👈 Aapka Database URL
+            projectId: "agroain-default-rtdb",
+        };
+        firebase.initializeApp(firebaseConfig);
+        const rdb = firebase.database(); // Realtime DB (Stages ke liye)
+        const db = firebase.firestore(); // Firestore (Products ke liye)
+
+        window.onload = () => {
+            setTimeout(() => document.getElementById('pageLoader').classList.add('hidden'), 1000);
+        };
+
+        async function handleSmartSearch() {
+            const query = document.getElementById('smartSearch').value.trim();
+            const bigha = parseFloat(document.getElementById('bigha').value) || 1;
+            const res = document.getElementById('result');
+            const content = document.getElementById('resContent');
+            const title = document.getElementById('resTitle');
+
+            if(!query) return alert("कृपया कुछ लिखें");
+
+            res.style.display = "block";
+            content.innerHTML = "खोज रहे हैं...";
+
+            // LOGIC 1: AGAR NUMBER HAI (DIN WALA SYSTEM)
+            if(!isNaN(query)) {
+                title.innerText = `फसल अवस्था: ${query} दिन`;
+                
+                // Realtime Database se Stage uthayein
+                rdb.ref('crop_stages').once('value', (snapshot) => {
+                    let found = false;
+                    content.innerHTML = "";
+                    
+                    snapshot.forEach((child) => {
+                        const stage = child.val();
+                        // Check karein ki query (din) start aur end ke beech mein hai ya nahi
+                        if (parseInt(query) >= stage.start && parseInt(query) <= stage.end) {
+                            content.innerHTML += `
+                                <div class="success-box">
+                                    <h3 style="margin-top:0">${stage.title}</h3>
+                                    <p>${stage.msg}</p>
+                                    ${stage.alert ? `<div class="alert-info">⚠️ ${stage.alert}</div>` : ''}
+                                </div>
+                            `;
+                            found = true;
+                        }
+                    });
+
+                    if(!found) {
+                        content.innerHTML = `<div class="success-box">😕 इस दिन के लिए डेटाबेस में कोई विशेष सलाह नहीं मिली।</div>`;
+                    }
+                });
+            } 
+            
+            // LOGIC 2: AGAR TEXT HAI (DAWAI WALA SYSTEM)
+            else {
+                title.innerText = "दवा की जानकारी";
+                try {
+                    const snapshot = await db.collection('products')
+                        .where('searchKeywords', 'array-contains', query.toLowerCase())
+                        .get();
+
+                    if (snapshot.empty) {
+                        content.innerHTML = `<div class="success-box">दवा नहीं मिली। कृपया नाम सही लिखें।</div>`;
+                    } else {
+                        content.innerHTML = "";
+                        snapshot.forEach(doc => {
+                            const p = doc.data();
+                            content.innerHTML += `
+                                <div class="med-card">
+                                    <strong style="color:var(--primary)">🌿 ${p.name}</strong><br>
+                                    <span>🧪 टेक्निकल: ${p.technical || '-'}</span><br>
+                                    <span>📦 स्टॉक: ${(p.stock > 0) ? '✅ उपलब्ध' : '❌ खत्म'}</span>
+                                </div>
+                            `;
+                        });
+                    }
+                } catch(e) {
+                    content.innerHTML = "सर्वर एरर!";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

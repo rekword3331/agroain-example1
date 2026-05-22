@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>एग्रोएन - पैकेज मेकर</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <header>🛠 एग्रोएन - पैकेज मेकर (प्रकार + ड्रॉपडाउन विधि)</header>
+
+    <div class="search-box">
+        <h3 style="color: #e65100; margin-bottom: 10px;">🔍 पुराना पैकेज खोजें (फसल + उम्र)</h3>
+        <div class="form-grid">
+            <input type="text" id="searchCrop" placeholder="फसल (उदा. सोयाबीन, lasun)">
+            <input type="number" id="searchAge" placeholder="उम्र (दिन)">
+            <button class="btn-auto" onclick="findPackagesByCrop()">खोजें</button>
+        </div>
+        <div id="searchResults"></div>
+        <div id="searchPagination" class="pagination"></div>
+    </div>
+
+    <hr>
+
+    <div class="sticky-fields">
+        <h4 style="color: #1b5e20; margin-bottom: 15px;">📌 पैकेज की मुख्य जानकारी (ये सेव रहेंगे)</h4>
+        <div class="form-grid">
+            <div><label>📄 पैकेज नंबर *</label><input type="text" id="inpPkgNo" placeholder="जैसे: PKG-001"></div>
+            <div><label>🌾 फसल *</label><input type="text" id="inpCrop" placeholder="जैसे: सोयाबीन, lasun"></div>
+        </div>
+    </div>
+
+    <div class="form-grid" id="otherPackageFields">
+        <div><label>🔬 टेक्निकल नाम</label><input type="text" id="inpPkgTechnical" placeholder="उदा. Kit for Growth"></div>
+        <div><label>🏢 कंपनी</label><input type="text" id="inpPkgCompany" placeholder="उदा. Agroain"></div>
+        <div><label>💰 कुल कीमत (Price)</label><input type="number" id="inpPkgPrice" placeholder="0.00"></div>
+        <div><label>📦 पैकिंग</label><input type="text" id="inpPkgPacking" placeholder="उदा. 1 Kit / 500gm"></div>
+        <div><label>📅 Min उम्र</label><input type="number" id="inpAgeMin" placeholder="0"></div>
+        <div><label>📅 Max उम्र</label><input type="number" id="inpAgeMax" placeholder="999"></div>
+        <div><label>📌 पैकेज का प्रकार</label>
+            <select id="inpPackageType">
+                <option value="बुवाई से पहले">🌱 बुवाई से पहले (Seed Treatment)</option>
+                <option value="बुवाई के बाद">🌿 बुवाई के बाद (Post-sowing)</option>
+            </select>
+        </div>
+        <div style="grid-column: span 2;">
+            <label>🖼️ फोटो URL (Image URL)</label>
+            <input type="text" id="inpPkgImg" oninput="previewFromURL(this.value)" placeholder="Photo Link Paste Karein">
+            <img id="previewImg" alt="Preview" style="max-width: 200px; max-height: 200px; margin-top: 10px; display: none; border-radius: 10px; border: 2px solid #2e7d32;">
+        </div>
+    </div>
+
+    <div class="medicine-section">
+        <h4 style="color: #2e7d32; margin-bottom: 15px;">💊 नई दवाई जोड़ें</h4>
+        <div class="form-grid">
+            <div style="grid-column: span 2; position: relative;">
+                <label>💊 दवाई का नाम / तकनीकी नाम *</label>
+                <input type="text" id="inpProdName" list="productList" placeholder="नाम लिखें या चुनें" autocomplete="off">
+                <datalist id="productList"></datalist>
+            </div>
+            <div><label>💧 डोज़ (मात्रा) *</label><input type="text" id="inpDose" placeholder="जैसे 200ml/एकड़"></div>
+            <div>
+                <label>🌱 उपचार विधि</label>
+                <select id="treatmentMethodSelect">
+                    <option value="स्प्रे">स्प्रे</option>
+                    <option value="बीज उपचार">बीज उपचार</option>
+                    <option value="खाद/मिट्टी">खाद/मिट्टी</option>
+                    <option value="बीज शोधन">बुवाई से पहले</option>
+                </select>
+            </div>
+            <div><label>📄 विवरण (Details)</label><textarea id="inpDetails" rows="2" placeholder="दवाई की पूरी जानकारी"></textarea></div>
+            <div><label>📢 सलाह/निर्देश</label><textarea id="inpAdvice" rows="2" placeholder="किसान को विशेष सलाह"></textarea></div>
+            <div><label>⚠️ नोट/अलर्ट</label><textarea id="inpNoteAlert" rows="2" placeholder="एक्सपायरी, स्टॉक कम आदि"></textarea></div>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn-auto" onclick="autoFillFromInventory()">🔍 ऑटो-फिल (इन्वेंट्री से भरें)</button>
+            <button class="btn-add" onclick="addItemToPackage()">➕ पैकेज में जोड़ें</button>
+            <button class="btn-add" style="background: #6a1b9a;" onclick="refreshProductList()">🔄 लिस्ट रिफ्रेश करें</button>
+        </div>
+        <div id="addMessage" class="success-message"></div>
+    </div>
+
+    <div class="table-wrapper">
+        <table id="medicineTable">
+            <thead>
+                <tr>
+                    <th>Dawai</th>
+                    <th>Technical</th>
+                    <th>Dose</th>
+                    <th>Upchar</th>
+                    <th>Company</th>
+                    <th>Price</th>
+                    <th>Packing</th>
+                    <th>Umra</th>
+                    <th>Details/Salah</th>
+                    <th>Photo</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="medicineTableBody">
+                <tr><td colspan="11" style="text-align:center">कोई दवाई नहीं जोड़ी गई</td></tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="button-group">
+        <button class="btn-save" onclick="savePackageToFirebase()">💾 पैकेज सेव करें</button>
+        <button class="btn-save btn-delete-pkg" onclick="deleteFullPackage()">🗑️ पैकेज डिलीट करें</button>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>Agroain Stage Admin</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
+        .admin-box { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        label { font-weight: bold; margin-bottom: 5px; }
+        input, textarea, select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+        .btn-save { background: #2e7d32; color: white; border: none; padding: 12px; cursor: pointer; font-weight: bold; border-radius: 6px; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #e8f5e9; }
+        .delete-btn { color: red; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="admin-box">
+    <h2>Agroain Stage Admin Panel</h2>
+    <p>Yahan se aap din ke anusaar alerts aur options badal sakte hain.</p>
+    
+    <div id="stageForm">
+        <div style="display: flex; gap: 10px;">
+            <div class="form-group" style="flex: 1;">
+                <label>शुरुआती दिन (From)</label>
+                <input type="number" id="startDay" placeholder="e.g. 14">
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>अंतिम दिन (To)</label>
+                <input type="number" id="endDay" placeholder="e.g. 45">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>स्टेज का नाम (Title)</label>
+            <input type="text" id="stageTitle" placeholder="e.g. खरपतवार नाशक समय">
+        </div>
+
+        <div class="form-group">
+            <label>मुख्य जानकारी (Message)</label>
+            <textarea id="stageMsg" rows="3" placeholder="Grahak ko kya dikhana hai..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>अलर्ट/चेतावनी (Alert Text)</label>
+            <input type="text" id="alertText" placeholder="e.g. 14 से 45 दिन के बीच ही काम करेगी">
+        </div>
+
+        <button class="btn-save" onclick="saveStage()">Data Database mein bhejein</button>
+    </div>
+
+    <hr>
+    <h3>Active Stages (Database List)</h3>
+    <table id="stageTable">
+        <thead>
+            <tr>
+                <th>Days</th>
+                <th>Title</th>
+                <th>Message</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="stageList"></tbody>
+    </table>
+</div>
+
+<script>
+    // Apne Firebase Realtime Database ka URL yahan dalein
+    const firebaseConfig = { databaseURL: "https://agroain-default-rtdb.firebaseio.com/" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    async function saveStage() {
+        const data = {
+            start: parseInt(document.getElementById('startDay').value),
+            end: parseInt(document.getElementById('endDay').value),
+            title: document.getElementById('stageTitle').value,
+            msg: document.getElementById('stageMsg').value,
+            alert: document.getElementById('alertText').value
+        };
+
+        if(!data.title) return alert("Title bharna zaroori hai");
+
+        await db.ref('crop_stages').push(data);
+        alert("Stage Save ho gayi!");
+        location.reload();
+    }
+
+    function loadStages() {
+        db.ref('crop_stages').on('value', (snapshot) => {
+            const list = document.getElementById('stageList');
+            list.innerHTML = "";
+            snapshot.forEach((child) => {
+                const val = child.val();
+                list.innerHTML += `
+                    <tr>
+                        <td>${val.start} - ${val.end}</td>
+                        <td><b>${val.title}</b></td>
+                        <td>${val.msg}</td>
+                        <td><span class="delete-btn" onclick="deleteStage('${child.key}')">Remove</span></td>
+                    </tr>
+                `;
+            });
+        });
+    }
+
+    function deleteStage(key) {
+        if(confirm("Kya aap ise hatana chahte hain?")) {
+            db.ref('crop_stages/' + key).remove();
+        }
+    }
+
+    loadStages();
+</script>
+</body>
+</html>

@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌾 एग्रोएन - उन्नत स्टॉक व बिक्री प्रबंधन (पूर्ण विवरण सहित)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #f0f2f5;
+            padding: 12px;
+            position: relative;
+            min-height: 100vh;
+        }
+        .page-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            transition: opacity 0.5s ease, visibility 0.5s;
+        }
+        .page-loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .page-spinner {
+            width: 80px;
+            height: 80px;
+            border: 8px solid #e0e0e0;
+            border-top: 8px solid #2e7d32;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,40,0,0.15);
+            position: relative;
+        }
+        .loader-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(3px);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s ease, visibility 0.2s;
+        }
+        .loader-overlay.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #e0e0e0;
+            border-top: 6px solid #2e7d32;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .fade-up {
+            animation: fadeInUp 0.6s ease forwards;
+            opacity: 0;
+        }
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .header-animate { animation-delay: 0.1s; }
+        .stats-animate { animation-delay: 0.3s; }
+        .form-animate { animation-delay: 0.5s; }
+        .search-animate { animation-delay: 0.7s; }
+        .table-animate { animation-delay: 0.9s; }
+
+        header {
+            background: linear-gradient(145deg, #1b5e20, #2e7d32);
+            color: white;
+            padding: 20px;
+            border-radius: 18px;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            box-shadow: 0 6px 12px rgba(0,80,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .backup-btn {
+            background: #ffb300;
+            color: #1b5e20;
+            border: none;
+            border-radius: 40px;
+            padding: 10px 20px;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 0 #b26500;
+        }
+        .backup-btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: var(--color);
+            padding: 16px 10px;
+            border-radius: 28px;
+            text-align: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+        }
+        .stat-card span {
+            display: block;
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .camera-ui {
+            border: 3px dashed #2e7d32;
+            background: #f1f8e9;
+            padding: 15px;
+            border-radius: 30px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        #previewImg {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid #2e7d32;
+            margin: 12px auto 0;
+            display: none;
+            background: #ddd;
+        }
+        .file-input-btn {
+            background: #2e7d32;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .file-input-btn:hover {
+            background: #1b5e20;
+        }
+
+        .section-box {
+            background: white;
+            padding: 22px;
+            border-radius: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+            border: 1px solid #c8e6c9;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 16px;
+        }
+        label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #1b5e20;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: block;
+            margin-bottom: 5px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid #c8e6c9;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            background: #fafafa;
+            transition: 0.2s;
+        }
+        textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #2e7d32;
+            outline: none;
+            background: white;
+            box-shadow: 0 0 0 4px #c8e6c9;
+        }
+        
+        /* Suggestions Box Styles */
+        .suggestions-wrapper {
+            position: relative;
+        }
+        .suggestions-box {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #2e7d32;
+            border-top: none;
+            border-radius: 0 0 20px 20px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+            display: none;
+            margin-top: -2px;
+        }
+        .suggestion-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+            transition: background 0.1s;
+        }
+        .suggestion-item:hover, .suggestion-item.active-suggestion {
+            background: #c8e6c9;
+            font-weight: 600;
+        }
+        .suggestion-item small {
+            color: #555;
+            font-size: 0.7rem;
+            display: block;
+        }
+        
+        .dawai-fields {
+            background: #e8f5e9;
+            border-radius: 28px;
+            padding: 20px;
+            margin-top: 10px;
+            display: none;
+            border-left: 8px solid #2e7d32;
+            grid-column: 1 / -1;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 40px;
+            padding: 12px 20px;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            color: white;
+            transition: 0.15s;
+            box-shadow: 0 5px 0 rgba(0,0,0,0.2);
+        }
+        .btn:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+        .btn-add {
+            background: #2e7d32;
+            width: 100%;
+            margin-top: 25px;
+            padding: 18px;
+        }
+        .btn-update {
+            background: #f57c00;
+            width: 100%;
+            margin-top: 25px;
+            display: none;
+            padding: 18px;
+        }
+        .btn-cancel {
+            background: #546e7a;
+            width: 100%;
+            margin-top: 10px;
+            display: none;
+        }
+        .small-btn {
+            background: #2e7d32;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 18px 25px;
+            border: none;
+            background: #f1f8e9;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            border: 2px solid #a5d6a7;
+            outline: none;
+            transition: 0.2s;
+        }
+        .search-bar:focus {
+            border-color: #2e7d32;
+            background: white;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 24px;
+            background: #fafafa;
+            padding: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            min-width: 1400px;
+        }
+        th {
+            background: #c8e6c9;
+            color: #1b5e20;
+            padding: 18px 10px;
+            font-weight: 700;
+        }
+        td {
+            padding: 15px 10px;
+            border-bottom: 1px solid #c8e6c9;
+            vertical-align: middle;
+        }
+        .prod-img {
+            width: 55px;
+            height: 55px;
+            object-fit: cover;
+            border-radius: 16px;
+            border: 2px solid #2e7d32;
+            background: #fff;
+        }
+        .low-stock-alert {
+            background: #ffcdd2 !important;
+            border-left: 6px solid #c62828;
+        }
+        .near-expiry-alert {
+            background: #fff9c4 !important;
+            border-left: 6px solid #fbc02d;
+        }
+        .expired-alert {
+            background: #ffebee !important;
+            border-left: 6px solid #c62828;
+        }
+        .pending-text { color: #c62828; font-weight: 800; }
+        .paid-text { color: #2e7d32; font-weight: 800; }
+
+        .bg-beej-upchar { background-color: #e3f2fd !important; }
+        .bg-herbicide { background-color: #f1f8e9 !important; }
+        .bg-insecticide { background-color: #fff3e0 !important; }
+        .bg-fungicide { background-color: #fce4ec !important; }
+        .bg-growth { background-color: #f3e5f5 !important; }
+        .bg-chipko { background-color: #efebe9 !important; }
+
+        .highlight-tech-row { 
+            border: 3px solid #1b5e20 !important;
+            transform: scale(1.01);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: 0.3s;
+        }
+        .tech-clickable {
+            cursor: pointer;
+            text-decoration: underline;
+            color: #1b5e20;
+        }
+        .tech-clickable:hover { color: #d32f2f; }
+
+        .action-btn {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            color: white;
+            margin: 0 2px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .btn-sale { background: #4b0082; }
+        .btn-edit { background: #1976d2; }
+        .btn-del { background: #d32f2f; }
+        .btn-detail { background: #2e7d32; }
+
+        .small-note {
+            font-size: 0.7rem;
+            color: #2e7d32;
+            margin-top: 4px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .modal-content h3 {
+            color: #1b5e20;
+            margin-bottom: 15px;
+        }
+        .modal-content .detail-row {
+            display: flex;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #c8e6c9;
+            padding-bottom: 5px;
+        }
+        .modal-content .detail-label {
+            font-weight: 800;
+            width: 120px;
+            color: #2e7d32;
+        }
+        .modal-content .detail-value {
+            flex: 1;
+        }
+        .close-btn {
+            background: #d32f2f;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 10px 20px;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-loader" id="pageLoader">
+        <div class="page-spinner"></div>
+    </div>
+
+    <div class="container" id="mainContainer">
+        <div class="loader-overlay" id="loaderOverlay">
+            <div class="spinner"></div>
+        </div>
+
+        <header id="header">
+            🌾 एग्रोएन · स्टॉक एवं बिक्री कमांड सेंटर
+            <button class="backup-btn" onclick="backupData()">💾 बैकअप डाउनलोड करें</button>
+        </header>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card" style="background:#2e7d32"><span id="statProd">0</span> कुल आइटम</div>
+            <div class="stat-card" style="background:#1976d2"><span id="statStock">0</span> कुल स्टॉक</div>
+            <div class="stat-card" style="background:#d32f2f"><span id="statDues">0</span> कुल बकाया (₹)</div>
+        </div>
+
+        <div class="section-box" id="formSection">
+            <input type="hidden" id="editId">
+            <input type="hidden" id="pImgBase64">
+
+            <div class="camera-ui">
+                <button class="file-input-btn" onclick="document.getElementById('camFile').click()">📸 कैमरा से फ़ोटो लें</button>
+                <input type="file" id="camFile" accept="image/*" capture="environment" style="display:none;" onchange="processImage(this)">
+                <img id="previewImg" alt="preview">
+            </div>
+
+            <div class="form-grid">
+                <div class="suggestions-wrapper">
+                    <label>उत्पाद नाम *</label>
+                    <input type="text" id="pName" placeholder="जैसे बीज, कीटनाशक" autocomplete="off">
+                    <div id="pNameSuggestions" class="suggestions-box"></div>
+                </div>
+                <div><label>श्रेणी</label>
+                    <select id="pCat" onchange="toggleFields()">
+                        <option value="hardware">हार्डवेयर / बीज / उर्वरक</option>
+                        <option value="dawai">दवाई (कीटनाशक/फफूंदनाशक)</option>
+                    </select>
+                </div>
+                <div class="suggestions-wrapper">
+                    <label>कंपनी</label>
+                    <input type="text" id="pComp" placeholder="बायर, सिनजेंटा..." autocomplete="off">
+                    <div id="pCompSuggestions" class="suggestions-box"></div>
+                </div>
+                <div class="suggestions-wrapper">
+                    <label>डिस्ट्रिब्यूटर</label>
+                    <input type="text" id="pDist" placeholder="विक्रेता का नाम" autocomplete="off">
+                    <div id="pDistSuggestions" class="suggestions-box"></div>
+                </div>
+                <div><label>खरीद तिथि</label><input type="date" id="pBuyDate"></div>
+                <div><label>एक्सपायरी तिथि</label><input type="date" id="pExpiry"></div>
+                <div><label>मौजूदा स्टॉक</label><input type="number" id="pQty" value="0"></div>
+                <div><label>बिक्री मूल्य (₹)</label><input type="number" id="pPrice" value="0"></div>
+                <div><label>बिल राशि (₹)</label><input type="number" id="pBill" value="0"></div>
+                <div><label>भुगतान राशि (₹)</label><input type="number" id="pPaid" value="0"></div>
+
+                <div id="dawaiBox" class="dawai-fields">
+                    <div class="form-grid">
+                        <div><label>दवाई का प्रकार</label>
+                            <select id="dType">
+                                <option value="">—चुनें—</option>
+                                <option value="बीज उपचार">बीज उपचार</option>
+                                <option value="Harbicide">हर्बीसाइड</option>
+                                <option value="Insecticide">इन्सेक्टिसाइड</option>
+                                <option value="Fungicide">फफूंदनाशक</option>
+                                <option value="Growth">ग्रोथ / पोषक</option>
+                                <option value="Chipko">चिपको / स्टिकी</option>
+                            </select>
+                        </div>
+                        <div class="suggestions-wrapper">
+                            <label>तकनीकी नाम</label>
+                            <input type="text" id="dTech" placeholder="उदा. इमिडाक्लोप्रिड" autocomplete="off">
+                            <div id="dTechSuggestions" class="suggestions-box"></div>
+                        </div>
+                        <div><label>बैच / सीरियल नं.</label><input type="text" id="dSerial" placeholder="SN-2425-01"></div>
+                        <div><label>न्यूनतम स्टॉक सीमा</label><input type="number" id="dMinStock" value="0" placeholder="जैसे 10"></div>
+                        <div><label>फसलें (जिनमें उपयोग होती है)</label><input type="text" id="dCrops" placeholder="सोयाबीन, मूंगफली, गेहूं ..."></div>
+                        <div><label>पैक आकार</label>
+                            <select id="dPack">
+                                <option value="">—चुनें—</option>
+                                <option value="100ml">100 ml</option>
+                                <option value="250ml">250 ml</option>
+                                <option value="500ml">500 ml</option>
+                                <option value="1L">1 लीटर</option>
+                                <option value="1kg">1 किलो</option>
+                                <option value="5kg">5 किलो</option>
+                                <option value="10kg">10 किलो</option>
+                                <option value="other">अन्य (लिखें)</option>
+                            </select>
+                            <input type="text" id="dPackOther" placeholder="अन्य पैक आकार" style="margin-top:5px; display:none;">
+                        </div>
+                        <div><label>प्रकार</label>
+                            <select id="dCombineType">
+                                <option value="single">एकल (अकेली)</option>
+                                <option value="multiple">मिश्रण (कई के साथ)</option>
+                            </select>
+                        </div>
+                        <div><label>मिश्रण में किनके साथ?</label>
+                            <input type="text" id="dCombineWith" placeholder="नाम लिखें, अल्पविराम से">
+                        </div>
+                    </div>
+                    <div style="grid-column: 1 / -1; background: #fff; padding: 15px; border-radius: 20px; border: 1px solid #c8e6c9; margin-top: 15px;">
+                        <label style="color: #2e7d32; font-weight: bold; margin-bottom: 10px; display: block;">💉 डोज़ विवरण (प्रति बीघा या किलो)</label>
+                        <div class="form-grid">
+                            <div><label>बीज उपचार डोज़</label><input type="text" id="dDoseSeed" placeholder="2gm/kg"></div>
+                            <div><label>स्प्रे डोज़ (प्रति बीघा)</label><input type="text" id="dDoseSpray" placeholder="200ml"></div>
+                            <div><label>मिट्टी/खाद डोज़</label><input type="text" id="dDoseSoil" placeholder="500gm"></div>
+                        </div>
+                        <div style="margin-top: 10px; border-top: 1px dashed #2e7d32; padding-top: 10px;">
+                            <label>🤝 पार्टनर प्रोडक्ट (किसके साथ देना है?)</label>
+                            <input type="text" id="dPartner" placeholder="जैसे: Imeza, Kloben, या चिपको">
+                            <label style="margin-top:10px;">📊 स्पेशल कॉम्बिनेशन डोज़ (Centurion/Kloben जैसे केस के लिए)</label>
+                            <textarea id="dSpecialLogic" rows="2" placeholder="उदाहरण: 1L Imeza के साथ 400ml = 5 बीघा | 500ml के साथ 400ml = 2 बीघा"></textarea>
+                            
+                            <label style="margin-top:10px;">📄 दवाई की सारी जानकारी (विवरण)</label>
+                            <textarea id="dExtraDetails" rows="2" placeholder="यहाँ दवाई की अतिरिक्त जानकारी लिखें जैसे उपयोग निर्देश, सावधानियाँ, आदि..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="addBtn" class="btn btn-add" onclick="saveProduct()">➕ स्टॉक में जोड़ें</button>
+                <button id="updateBtn" class="btn btn-update" onclick="updateProduct()">⚡ अपडेट करें</button>
+                <button id="cancelBtn" class="btn btn-cancel" onclick="cancelEdit()">✖ रद्द करें</button>
+            </div>
+        </div>
+
+        <input type="text" id="search" class="search-bar" placeholder="🔍 ढूँढ़ें: नाम, बैच, तकनीकी, पार्टनर, 'low stock', 'near expiry', 'expired', फसल, विवरण...">
+
+        <div class="table-wrapper" id="tableWrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>फोटो</th>
+                        <th>उत्पाद / तकनीकी</th>
+                        <th>डोज़ / पार्टनर / स्पेशल / विवरण</th>
+                        <th>फसलें</th>
+                        <th>कंपनी / एक्सपायरी</th>
+                        <th>स्टॉक (न्यूनतम)</th>
+                        <th>मूल्य (₹)</th>
+                        <th>बकाया (₹)</th>
+                        <th>कार्रवाई</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <h3>📋 उत्पाद विवरण</h3>
+            <div id="modalDetailContent"></div>
+            <button class="close-btn" onclick="closeModal()">बंद करें</button>
+        </div>
+    </div>
+
+    <script>
+        const DB_URL = "https://agroain-default-rtdb.firebaseio.com/"; 
+        const ADMIN_PIN = "1234";
+
+        let allProducts = [];
+        let displayProducts = [];
+        let loaderCounter = 0;
+
+        function checkAccess() {
+            const pin = prompt("कृपया एडमिन PIN दर्ज करें:");
+            if (pin === ADMIN_PIN) return true;
+            alert("❌ गलत PIN! आप बदलाव नहीं कर सकते।");
+            return false;
+        }
+
+        function showLoader() {
+            loaderCounter++;
+            document.getElementById('loaderOverlay').classList.add('show');
+        }
+        function hideLoader() {
+            loaderCounter--;
+            if (loaderCounter <= 0) {
+                document.getElementById('loaderOverlay').classList.remove('show');
+                loaderCounter = 0;
+            }
+        }
+
+        function toggleFields() {
+            const cat = document.getElementById('pCat').value;
+            document.getElementById('dawaiBox').style.display = cat === 'dawai' ? 'block' : 'none';
+        }
+
+        document.getElementById('dPack').addEventListener('change', function() {
+            const otherInput = document.getElementById('dPackOther');
+            otherInput.style.display = this.value === 'other' ? 'block' : 'none';
+        });
+
+        function processImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width, height = img.height;
+                        const maxSize = 250;
+                        if (width > height) {
+                            if (width > maxSize) { height *= maxSize / width; width = maxSize; }
+                        } else {
+                            if (height > maxSize) { width *= maxSize / height; height = maxSize; }
+                        }
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const base64 = canvas.toDataURL('image/jpeg', 0.7);
+                        document.getElementById('previewImg').src = base64;
+                        document.getElementById('previewImg').style.display = 'block';
+                        document.getElementById('pImgBase64').value = base64;
+                    }
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function getFormData() {
+            const name = document.getElementById('pName').value.trim();
+            const tech = document.getElementById('dTech').value.trim();
+            const combined = (name + " " + tech).toLowerCase();
+            const words = combined.split(/[\s,]+/).filter(word => word.length > 2);
+            const searchKeywords = [...new Set(words)];
+            const bill = parseFloat(document.getElementById('pBill').value) || 0;
+            const paid = parseFloat(document.getElementById('pPaid').value) || 0;
+            let packSize = document.getElementById('dPack').value;
+            if (packSize === 'other') packSize = document.getElementById('dPackOther').value.trim() || 'अन्य';
+            return {
+                name, searchKeywords,
+                cat: document.getElementById('pCat').value,
+                company: document.getElementById('pComp').value.trim(),
+                distributor: document.getElementById('pDist').value.trim(),
+                buyDate: document.getElementById('pBuyDate').value || 'N/A',
+                expiry: document.getElementById('pExpiry').value || 'N/A',
+                qty: parseInt(document.getElementById('pQty').value) || 0,
+                price: parseFloat(document.getElementById('pPrice').value) || 0,
+                bill, paid, pending: bill - paid,
+                img: document.getElementById('pImgBase64').value || 'https://via.placeholder.com/100?text=No+Image',
+                dType: document.getElementById('dType').value || '',
+                technical: tech,
+                serial: document.getElementById('dSerial').value.trim() || 'N/A',
+                minStock: parseInt(document.getElementById('dMinStock').value) || 0,
+                crops: document.getElementById('dCrops').value.trim() || '',
+                packSize,
+                combineType: document.getElementById('dCombineType').value,
+                combineWith: document.getElementById('dCombineWith').value.trim() || '',
+                doseSeed: document.getElementById('dDoseSeed').value.trim() || '—',
+                doseSpray: document.getElementById('dDoseSpray').value.trim() || '—',
+                doseSoil: document.getElementById('dDoseSoil').value.trim() || '—',
+                partner: document.getElementById('dPartner').value.trim() || 'No Partner',
+                specialLogic: document.getElementById('dSpecialLogic').value.trim() || 'Standard Dose',
+                extraDetails: document.getElementById('dExtraDetails').value.trim() || ''
+            };
+        }
+
+        async function loadData() {
+            showLoader();
+            try {
+                const res = await fetch(`${DB_URL}inventory.json`);
+                const data = await res.json();
+                allProducts = [];
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        if (data[key]) {
+                            allProducts.push({ ...data[key], id: key });
+                        }
+                    });
+                }
+                displayProducts = [...allProducts];
+                renderTable(displayProducts);
+                updateStats();
+                console.log("Data loaded:", allProducts.length);
+            } catch (e) {
+                console.error("Load Error:", e);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        function getAlertClass(product) {
+            const today = new Date();
+            let alertClass = '';
+            if (product.expiry && product.expiry !== 'N/A') {
+                const expDate = new Date(product.expiry);
+                const diffDays = (expDate - today) / (1000 * 60 * 60 * 24);
+                if (diffDays < 0) alertClass = 'expired-alert';
+                else if (diffDays <= 30) alertClass = 'near-expiry-alert';
+            }
+            if (product.qty <= product.minStock) alertClass = alertClass ? alertClass + ' low-stock-alert' : 'low-stock-alert';
+            return alertClass;
+        }
+
+        function highlightSameTech(techName) {
+            document.querySelectorAll('tr').forEach(tr => tr.classList.remove('highlight-tech-row'));
+            if(!techName || techName === '—') return;
+            const rows = document.querySelectorAll('#inventoryBody tr');
+            rows.forEach(row => {
+                if(row.getAttribute('data-tech') === techName.toLowerCase().trim()) row.classList.add('highlight-tech-row');
+            });
+            alert(`🔬 Technical: "${techName}" वाले सभी प्रोडक्ट हाईलाइट कर दिए गए हैं।`);
+        }
+
+        function renderTable(productsArray) {
+            const tbody = document.getElementById('inventoryBody');
+            tbody.innerHTML = '';
+            productsArray.forEach(p => {
+                const alertClass = getAlertClass(p);
+                const row = document.createElement('tr');
+                let catClass = '';
+                if (p.cat === 'dawai') {
+                    const typeMap = {
+                        'बीज उपचार': 'bg-beej-upchar',
+                        'Harbicide': 'bg-herbicide',
+                        'Insecticide': 'bg-insecticide',
+                        'Fungicide': 'bg-fungicide',
+                        'Growth': 'bg-growth',
+                        'Chipko': 'bg-chipko'
+                    };
+                    catClass = typeMap[p.dType] || '';
+                }
+                row.className = `${alertClass} ${catClass}`;
+                row.setAttribute('data-tech', (p.technical || '').toLowerCase().trim());
+                let combineInfo = '—';
+                if (p.cat === 'dawai') {
+                    combineInfo = `
+                        🌱 बीज: ${p.doseSeed}<br>
+                        💦 स्प्रे: ${p.doseSpray}<br>
+                        🪴 मिट्टी: ${p.doseSoil}<br>
+                        🤝 पार्टनर: ${p.partner}<br>
+                        📊 ${p.specialLogic}<br>
+                        📦 पैक: ${p.packSize}<br>
+                        ⚙️ ${p.combineType === 'multiple' ? 'मिश्रण: '+p.combineWith : 'एकल'}<br>
+                        📄 <strong>विवरण:</strong> ${p.extraDetails ? p.extraDetails : '—'}
+                    `;
+                }
+                row.innerHTML = `
+                    <td><img src="${p.img}" class="prod-img" onerror="this.src='https://via.placeholder.com/100?text=Error'"></td>
+                    <td>
+                        <strong style="font-size:1.1rem;">${p.name}</strong><br>
+                        <span class="tech-clickable" onclick="highlightSameTech('${p.technical}')">
+                            <b>${p.technical || '—'}</b>
+                        </span><br>
+                        <small style="background:#fff; border:1px solid #ccc; padding:2px 6px; border-radius:4px; font-size:10px;">SN: ${p.serial}</small>
+                    </td>
+                    <td>${combineInfo}</td>
+                    <td>${p.crops || '—'}</td>
+                    <td>${p.company}<br><small>Exp: ${p.expiry}</small></td>
+                    <td><span style="font-size:1.3rem; font-weight:800;">${p.qty}</span> <small>(min ${p.minStock})</small></td>
+                    <td>₹ ${p.price}</td>
+                    <td><span class="${p.pending > 0 ? 'pending-text' : 'paid-text'}">₹ ${p.pending}</span></td>
+                    <td>
+                        <button class="action-btn btn-detail" onclick="showDetails('${p.id}')">📋</button>
+                        <button class="action-btn btn-sale" onclick="sellItem('${p.id}')">🛒</button>
+                        <button class="action-btn btn-edit" onclick="editItem('${p.id}')">✎</button>
+                        <button class="action-btn btn-del" onclick="deleteItem('${p.id}')">🗑</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateStats() {
+            const totalItems = allProducts.length;
+            const totalStock = allProducts.reduce((acc, p) => acc + (p.qty || 0), 0);
+            const totalDues = allProducts.reduce((acc, p) => acc + (p.pending || 0), 0);
+            document.getElementById('statProd').innerText = totalItems;
+            document.getElementById('statStock').innerText = totalStock;
+            document.getElementById('statDues').innerText = totalDues.toFixed(0);
+        }
+
+        async function sellItem(id) {
+            const product = allProducts.find(p => p.id === id);
+            if (!product) return;
+            const sellQty = prompt(`कितना माल बेचना है? (उपलब्ध स्टॉक: ${product.qty})`, "1");
+            if (sellQty === null) return;
+            const qtyNum = parseInt(sellQty);
+            if (isNaN(qtyNum) || qtyNum <= 0) return alert("सही संख्या दर्ज करें!");
+            if (qtyNum > product.qty) return alert("स्टॉक में पर्याप्त माल नहीं है!");
+
+            const newQty = product.qty - qtyNum;
+            showLoader();
+            try {
+                await fetch(`${DB_URL}inventory/${id}/qty.json`, {
+                    method: 'PUT',
+                    body: JSON.stringify(newQty)
+                });
+                alert(`${qtyNum} माल बिक गया। नया स्टॉक: ${newQty}`);
+                loadData();
+            } catch (e) {
+                alert("बिक्री दर्ज नहीं हुई, फिर प्रयास करें।");
+                hideLoader();
+            }
+        }
+
+        async function saveProduct() {
+            if (!document.getElementById('pName').value.trim()) return alert("उत्पाद नाम अनिवार्य है।");
+            if (!checkAccess()) return;
+            const btn = document.getElementById('addBtn');
+            btn.innerText = "सेव हो रहा...";
+            btn.disabled = true;
+            showLoader();
+            try {
+                const data = getFormData();
+                await fetch(`${DB_URL}inventory.json`, { method: 'POST', body: JSON.stringify(data) });
+                alert("✅ प्रोडक्ट सफलतापूर्वक जोड़ दिया गया है!");
+                clearForm();
+                await loadData();
+            } catch(e) { alert("❌ सेव नहीं हुआ, नेटवर्क चेक करें।"); } finally { hideLoader(); btn.innerText = "➕ स्टॉक में जोड़ें"; btn.disabled = false; }
+        }
+
+        function editItem(id) {
+            const p = allProducts.find(x => x.id === id);
+            if (!p) return;
+            document.getElementById('editId').value = p.id;
+            document.getElementById('pName').value = p.name || '';
+            document.getElementById('pCat').value = p.cat || 'hardware';
+            document.getElementById('pComp').value = p.company || '';
+            document.getElementById('pDist').value = p.distributor || '';
+            document.getElementById('pBuyDate').value = p.buyDate || '';
+            document.getElementById('pExpiry').value = p.expiry || '';
+            document.getElementById('pQty').value = p.qty || 0;
+            document.getElementById('pPrice').value = p.price || 0;
+            document.getElementById('pBill').value = p.bill || 0;
+            document.getElementById('pPaid').value = p.paid || 0;
+            document.getElementById('dType').value = p.dType || '';
+            document.getElementById('dTech').value = p.technical || '';
+            document.getElementById('dSerial').value = p.serial || '';
+            document.getElementById('dMinStock').value = p.minStock || 0;
+            document.getElementById('dCrops').value = p.crops || '';
+            document.getElementById('dPack').value = p.packSize || '';
+            const packSelect = document.getElementById('dPack');
+            const otherInput = document.getElementById('dPackOther');
+            if (p.packSize && !Array.from(packSelect.options).some(opt => opt.value === p.packSize)) {
+                packSelect.value = 'other';
+                otherInput.style.display = 'block';
+                otherInput.value = p.packSize;
+            } else {
+                packSelect.value = p.packSize || '';
+                otherInput.style.display = 'none';
+                otherInput.value = '';
+            }
+            document.getElementById('dCombineType').value = p.combineType || 'single';
+            document.getElementById('dCombineWith').value = p.combineWith || '';
+            document.getElementById('dDoseSeed').value = p.doseSeed || '';
+            document.getElementById('dDoseSpray').value = p.doseSpray || '';
+            document.getElementById('dDoseSoil').value = p.doseSoil || '';
+            document.getElementById('dPartner').value = p.partner || '';
+            document.getElementById('dSpecialLogic').value = p.specialLogic || '';
+            document.getElementById('dExtraDetails').value = p.extraDetails || '';
+            if (p.img && p.img !== 'https://via.placeholder.com/100?text=No+Image') {
+                document.getElementById('previewImg').src = p.img;
+                document.getElementById('previewImg').style.display = 'block';
+                document.getElementById('pImgBase64').value = p.img;
+            } else {
+                document.getElementById('previewImg').style.display = 'none';
+                document.getElementById('pImgBase64').value = '';
+            }
+            toggleFields();
+            document.getElementById('addBtn').style.display = 'none';
+            document.getElementById('updateBtn').style.display = 'block';
+            document.getElementById('cancelBtn').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function updateProduct() {
+            const id = document.getElementById('editId').value;
+            if (!id) return;
+            if (!checkAccess()) return;
+            const btn = document.getElementById('updateBtn');
+            btn.innerText = "अपडेट हो रहा...";
+            btn.disabled = true;
+            showLoader();
+            try {
+                const data = getFormData();
+                await fetch(`${DB_URL}inventory/${id}.json`, { method: 'PUT', body: JSON.stringify(data) });
+                alert("⚡ प्रोडक्ट अपडेट हो गया है!");
+                cancelEdit();
+                await loadData();
+            } catch(e) { alert("❌ अपडेट विफल रहा"); } finally { hideLoader(); btn.innerText = "⚡ अपडेट करें"; btn.disabled = false; }
+        }
+
+        async function deleteItem(id) {
+            if (!checkAccess()) return;
+            if (!confirm("क्या आप निश्चित हैं? यह आइटम डिलीट हो जाएगा।")) return;
+            showLoader();
+            try {
+                await fetch(`${DB_URL}inventory/${id}.json`, { method: 'DELETE' });
+                loadData();
+            } catch(e) { alert("डिलीट नहीं हो सका"); hideLoader(); }
+        }
+
+        function cancelEdit() {
+            clearForm();
+            document.getElementById('addBtn').style.display = 'block';
+            document.getElementById('updateBtn').style.display = 'none';
+            document.getElementById('cancelBtn').style.display = 'none';
+        }
+
+        function clearForm() {
+            document.querySelectorAll('input:not([type="hidden"]), select, textarea').forEach(el => {
+                if (el.id !== 'pCat' && el.id !== 'dPackOther') el.value = '';
+            });
+            document.getElementById('pCat').value = 'hardware';
+            document.getElementById('dawaiBox').style.display = 'none';
+            document.getElementById('previewImg').style.display = 'none';
+            document.getElementById('previewImg').src = '';
+            document.getElementById('pImgBase64').value = '';
+            document.getElementById('dPackOther').style.display = 'none';
+            document.getElementById('dPackOther').value = '';
+            document.getElementById('dExtraDetails').value = '';
+        }
+
+        document.getElementById('search').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase().trim();
+            
+            if (term === '') {
+                displayProducts = [...allProducts];
+            } else if (term === 'low stock') {
+                displayProducts = allProducts.filter(p => p.qty <= (p.minStock || 0));
+            } else if (term === 'near expiry') {
+                const today = new Date();
+                displayProducts = allProducts.filter(p => {
+                    if (!p.expiry || p.expiry === 'N/A') return false;
+                    const diffDays = (new Date(p.expiry) - today) / (1000*60*60*24);
+                    return diffDays > 0 && diffDays <= 30;
+                });
+            } else if (term === 'expired') {
+                const today = new Date();
+                displayProducts = allProducts.filter(p => {
+                    if (!p.expiry || p.expiry === 'N/A') return false;
+                    return new Date(p.expiry) < today;
+                });
+            } else {
+                displayProducts = allProducts.filter(p => 
+                    (p.name && p.name.toLowerCase().includes(term)) ||
+                    (p.dType && p.dType.toLowerCase().includes(term)) ||
+                    (p.serial && p.serial.toLowerCase().includes(term)) ||
+                    (p.technical && p.technical.toLowerCase().includes(term)) ||
+                    (p.company && p.company.toLowerCase().includes(term)) ||
+                    (p.crops && p.crops.toLowerCase().includes(term)) ||
+                    (p.partner && p.partner.toLowerCase().includes(term)) ||
+                    (p.specialLogic && p.specialLogic.toLowerCase().includes(term)) ||
+                    (p.extraDetails && p.extraDetails.toLowerCase().includes(term)) ||
+                    (p.searchKeywords && p.searchKeywords.some(kw => kw.includes(term)))
+                );
+            }
+            renderTable(displayProducts);
+        });
+
+        function backupData() {
+            const dataStr = JSON.stringify(allProducts, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `agroen_backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function showDetails(id) {
+            const product = allProducts.find(p => p.id === id);
+            if (!product) return;
+            const modal = document.getElementById('detailModal');
+            const content = document.getElementById('modalDetailContent');
+            let html = `<div style="text-align:center; margin-bottom:15px;"><img src="${product.img}" style="max-width:150px; border-radius:20px; border:3px solid #2e7d32;"></div>`;
+            html += `<div class="detail-row"><span class="detail-label">नाम:</span><span class="detail-value">${product.name || '—'}</span></div>`;
+            html += `<div class="detail-row"><span class="detail-label">श्रेणी:</span><span class="detail-value">${product.cat === 'dawai' ? 'दवाई' : 'हार्डवेयर/बीज'}</span></div>`;
+            html += `<div class="detail-row"><span class="detail-label">कंपनी:</span><span class="detail-value">${product.company || '—'}</span></div>`;
+            html += `<div class="detail-row"><span class="detail-label">डिस्ट्रिब्यूटर:</span><span class="detail-value">${product.distributor || '—'}</span></div>`;
+            html += `<div class="detail-row"><span class="detail-label">खरीद तिथि:</span><span class="detail-value">${product.buyDate || '—'}</span></div>`;
+            html += `<div class="detail-row"><span class="detail-label">एक्सपायरी:</span><span class="detail-value">${product.expiry || '—'}</span></div>`;
+            html += `<div class="detail-row"><span class="detail-label">स्टॉक:</span><span class="detail-value">${product.qty} (न्यूनतम: ${product.minStock})</span></div>`;
+            html += `<div class="detail-row"><span class="detail-label">मूल्य:</span><span class="detail-value">₹ ${product.price}</span></div>`;
+            html += `<div class="detail-row"><span class="detail-label">बिल:</span><span class="detail-value">₹ ${product.bill}</span></div>`;
+            html += `<div class="detail-row"><span class="detail-label">भुगतान:</span><span class="detail-value">₹ ${product.paid}</span></div>`;
+            html += `<div class="detail-row"><span class="detail-label">बकाया:</span><span class="detail-value">₹ ${product.pending}</span></div>`;
+            html += `<div class="detail-row"><span class="detail-label">बैच/सीरियल:</span><span class="detail-value">${product.serial || '—'}</span></div>`;
+            if (product.cat === 'dawai') {
+                html += `<div class="detail-row"><span class="detail-label">दवाई प्रकार:</span><span class="detail-value">${product.dType || '—'}</span></div>`;
+                html += `<div class="detail-row"><span class="detail-label">तकनीकी नाम:</span><span class="detail-value">${product.technical || '—'}</span></div>`;
+                html += `<div class="detail-row"><span class="detail-label">पैक आकार:</span><span class="detail-value">${product.packSize || '—'}</span></div>`;
+                html += `<div class="detail-row"><span class="detail-label">बीज डोज़:</span><span class="detail-value">${product.doseSeed || '—'}</span></div>`;
+                html += `<div class="detail-row"><span class="detail-label">स्प्रे डोज़:</span><span class="detail-value">${product.doseSpray || '—'}</span></div>`;
+                html += `<div class="detail-row"><span class="detail-label">मिट्टी डोज़:</span><span class="detail-value">${product.doseSoil || '—'}</span></div>`;
+                html += `<div class="detail-row"><span class="detail-label">पार्टनर:</span><span class="detail-value">${product.partner || '—'}</span></div>`;
+                html += `<div class="detail-row"><span class="detail-label">स्पेशल लॉजिक:</span><span class="detail-value">${product.specialLogic || '—'}</span></div>`;
+                html += `<div class="detail-row"><span class="detail-label">अतिरिक्त विवरण:</span><span class="detail-value">${product.extraDetails ? product.extraDetails : '—'}</span></div>`;
+                html += `<div class="detail-row"><span class="detail-label">प्रकार:</span><span class="detail-value">${product.combineType === 'multiple' ? 'मिश्रण' : 'एकल'}</span></div>`;
+                html += `<div class="detail-row"><span class="detail-label">मिश्रण साथी:</span><span class="detail-value">${product.combineWith || '—'}</span></div>`;
+                html += `<div class="detail-row"><span class="detail-label">फसलें:</span><span class="detail-value">${product.crops || '—'}</span></div>`;
+            }
+            content.innerHTML = html;
+            modal.classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('show');
+        }
+
+        // ========== LIVE SEARCH FUNCTIONS ==========
+        
+        // Product Name Suggestion - FULL AUTO-FILL (All Details)
+        function setupProductNameSearch() {
+            const input = document.getElementById('pName');
+            const box = document.getElementById('pNameSuggestions');
+            let activeIndex = -1;
+
+            input.addEventListener('input', function() {
+                const term = this.value.trim().toLowerCase();
+                if (term.length < 1) { box.style.display = 'none'; return; }
+                
+                const suggestions = [];
+                const seen = new Set();
+                
+                allProducts.forEach(p => {
+                    if (p.name && p.name.toLowerCase().includes(term)) {
+                        const key = p.name.toLowerCase();
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            suggestions.push(p);
+                        }
+                    }
+                });
+
+                if (suggestions.length === 0) { box.style.display = 'none'; return; }
+
+                box.innerHTML = '';
+                suggestions.slice(0, 8).forEach((prod) => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.innerHTML = `<strong>${prod.name}</strong><small>${prod.company || ''} | ${prod.technical || ''} | ${prod.packSize || ''}</small>`;
+                    
+                    div.addEventListener('click', () => {
+                        input.value = prod.name;
+                        autoFillFullProduct(prod);
+                        box.style.display = 'none';
+                    });
+                    box.appendChild(div);
+                });
+                box.style.display = 'block';
+                activeIndex = -1;
+            });
+
+            // Keyboard navigation
+            input.addEventListener('keydown', (e) => {
+                const items = box.querySelectorAll('.suggestion-item');
+                if (items.length === 0) return;
+                
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    activeIndex = (activeIndex + 1) % items.length;
+                    items.forEach((item, i) => item.classList.toggle('active-suggestion', i === activeIndex));
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    activeIndex = (activeIndex - 1 + items.length) % items.length;
+                    items.forEach((item, i) => item.classList.toggle('active-suggestion', i === activeIndex));
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (activeIndex >= 0 && items[activeIndex]) {
+                        items[activeIndex].click();
+                    }
+                    box.style.display = 'none';
+                } else if (e.key === 'Escape') {
+                    box.style.display = 'none';
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!input.contains(e.target) && !box.contains(e.target)) box.style.display = 'none';
+            });
+        }
+
+        // Full Product Auto-Fill (for Product Name selection)
+        function autoFillFullProduct(product) {
+            if (!product) return;
+            
+            document.getElementById('pName').value = product.name || '';
+            document.getElementById('pCat').value = product.cat || 'hardware';
+            document.getElementById('pComp').value = product.company || '';
+            document.getElementById('pDist').value = product.distributor || '';
+            document.getElementById('pBuyDate').value = product.buyDate || '';
+            document.getElementById('pExpiry').value = product.expiry || '';
+            document.getElementById('pQty').value = product.qty || 0;
+            document.getElementById('pPrice').value = product.price || 0;
+            document.getElementById('pBill').value = product.bill || 0;
+            document.getElementById('pPaid').value = product.paid || 0;
+            
+            if (product.img && !product.img.includes('placeholder')) {
+                document.getElementById('previewImg').src = product.img;
+                document.getElementById('previewImg').style.display = 'block';
+                document.getElementById('pImgBase64').value = product.img;
+            }
+
+            document.getElementById('dType').value = product.dType || '';
+            document.getElementById('dTech').value = product.technical || '';
+            document.getElementById('dSerial').value = product.serial || '';
+            document.getElementById('dMinStock').value = product.minStock || 0;
+            document.getElementById('dCrops').value = product.crops || '';
+            
+            const packSelect = document.getElementById('dPack');
+            const otherInput = document.getElementById('dPackOther');
+            if (product.packSize && !Array.from(packSelect.options).some(opt => opt.value === product.packSize)) {
+                packSelect.value = 'other';
+                otherInput.style.display = 'block';
+                otherInput.value = product.packSize;
+            } else {
+                packSelect.value = product.packSize || '';
+                otherInput.style.display = 'none';
+            }
+
+            document.getElementById('dCombineType').value = product.combineType || 'single';
+            document.getElementById('dCombineWith').value = product.combineWith || '';
+            document.getElementById('dDoseSeed').value = product.doseSeed || '';
+            document.getElementById('dDoseSpray').value = product.doseSpray || '';
+            document.getElementById('dDoseSoil').value = product.doseSoil || '';
+            document.getElementById('dPartner').value = product.partner || '';
+            document.getElementById('dSpecialLogic').value = product.specialLogic || '';
+            document.getElementById('dExtraDetails').value = product.extraDetails || '';
+            
+            toggleFields();
+
+            if (product.id) {
+                document.getElementById('editId').value = product.id;
+                document.getElementById('addBtn').style.display = 'none';
+                document.getElementById('updateBtn').style.display = 'block';
+                document.getElementById('cancelBtn').style.display = 'block';
+            }
+        }
+
+        // Company Name - ONLY SUGGESTIONS (No Auto-Fill)
+        function setupCompanySearch() {
+            const input = document.getElementById('pComp');
+            const box = document.getElementById('pCompSuggestions');
+            let activeIndex = -1;
+
+            input.addEventListener('input', function() {
+                const term = this.value.trim().toLowerCase();
+                if (term.length < 1) { box.style.display = 'none'; return; }
+                
+                const suggestions = [];
+                const seen = new Set();
+                
+                allProducts.forEach(p => {
+                    if (p.company && p.company.toLowerCase().includes(term)) {
+                        const key = p.company.toLowerCase();
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            suggestions.push(p.company);
+                        }
+                    }
+                });
+
+                if (suggestions.length === 0) { box.style.display = 'none'; return; }
+
+                box.innerHTML = '';
+                suggestions.slice(0, 8).forEach((comp) => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.innerHTML = `<strong>${comp}</strong>`;
+                    
+                    div.addEventListener('click', () => {
+                        input.value = comp;
+                        box.style.display = 'none';
+                    });
+                    box.appendChild(div);
+                });
+                box.style.display = 'block';
+            });
+
+            input.addEventListener('keydown', (e) => {
+                const items = box.querySelectorAll('.suggestion-item');
+                if (items.length === 0) return;
+                
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    activeIndex = (activeIndex + 1) % items.length;
+                    items.forEach((item, i) => item.classList.toggle('active-suggestion', i === activeIndex));
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    activeIndex = (activeIndex - 1 + items.length) % items.length;
+                    items.forEach((item, i) => item.classList.toggle('active-suggestion', i === activeIndex));
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (activeIndex >= 0 && items[activeIndex]) {
+                        items[activeIndex].click();
+                    }
+                    box.style.display = 'none';
+                } else if (e.key === 'Escape') {
+                    box.style.display = 'none';
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!input.contains(e.target) && !box.contains(e.target)) box.style.display = 'none';
+            });
+        }
+
+        // Distributor Name - ONLY SUGGESTIONS (No Auto-Fill)
+        function setupDistributorSearch() {
+            const input = document.getElementById('pDist');
+            const box = document.getElementById('pDistSuggestions');
+            let activeIndex = -1;
+
+            input.addEventListener('input', function() {
+                const term = this.value.trim().toLowerCase();
+                if (term.length < 1) { box.style.display = 'none'; return; }
+                
+                const suggestions = [];
+                const seen = new Set();
+                
+                allProducts.forEach(p => {
+                    if (p.distributor && p.distributor.toLowerCase().includes(term)) {
+                        const key = p.distributor.toLowerCase();
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            suggestions.push(p.distributor);
+                        }
+                    }
+                });
+
+                if (suggestions.length === 0) { box.style.display = 'none'; return; }
+
+                box.innerHTML = '';
+                suggestions.slice(0, 8).forEach((dist) => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.innerHTML = `<strong>${dist}</strong>`;
+                    
+                    div.addEventListener('click', () => {
+                        input.value = dist;
+                        box.style.display = 'none';
+                    });
+                    box.appendChild(div);
+                });
+                box.style.display = 'block';
+            });
+
+            input.addEventListener('keydown', (e) => {
+                const items = box.querySelectorAll('.suggestion-item');
+                if (items.length === 0) return;
+                
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    activeIndex = (activeIndex + 1) % items.length;
+                    items.forEach((item, i) => item.classList.toggle('active-suggestion', i === activeIndex));
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    activeIndex = (activeIndex - 1 + items.length) % items.length;
+                    items.forEach((item, i) => item.classList.toggle('active-suggestion', i === activeIndex));
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (activeIndex >= 0 && items[activeIndex]) {
+                        items[activeIndex].click();
+                    }
+                    box.style.display = 'none';
+                } else if (e.key === 'Escape') {
+                    box.style.display = 'none';
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!input.contains(e.target) && !box.contains(e.target)) box.style.display = 'none';
+            });
+        }
+
+        // Technical Name - ONLY DOSE DETAILS AUTO-FILL (Product Name & Company remain unchanged)
+        function setupTechnicalSearch() {
+            const input = document.getElementById('dTech');
+            const box = document.getElementById('dTechSuggestions');
+            let activeIndex = -1;
+
+            input.addEventListener('input', function() {
+                const term = this.value.trim().toLowerCase();
+                if (term.length < 1) { box.style.display = 'none'; return; }
+                
+                const suggestions = [];
+                const seen = new Set();
+                
+                allProducts.forEach(p => {
+                    if (p.technical && p.technical.toLowerCase().includes(term)) {
+                        const key = p.technical.toLowerCase();
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            suggestions.push(p);
+                        }
+                    }
+                });
+
+                if (suggestions.length === 0) { box.style.display = 'none'; return; }
+
+                box.innerHTML = '';
+                suggestions.slice(0, 8).forEach((prod) => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.innerHTML = `<strong>${prod.technical}</strong><small>${prod.name || ''} | ${prod.company || ''}</small>`;
+                    
+                    div.addEventListener('click', () => {
+                        input.value = prod.technical;
+                        autoFillDoseDetailsOnly(prod);
+                        box.style.display = 'none';
+                    });
+                    box.appendChild(div);
+                });
+                box.style.display = 'block';
+            });
+
+            input.addEventListener('keydown', (e) => {
+                const items = box.querySelectorAll('.suggestion-item');
+                if (items.length === 0) return;
+                
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    activeIndex = (activeIndex + 1) % items.length;
+                    items.forEach((item, i) => item.classList.toggle('active-suggestion', i === activeIndex));
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    activeIndex = (activeIndex - 1 + items.length) % items.length;
+                    items.forEach((item, i) => item.classList.toggle('active-suggestion', i === activeIndex));
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (activeIndex >= 0 && items[activeIndex]) {
+                        items[activeIndex].click();
+                    }
+                    box.style.display = 'none';
+                } else if (e.key === 'Escape') {
+                    box.style.display = 'none';
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!input.contains(e.target) && !box.contains(e.target)) box.style.display = 'none';
+            });
+        }
+
+        // Auto-Fill ONLY Dose Details (For Technical Name selection)
+        function autoFillDoseDetailsOnly(product) {
+            if (!product) return;
+            
+            // Only fill dose-related fields, don't change Product Name and Company
+            document.getElementById('dType').value = product.dType || '';
+            document.getElementById('dCrops').value = product.crops || '';
+            document.getElementById('dDoseSeed').value = product.doseSeed || '';
+            document.getElementById('dDoseSpray').value = product.doseSpray || '';
+            document.getElementById('dDoseSoil').value = product.doseSoil || '';
+            document.getElementById('dPartner').value = product.partner || '';
+            document.getElementById('dSpecialLogic').value = product.specialLogic || '';
+            document.getElementById('dExtraDetails').value = product.extraDetails || '';
+            document.getElementById('dCombineType').value = product.combineType || 'single';
+            document.getElementById('dCombineWith').value = product.combineWith || '';
+            
+            // Also fill category to show dawai fields if not already showing
+            if (product.cat === 'dawai') {
+                document.getElementById('pCat').value = 'dawai';
+                toggleFields();
+            }
+            
+            // Don't change: pName, pComp, pDist, pBuyDate, pExpiry, pQty, pPrice, pBill, pPaid, dPack, dSerial, dMinStock
+        }
+
+        window.onload = async function() {
+            await loadData();
+            
+            // Initialize all search features
+            setupProductNameSearch();      // Full auto-fill
+            setupCompanySearch();          // Only suggestions
+            setupDistributorSearch();      // Only suggestions
+            setupTechnicalSearch();        // Only dose details auto-fill
+            
+            const loader = document.getElementById('pageLoader');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    document.getElementById('header').classList.add('fade-up', 'header-animate');
+                    document.getElementById('statsGrid').classList.add('fade-up', 'stats-animate');
+                    document.getElementById('formSection').classList.add('fade-up', 'form-animate');
+                    document.getElementById('search').classList.add('fade-up', 'search-animate');
+                    document.getElementById('tableWrapper').classList.add('fade-up', 'table-animate');
+                }, 500);
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGROAIN - Pesticide Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2e7d32;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #2e7d32;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #1b5e20;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+            display: none;
+        }
+        .result h2 {
+            color: #2e7d32;
+            margin-top: 0;
+        }
+        .result-item {
+            margin-bottom: 10px;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #d32f2f;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">AGROAIN</div>
+        <h1>Pesticide Calculator</h1>
+        
+        <div class="form-group">
+            <label for="bigha">Enter Number of Bigha:</label>
+            <input type="number" id="bigha" min="0" step="0.01" placeholder="Enter bigha amount">
+        </div>
+        
+        <div class="form-group">
+            <label for="pesticide">Select Pesticide:</label>
+            <select id="pesticide">
+                <option value="">-- Select Pesticide --</option>
+                <option value="thiamethoxam">Thiamethoxam + Lambda Cyhalothrin 9.5% ZC</option>
+                <option value="emamectin">Emamectin Benzoat 5% SG</option>
+                <option value="both">Both (Thiamethoxam + Emamectin)</option>
+                <option value="chipko">Chipko</option>
+            </select>
+        </div>
+        
+        <button onclick="calculate()">Calculate</button>
+        
+        <div id="result" class="result">
+            <h2>Calculation Results</h2>
+            <div id="result-content"></div>
+        </div>
+    </div>
+
+    <script>
+        function calculate() {
+            const bigha = parseFloat(document.getElementById('bigha').value);
+            const pesticide = document.getElementById('pesticide').value;
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('result-content');
+            
+            if (isNaN(bigha) || bigha <= 0) {
+                alert('Please enter a valid number of bigha');
+                return;
+            }
+            
+            if (!pesticide) {
+                alert('Please select a pesticide');
+                return;
+            }
+            
+            let html = '';
+            
+            switch(pesticide) {
+                case 'thiamethoxam':
+                    const thiaPerBigha = 60;
+                    const thiaTotal = bigha * thiaPerBigha;
+                    
+                    html += `
+                        <div class="result-item">For <span class="highlight">${bigha} bigha</span>, you need:</div>
+                        <div class="result-item"><span class="highlight">${thiaTotal} ml</span> of Thiamethoxam + Lambda Cyhalothrin 9.5% ZC</div>
+                        <div class="result-item">Recommended packaging:</div>
+                    `;
+                    
+                    // Calculate packaging
+                    if (thiaTotal >= 1000) {
+                        const liters = Math.floor(thiaTotal / 1000);
+                        const remaining = thiaTotal % 1000;
+                        html += `<div class="result-item">- ${liters} liter bottle(s)</div>`;
+                        if (remaining > 0) {
+                            if (remaining >= 500) {
+                                html += `<div class="result-item">- 1 × 500ml bottle</div>`;
+                                if (remaining - 500 > 0) {
+                                    html += `<div class="result-item">- ${Math.ceil((remaining - 500)/250)} × 250ml bottle(s)</div>`;
+                                }
+                            } else {
+                                html += `<div class="result-item">- ${Math.ceil(remaining/250)} × 250ml bottle(s)</div>`;
+                            }
+                        }
+                    } else {
+                        if (thiaTotal >= 500) {
+                            html += `<div class="result-item">- 1 × 500ml bottle</div>`;
+                            const remaining = thiaTotal - 500;
+                            if (remaining > 0) {
+                                html += `<div class="result-item">- ${Math.ceil(remaining/250)} × 250ml bottle(s)</div>`;
+                            }
+                        } else {
+                            html += `<div class="result-item">- ${Math.ceil(thiaTotal/250)} × 250ml bottle(s)</div>`;
+                        }
+                    }
+                    break;
+                    
+                case 'emamectin':
+                    const emaPerBigha = 70;
+                    const emaTotal = bigha * emaPerBigha;
+                    
+                    html += `
+                        <div class="result-item">For <span class="highlight">${bigha} bigha</span>, you need:</div>
+                        <div class="result-item"><span class="highlight">${emaTotal} gm</span> of Emamectin Benzoat 5% SG</div>
+                        <div class="result-item">Recommended packaging:</div>
+                    `;
+                    
+                    // Calculate packaging
+                    if (emaTotal >= 1000) {
+                        const kg = Math.floor(emaTotal / 1000);
+                        const remaining = emaTotal % 1000;
+                        html += `<div class="result-item">- ${kg} kg packet(s)</div>`;
+                        if (remaining > 0) {
+                            if (remaining >= 500) {
+                                html += `<div class="result-item">- 1 × 500gm packet</div>`;
+                                if (remaining - 500 > 0) {
+                                    html += `<div class="result-item">- ${Math.ceil((remaining - 500)/250)} × 250gm packet(s)</div>`;
+                                }
+                            } else {
+                                html += `<div class="result-item">- ${Math.ceil(remaining/250)} × 250gm packet(s)</div>`;
+                            }
+                        }
+                    } else {
+                        if (emaTotal >= 500) {
+                            html += `<div class="result-item">- 1 × 500gm packet</div>`;
+                            const remaining = emaTotal - 500;
+                            if (remaining > 0) {
+                                html += `<div class="result-item">- ${Math.ceil(remaining/250)} × 250gm packet(s)</div>`;
+                            }
+                        } else {
+                            html += `<div class="result-item">- ${Math.ceil(emaTotal/250)} × 250gm packet(s)</div>`;
+                        }
+                    }
+                    break;
+                    
+                case 'both':
+                    const bothPerBigha = 50;
+                    const bothTotal = bigha * bothPerBigha;
+                    
+                    html += `
+                        <div class="result-item">For <span class="highlight">${bigha} bigha</span>, you need:</div>
+                        <div class="result-item"><span class="highlight">${bothTotal} ml</span> of Thiamethoxam + Lambda Cyhalothrin 9.5% ZC</div>
+                        <div class="result-item"><span class="highlight">${bothTotal} gm</span> of Emamectin Benzoat 5% SG</div>
+                        <div class="result-item">Recommended packaging for Thiamethoxam:</div>
+                    `;
+                    
+                    // Calculate Thiamethoxam packaging
+                    if (bothTotal >= 1000) {
+                        const liters = Math.floor(bothTotal / 1000);
+                        const remaining = bothTotal % 1000;
+                        html += `<div class="result-item">- ${liters} liter bottle(s)</div>`;
+                        if (remaining > 0) {
+                            if (remaining >= 500) {
+                                html += `<div class="result-item">- 1 × 500ml bottle</div>`;
+                                if (remaining - 500 > 0) {
+                                    html += `<div class="result-item">- ${Math.ceil((remaining - 500)/250)} × 250ml bottle(s)</div>`;
+                                }
+                            } else {
+                                html += `<div class="result-item">- ${Math.ceil(remaining/250)} × 250ml bottle(s)</div>`;
+                            }
+                        }
+                    } else {
+                        if (bothTotal >= 500) {
+                            html += `<div class="result-item">- 1 × 500ml bottle</div>`;
+                            const remaining = bothTotal - 500;
+                            if (remaining > 0) {
+                                html += `<div class="result-item">- ${Math.ceil(remaining/250)} × 250ml bottle(s)</div>`;
+                            }
+                        } else {
+                            html += `<div class="result-item">- ${Math.ceil(bothTotal/250)} × 250ml bottle(s)</div>`;
+                        }
+                    }
+                    
+                    html += `<div class="result-item">Recommended packaging for Emamectin:</div>`;
+                    
+                    // Calculate Emamectin packaging
+                    if (bothTotal >= 1000) {
+                        const kg = Math.floor(bothTotal / 1000);
+                        const remaining = bothTotal % 1000;
+                        html += `<div class="result-item">- ${kg} kg packet(s)</div>`;
+                        if (remaining > 0) {
+                            if (remaining >= 500) {
+                                html += `<div class="result-item">- 1 × 500gm packet</div>`;
+                                if (remaining - 500 > 0) {
+                                    html += `<div class="result-item">- ${Math.ceil((remaining - 500)/250)} × 250gm packet(s)</div>`;
+                                }
+                            } else {
+                                html += `<div class="result-item">- ${Math.ceil(remaining/250)} × 250gm packet(s)</div>`;
+                            }
+                        }
+                    } else {
+                        if (bothTotal >= 500) {
+                            html += `<div class="result-item">- 1 × 500gm packet</div>`;
+                            const remaining = bothTotal - 500;
+                            if (remaining > 0) {
+                                html += `<div class="result-item">- ${Math.ceil(remaining/250)} × 250gm packet(s)</div>`;
+                            }
+                        } else {
+                            html += `<div class="result-item">- ${Math.ceil(bothTotal/250)} × 250gm packet(s)</div>`;
+                        }
+                    }
+                    break;
+                    
+                case 'chipko':
+                    const chipkoPerBigha = 15;
+                    const chipkoTotal = bigha * chipkoPerBigha;
+                    
+                    html += `
+                        <div class="result-item">For <span class="highlight">${bigha} bigha</span>, you need:</div>
+                        <div class="result-item"><span class="highlight">${chipkoTotal} ml</span> of Chipko</div>
+                        <div class="result-item">Recommended packaging:</div>
+                    `;
+                    
+                    // Calculate packaging
+                    if (chipkoTotal >= 250) {
+                        const bigBottles = Math.floor(chipkoTotal / 250);
+                        const remaining = chipkoTotal % 250;
+                        html += `<div class="result-item">- ${bigBottles} × 250ml bottle(s)</div>`;
+                        if (remaining > 0) {
+                            html += `<div class="result-item">- 1 × 100ml bottle</div>`;
+                        }
+                    } else {
+                        html += `<div class="result-item">- 1 × 100ml bottle</div>`;
+                    }
+                    break;
+            }
+            
+            resultContent.innerHTML = html;
+            resultDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGROAIN</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .options-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .options-container label {
+            margin: 0 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .form-section {
+            display: none;
+            margin-top: 20px;
+            border-top: 2px solid #eee;
+            padding-top: 20px;
+        }
+        .form-section h2 {
+            color: #34495e;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input[type="number"],
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-group button {
+            width: 100%;
+            padding: 10px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .form-group button:hover {
+            background-color: #27ae60;
+        }
+        .results-section {
+            margin-top: 20px;
+            display: none;
+        }
+        .results-section h3 {
+            text-align: center;
+            color: #34495e;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .cancel-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .cancel-btn:hover {
+            background: #c0392b;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>AGROAIN</h1>
+
+        <div class="options-container">
+            <label><input type="radio" name="product_type" value="insecticide" onclick="toggleForm('insecticide')"> Insecticide</label>
+            <label><input type="radio" name="product_type" value="herbicide" onclick="toggleForm('herbicide')"> Herbicide</label>
+        </div>
+
+        <div id="insecticide_section" class="form-section">
+            <h2>Insecticide Calculator</h2>
+            <form id="insecticide_form">
+                <div class="form-group">
+                    <label for="bigha_insecticide">Bigha:</label>
+                    <input type="number" id="bigha_insecticide" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="dawai_insecticide">Dawai:</label>
+                    <select id="dawai_insecticide" multiple required>
+                        <option value="1">Thiamethoxam 12.6% + Lambda Cyhalothrin 9.5% ZC</option>
+                        <option value="2">Emamectin Benzoate 5% SG</option>
+                        <option value="3">Thiamethoxam 12.6% + Lambda Cyhalothrin 9.5% ZC & Emamectin Benzoate 5% SG</option>
+                        <option value="4">Chipko</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="button" onclick="calculateInsecticide()">Submit</button>
+                </div>
+            </form>
+
+            <div id="insecticide_results" class="results-section">
+                <h3>Results</h3>
+                <table id="insecticide_results_table">
+                    <thead>
+                        <tr>
+                            <th>Dawai Name</th>
+                            <th>Total Dawai</th>
+                            <th>Recommended Package</th>
+                            <th>Use per Acre</th>
+                            <th>Total Payment</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="herbicide_section" class="form-section">
+            <h2>Herbicide Calculator</h2>
+            <form id="herbicide_form">
+                <div class="form-group">
+                    <label for="bigha_herbicide">Bigha:</label>
+                    <input type="number" id="bigha_herbicide" min="1" required>
+                </div>
+                 <div class="form-group">
+                    <label for="dawai_herbicide">Dawai:</label>
+                    <select id="dawai_herbicide" multiple required>
+                        <option value="1">Imazethapyr 10% SL</option>
+                        <option value="2">IRIS</option>
+                        <option value="3">Centurion</option>
+                        <option value="4">Clobin</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="button" onclick="calculateHerbicide()">Submit</button>
+                </div>
+            </form>
+
+            <div id="herbicide_results" class="results-section">
+                <h3>Results</h3>
+                <table id="herbicide_results_table">
+                    <thead>
+                        <tr>
+                            <th>Dawai Name</th>
+                            <th>Total Dawai</th>
+                            <th>Recommended Package</th>
+                            <th>Use per Acre</th>
+                            <th>Total Payment</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function toggleForm(type) {
+            document.getElementById('insecticide_section').style.display = 'none';
+            document.getElementById('herbicide_section').style.display = 'none';
+            document.getElementById('insecticide_results').style.display = 'none';
+            document.getElementById('herbicide_results').style.display = 'none';
+
+            if (type === 'insecticide') {
+                document.getElementById('insecticide_section').style.display = 'block';
+            } else if (type === 'herbicide') {
+                document.getElementById('herbicide_section').style.display = 'block';
+            }
+        }
+
+        function calculateInsecticide() {
+            const bigha = parseInt(document.getElementById('bigha_insecticide').value);
+            const selectedOptions = Array.from(document.getElementById('dawai_insecticide').selectedOptions).map(option => option.value);
+
+            if (isNaN(bigha) || bigha <= 0 || selectedOptions.length === 0) {
+                alert("Please enter a valid Bigha and select at least one Dawai.");
+                return;
+            }
+
+            const results = [];
+            const hasChipko = selectedOptions.includes('4');
+            const hasBothSpecial = selectedOptions.includes('1') && selectedOptions.includes('2');
+            
+            selectedOptions.forEach(option => {
+                let dawaiName, totalDawai, usePerAcr, recommendedPackage, totalPayment;
+                
+                switch (option) {
+                    case '1':
+                        dawaiName = 'Thiamethoxam 12.6% + Lambda Cyhalothrin 9.5% ZC';
+                        usePerAcr = hasBothSpecial ? 50 : 65;
+                        totalDawai = usePerAcr * bigha;
+                        
+                        if (totalDawai <= 250) {
+                            recommendedPackage = `250 ml (${totalDawai} ml use)`;
+                            totalPayment = 320;
+                        } else if (totalDawai <= 500) {
+                            recommendedPackage = `500 ml (${totalDawai} ml use)`;
+                            totalPayment = 950;
+                        } else {
+                             const numLiters = Math.ceil(totalDawai / 1000);
+                             recommendedPackage = `${numLiters} x 1 Liter (${totalDawai} ml use)`;
+                             totalPayment = numLiters * 1850;
+                        }
+                        
+                        results.push({ dawaiName, totalDawai, usePerAcr: usePerAcr + ' ml', recommendedPackage, totalPayment });
+                        break;
+                    case '2':
+                        dawaiName = 'Emamectin Benzoate 5% SG';
+                        usePerAcr = hasBothSpecial ? 50 : 75;
+                        totalDawai = usePerAcr * bigha;
+                        
+                        if (totalDawai <= 250) {
+                            recommendedPackage = `250 gm (${totalDawai} gm use)`;
+                            totalPayment = 480;
+                        } else if (totalDawai <= 500) {
+                            recommendedPackage = `500 gm (${totalDawai} gm use)`;
+                            totalPayment = 950;
+                        } else {
+                            const numKg = Math.ceil(totalDawai / 1000);
+                            recommendedPackage = `${numKg} x 1 Kg (${totalDawai} gm use)`;
+                            totalPayment = numKg * 1900;
+                        }
+
+                        results.push({ dawaiName, totalDawai, usePerAcr: usePerAcr + ' gm', recommendedPackage, totalPayment });
+                        break;
+                    case '3':
+                        dawaiName = 'Thiamethoxam 12.6% + Lambda Cyhalothrin 9.5% ZC & Emamectin Benzoate 5% SG';
+                        // This option is handled by the logic above when both 1 and 2 are selected.
+                        // We will skip it here to avoid duplication.
+                        break;
+                    case '4':
+                        dawaiName = 'Chipko';
+                        usePerAcr = 15;
+                        totalDawai = usePerAcr * bigha;
+
+                        if (totalDawai <= 250) {
+                            recommendedPackage = `250 ml (${totalDawai} ml use)`;
+                            totalPayment = 550;
+                        } else {
+                            const num250ml = Math.ceil(totalDawai / 250);
+                            recommendedPackage = `${num250ml} x 250 ml (${totalDawai} ml use)`;
+                            totalPayment = num250ml * 550;
+                        }
+                        
+                        results.push({ dawaiName, totalDawai, usePerAcr: usePerAcr + ' ml', recommendedPackage, totalPayment });
+                        break;
+                }
+            });
+
+            showInsecticideResults(results);
+        }
+
+        function showInsecticideResults(results) {
+            const tableBody = document.getElementById('insecticide_results_table').querySelector('tbody');
+            tableBody.innerHTML = ''; // Clear previous results
+
+            results.forEach(item => {
+                const row = `
+                    <tr>
+                        <td>${item.dawaiName}</td>
+                        <td>${item.totalDawai}</td>
+                        <td>${item.recommendedPackage}</td>
+                        <td>${item.usePerAcr}</td>
+                        <td>₹ ${item.totalPayment}</td>
+                        <td><button class="cancel-btn" onclick="cancelRow(this)">Cancel</button></td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+
+            document.getElementById('insecticide_results').style.display = 'block';
+        }
+
+        function calculateHerbicide() {
+            const bigha = parseInt(document.getElementById('bigha_herbicide').value);
+            const selectedOptions = Array.from(document.getElementById('dawai_herbicide').selectedOptions).map(option => option.value);
+
+            if (isNaN(bigha) || bigha <= 0 || selectedOptions.length === 0) {
+                alert("Please enter a valid Bigha and select at least one Dawai.");
+                return;
+            }
+
+            const results = [];
+            
+            const hasSpecialCombo = selectedOptions.includes('1') && selectedOptions.includes('2') && selectedOptions.includes('3') && selectedOptions.includes('4');
+            
+            selectedOptions.forEach(option => {
+                let dawaiName, totalDawai, usePerAcr, recommendedPackage, totalPayment;
+                
+                switch (option) {
+                    case '1':
+                        dawaiName = 'Imazethapyr 10% SL';
+                        usePerAcr = hasSpecialCombo ? 160 : 200;
+                        totalDawai = usePerAcr * bigha;
+                        
+                        if (totalDawai <= 500) {
+                            recommendedPackage = `500 ml (${totalDawai} ml use)`;
+                            totalPayment = 450;
+                        } else {
+                            const numLiters = Math.ceil(totalDawai / 1000);
+                            recommendedPackage = `${numLiters} x 1 Liter (${totalDawai} ml use)`;
+                            totalPayment = numLiters * 900;
+                        }
+                        results.push({ dawaiName, totalDawai, usePerAcr: usePerAcr + ' ml', recommendedPackage, totalPayment });
+                        break;
+                    case '2':
+                        dawaiName = 'IRIS';
+                        usePerAcr = hasSpecialCombo ? 160 : 90;
+                        totalDawai = usePerAcr * bigha;
+                        
+                        if (totalDawai <= 400) {
+                            recommendedPackage = `400 ml (${totalDawai} ml use)`;
+                            totalPayment = 750;
+                        } else {
+                            const numPacks = Math.ceil(totalDawai / 800);
+                            recommendedPackage = `${numPacks} x 800 ml (${totalDawai} ml use)`;
+                            totalPayment = numPacks * 1450;
+                        }
+                        results.push({ dawaiName, totalDawai, usePerAcr: usePerAcr + ' ml', recommendedPackage, totalPayment });
+                        break;
+                    case '3':
+                        dawaiName = 'Centurion';
+                        // This is an add-on, not a primary selection for dose calculation
+                        if (hasSpecialCombo) {
+                            usePerAcr = 'N/A (Add-on)';
+                            totalDawai = 'N/A';
+                            recommendedPackage = '1 x 400 ml (with Imazethapyr 1L/500ml)';
+                            totalPayment = 650;
+                            results.push({ dawaiName, totalDawai, usePerAcr, recommendedPackage, totalPayment });
+                        }
+                        break;
+                    case '4':
+                        dawaiName = 'Clobin';
+                        // This is an add-on, not a primary selection for dose calculation
+                        if (hasSpecialCombo) {
+                            usePerAcr = 'N/A (Add-on)';
+                            totalDawai = 'N/A';
+                            recommendedPackage = '1 Pack (with Imazethapyr 1L/500ml)';
+                            totalPayment = 140;
+                            results.push({ dawaiName, totalDawai, usePerAcr, recommendedPackage, totalPayment });
+                        }
+                        break;
+                }
+            });
+            showHerbicideResults(results);
+        }
+
+        function showHerbicideResults(results) {
+            const tableBody = document.getElementById('herbicide_results_table').querySelector('tbody');
+            tableBody.innerHTML = ''; // Clear previous results
+
+            results.forEach(item => {
+                const row = `
+                    <tr>
+                        <td>${item.dawaiName}</td>
+                        <td>${item.totalDawai}</td>
+                        <td>${item.recommendedPackage}</td>
+                        <td>${item.usePerAcr}</td>
+                        <td>₹ ${item.totalPayment}</td>
+                        <td><button class="cancel-btn" onclick="cancelRow(this)">Cancel</button></td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+
+            document.getElementById('herbicide_results').style.display = 'block';
+        }
+
+        function cancelRow(button) {
+            const row = button.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agroain - कृषि समाधान</title>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            color: #333;
+            text-align: center;
+        }
+
+        header {
+            background-color: #2e7d32;
+            color: white;
+            padding: 0px 0px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0px;
+            padding: 0 px;
+        }
+
+        .shop-name {
+            margin: 0;
+            font-size: 1.8em;
+            font-weight: bold;
+            flex-grow: 1;
+            text-align: center;
+            transform: translateX(-50px);
+        }
+
+        .profile-container {
+            width: 100px;
+            text-align: left;
+        }
+
+        .profile-button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .profile-button:hover {
+            background-color: #388e3c;
+        }
+
+        .search-container {
+            display: flex;
+            justify-content: center;
+            padding: 0 10px;
+        }
+
+        #search-input {
+            width: 70%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px 0 0 5px;
+            font-size: 1em;
+        }
+
+        .search-container button {
+            padding: 10px 15px;
+            border: none;
+            background-color: #ff9800;
+            color: white;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+        }
+
+        .search-container button:hover {
+            background-color: #e68900;
+        }
+
+        .options-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 3px;
+            padding: 10px;
+        }
+
+        .option-item {
+            background-color: white;
+            color: #2e7d32;
+            border: 2px solid #2e7d32;
+            padding: 3px 3px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.em;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.3s;
+            min-width: 120px%;
+        }
+
+        .option-item:hover {
+            background-color: #e8f5e9;
+            transform: translateY(-2px);
+        }
+
+        #lasun-options {
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            max-width: 400px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        #lasun-options h3 {
+            color: #2e7d32;
+            margin-top: 0;
+        }
+
+        .sub-option-item {
+            display: block;
+            width: 90%;
+            margin: 10px auto;
+            padding: 12px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .sub-option-item:hover {
+            background-color: #e68900;
+        }
+
+        #seed-treatment-calculator {
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #2e7d32;
+            border-radius: 10px;
+            max-width: 400px;
+            background-color: #e8f5e9;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #seed-treatment-calculator h3 {
+            color: #2e7d32;
+            margin-top: 0;
+        }
+
+        #lasun-weight-input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+            text-align: center;
+        }
+
+        .result-box {
+            background-color: #ffffff;
+            border: 2px solid #ff9800;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 8px;
+            text-align: left;
+        }
+
+        .result-box h4 {
+            color: #e68900;
+            margin-top: 0;
+        }
+        
+        .buy-now-button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .buy-now-button:hover {
+            background-color: #388E3C;
+        }
+
+
+        .back-button {
+            display: block;
+            width: 90%;
+            margin: 15px auto 0;
+            padding: 10px;
+            background-color: #607d8b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .back-button:hover {
+            background-color: #455a64;
+        }
+
+        .message-area {
+            margin-top: 20px;
+            padding: 10px;
+            color: #2e7d32;
+            font-size: 1.1em;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-content">
+            <div class="profile-container">
+                <button class="profile-button" onclick="showProfile()">👤 प्रोफ़ाइल</button>
+            </div>
+            <h1 class="shop-name">Agroain</h1>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="उत्पाद या समस्या खोजें..." onkeyup="filterOptions()">
+            <button onclick="searchAction()">🔍 खोजें</button>
+        </div>
+    </header>
+
+    <main>
+        <section class="options-container" id="main-options">
+            <button class="option-item" data-product="soyabin" onclick="selectProduct('सोयाबीन')">
+                🌱 सोयाबीन
+            </button>
+            <button class="option-item" data-product="lasun" onclick="selectProduct('लहसुन')">
+                🧄 लहसुन
+            </button>
+            <button class="option-item" data-product="payaj" onclick="selectProduct('प्याज')">
+                🧅 प्याज
+            </button>
+            <button class="option-item" data-product="gehu" onclick="selectProduct('गेहूं')">
+                🌾 गेहूं
+            </button>
+            <button class="option-item" data-product="batla" onclick="selectProduct('मटर')">
+                🟢 मटर
+            </button>
+        </section>
+
+        <div id="lasun-options" class="hidden">
+            <h3>🧄 लहसुन के लिए विकल्प</h3>
+            <button class="sub-option-item" onclick="handleLasunOption('बीज उपचार')">
+                🔬 बीज उपचार
+            </button>
+            <button class="sub-option-item" onclick="handleLasunOption('72 hour वाली दवाई')">
+                💊 72 hour वाली दवाई
+            </button>
+            <button class="sub-option-item" onclick="resetView()">
+                ⬅️ मुख्य मेनू पर वापस जाएँ
+            </button>
+        </div>
+
+        <div id="seed-treatment-calculator" class="hidden">
+            <h3>🔬 लहसुन बीज उपचार कैलकुलेटर</h3>
+            <p>कृपया लहसुन के बीज का वजन (किलोग्राम में) दर्ज करें:</p>
+            <input type="number" id="lasun-weight-input" placeholder="उदाहरण: 120" oninput="calculateSeedTreatment()">
+            
+            <div id="treatment-result" class="result-box hidden">
+                </div>
+            
+            <button class="back-button" onclick="showLasunOptions()">
+                ⬅️ लहसुन विकल्प पर वापस जाएँ
+            </button>
+        </div>
+
+        <p id="message-area" class="message-area">कोई उत्पाद चुनें या खोजें...</p>
+    </main>
+
+    <script>
+        // --- नकली सर्वर डेटा (मोबाइल लोकल होस्ट डेटा का सिमुलेशन) ---
+        // यह डेटा अब आपके स्थानीय लोकल स्टोरेज या सर्वर से आ रहा है।
+        const medicineData = {
+            // तकनीकी नाम के आधार पर डेटा
+            'Carbendazim 12% + Mancozeb 63% WP': [
+                {
+                    name: 'साफ (Saaf) - फफूंदनाशक',
+                    brand: 'यूपीएल (UPL)',
+                    technical: 'Carbendazim 12% + Mancozeb 63% WP',
+                    unit_price: 350, // 500 ग्राम पैक की कीमत (₹)
+                    pack_size_gm: 500, // 500 ग्राम का पैक
+                    dose_ratio_kg: 120, // 120 kg पर
+                    dose_ratio_gm: 500, // 500 gm दवा चाहिए
+                    buy_link: 'http://localhost/agroain/buy?product=saaf' 
+                },
+                {
+                    name: 'जायरो (Jyro) - बीज उपचार',
+                    brand: 'अन्य ब्रांड',
+                    technical: 'Carbendazim 12% + Mancozeb 63% WP',
+                    unit_price: 320, // 500 ग्राम पैक की कीमत (₹)
+                    pack_size_gm: 500, // 500 ग्राम का पैक
+                    dose_ratio_kg: 120, // 120 kg पर
+                    dose_ratio_gm: 500, // 500 gm दवा चाहिए
+                    buy_link: 'http://localhost/agroain/buy?product=jyro'
+                }
+            ]
+        };
+        // -----------------------------------------------------------
+
+
+        // यह फ़ंक्शन किसी उत्पाद को चुनने पर काम करता है
+        function selectProduct(productName) {
+            const messageArea = document.getElementById('message-area');
+            const mainOptions = document.getElementById('main-options');
+            const lasunOptions = document.getElementById('lasun-options');
+            const calculator = document.getElementById('seed-treatment-calculator');
+
+            // सभी सब-सेक्शन को पहले छुपाओ
+            lasunOptions.classList.add('hidden');
+            calculator.classList.add('hidden');
+            
+            if (productName === 'लहसुन') {
+                mainOptions.classList.add('hidden'); 
+                lasunOptions.classList.remove('hidden'); 
+                messageArea.textContent = 'लहसुन के उपचार के लिए एक विकल्प चुनें।';
+            } else {
+                mainOptions.classList.remove('hidden'); 
+                messageArea.textContent = `${productName} का विकल्प चुना गया है। अब इस पर एक्शन लिया जा सकता है।`;
+            }
+        }
+
+        // लहसुन के सब-ऑप्शंस को संभालने के लिए फ़ंक्शन
+        function handleLasunOption(option) {
+            const messageArea = document.getElementById('message-area');
+            const lasunOptions = document.getElementById('lasun-options');
+            const calculator = document.getElementById('seed-treatment-calculator');
+
+            if (option === 'बीज उपचार') {
+                lasunOptions.classList.add('hidden'); 
+                calculator.classList.remove('hidden'); 
+                document.getElementById('lasun-weight-input').value = ''; 
+                document.getElementById('treatment-result').classList.add('hidden'); 
+                messageArea.textContent = 'बीज उपचार के लिए लहसुन का वजन दर्ज करें।';
+            } else {
+                messageArea.textContent = `आपने 'लहसुन' के लिए '${option}' चुना है। इससे संबंधित जानकारी/सामग्री यहाँ प्रदर्शित होगी।`;
+                alert(`एक्शन: लहसुन - ${option}`);
+            }
+        }
+
+        // बीज उपचार की मात्रा की गणना और दवा प्रदर्शित करने के लिए नया फ़ंक्शन (अपडेटेड)
+        function calculateSeedTreatment() {
+            const weightInput = document.getElementById('lasun-weight-input');
+            const resultDiv = document.getElementById('treatment-result');
+            const messageArea = document.getElementById('message-area');
+            
+            const lasunWeight = parseFloat(weightInput.value);
+
+            // बीज उपचार के लिए तकनीकी नाम (यह एक मानक मान है)
+            const technicalName = "Carbendazim 12% + Mancozeb 63% WP"; 
+            
+            // सर्वर डेटा से दवा की जानकारी प्राप्त करें
+            const availableMedicines = medicineData[technicalName] || []; 
+            
+            resultDiv.classList.add('hidden'); 
+
+            if (lasunWeight > 0 && availableMedicines.length > 0) {
+                
+                // पहली उपलब्ध दवा के पैरामीटर्स का उपयोग करें
+                const medicine = availableMedicines[0]; 
+                const RATIO_WEIGHT_KG = medicine.dose_ratio_kg; 
+                const RATIO_DOSE_GM = medicine.dose_ratio_gm;  
+                const PACK_SIZE_GM = medicine.pack_size_gm;     
+                
+                // आवश्यक खुराक (ग्राम में)
+                const requiredDose = (lasunWeight / RATIO_WEIGHT_KG) * RATIO_DOSE_GM;
+                
+                // आवश्यक पैकेट की संख्या
+                const requiredPacks = Math.ceil(requiredDose / PACK_SIZE_GM);
+
+                const estimatedCost = requiredPacks * medicine.unit_price;
+
+                const doseMessage = `(अनुमानित सटीक खुराक: ${requiredDose.toFixed(2)} ग्राम)`;
+                
+                // HTML आउटपुट
+                resultDiv.innerHTML = `
+                    <h4>✅ आवश्यक बीज उपचार</h4>
+                    <p><strong>लहसुन का वजन:</strong> ${lasunWeight} किलोग्राम</p>
+                    <p><strong>दवा की कुल मात्रा:</strong> **${requiredPacks * PACK_SIZE_GM} ग्राम** ${doseMessage}</p>
+                    <p style="font-size: 0.9em; color: #388e3c;">(गणना ${RATIO_WEIGHT_KG}kg बीज पर ${RATIO_DOSE_GM}g दवा के अनुपात पर आधारित है।)</p>
+                    
+                    <div style="border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px;">
+                        <h4>🛒 अनुशंसित उत्पाद:</h4>
+                        <p>
+                            <strong>दवा का नाम:</strong> ${medicine.name} (${medicine.brand})<br>
+                            <strong>तकनीकी:</strong> ${medicine.technical}<br>
+                            <strong>पैक साइज़:</strong> ${medicine.pack_size_gm} ग्राम
+                        </p>
+                        <p style="font-size: 1.1em; font-weight: bold; color: #2e7d32;">
+                            आपको चाहिए: **${requiredPacks} पैक**
+                        </p>
+                        <a href="${medicine.buy_link}" target="_blank" class="buy-now-button">
+                            🛒 अभी खरीदें (₹${estimatedCost.toFixed(2)})
+                        </a>
+                    </div>
+                `;
+                resultDiv.classList.remove('hidden');
+                messageArea.textContent = 'आवश्यक पैकेट की संख्या और दवा की जानकारी उपलब्ध है।';
+
+            } else if (availableMedicines.length === 0) {
+                resultDiv.innerHTML = `<p style="color: red; font-weight: bold;">क्षमा करें, इस तकनीकी (${technicalName}) की कोई दवा उपलब्ध नहीं है।</p>`;
+                resultDiv.classList.remove('hidden');
+                messageArea.textContent = 'कोई दवा उपलब्ध नहीं है।';
+            } else if (weightInput.value.length === 0) {
+                resultDiv.classList.add('hidden');
+                messageArea.textContent = 'बीज उपचार के लिए लहसुन का वजन दर्ज करें।';
+            } else {
+                resultDiv.classList.add('hidden');
+                messageArea.textContent = 'कृपया लहसुन का सही वजन दर्ज करें।';
+            }
+        }
+
+
+        // (अन्य सहायक फ़ंक्शन पहले जैसे ही रहेंगे)
+        function showLasunOptions() {
+            document.getElementById('seed-treatment-calculator').classList.add('hidden');
+            document.getElementById('lasun-options').classList.remove('hidden');
+            document.getElementById('message-area').textContent = 'लहसुन के उपचार के लिए एक विकल्प चुनें।';
+        }
+
+        function resetView() {
+            document.getElementById('lasun-options').classList.add('hidden');
+            document.getElementById('seed-treatment-calculator').classList.add('hidden');
+            document.getElementById('main-options').classList.remove('hidden');
+            document.getElementById('message-area').textContent = 'कोई उत्पाद चुनें या खोजें...';
+        }
+
+        function showProfile() {
+            alert('प्रोफ़ाइल सेक्शन जल्द ही उपलब्ध होगा!');
+        }
+
+        function searchAction() {
+            const searchInput = document.getElementById('search-input').value;
+            alert(`आप खोज रहे हैं: "${searchInput}"`);
+        }
+
+        function filterOptions() {
+            resetView(); 
+            const searchInput = document.getElementById('search-input').value.toLowerCase();
+            const options = document.querySelectorAll('.option-item');
+            let found = false;
+
+            options.forEach(button => {
+                const productText = button.textContent.toLowerCase();
+                const productData = button.getAttribute('data-product').toLowerCase();
+
+                if (productText.includes(searchInput) || productData.includes(searchInput)) {
+                    button.classList.remove('hidden');
+                    found = true;
+                } else {
+                    button.classList.add('hidden');
+                }
+            });
+            
+            const messageArea = document.getElementById('message-area');
+            if (!found && searchInput.length > 0) {
+                messageArea.textContent = `"${searchInput}" से संबंधित कोई विकल्प नहीं मिला।`;
+            } else if (searchInput.length === 0) {
+                messageArea.textContent = `कोई उत्पाद चुनें या खोजें...`;
+            } else {
+                messageArea.textContent = `आप खोज सकते हैं...`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGROAIN - Pesticide Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2e7d32;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .language-selector {
+            text-align: right;
+            margin-bottom: 15px;
+        }
+        select, input, button {
+            padding: 10px;
+            margin: 8px 0;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .results {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #e8f5e9;
+            border-radius: 8px;
+            display: none;
+        }
+        .pesticide-option {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .pesticide-option:hover {
+            border-color: #4CAF50;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        .radio-group {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            font-weight: normal;
+        }
+        .radio-group input {
+            width: auto;
+            margin-right: 10px;
+        }
+        .result-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #ccc;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="language-selector">
+            <select id="language">
+                <option value="english">English</option>
+                <option value="hindi">हिंदी (Hindi)</option>
+            </select>
+        </div>
+        
+        <h1 id="title">AGROAIN</h1>
+        
+        <div>
+            <label for="bigha" id="bighaLabel">Enter number of Bigha:</label>
+            <input type="number" id="bigha" min="0" step="0.1" placeholder="e.g. 5">
+        </div>
+        
+        <h3 id="pesticideHeader">Select Pesticide:</h3>
+        
+        <div class="pesticide-option">
+            <input type="radio" id="pesticide1" name="pesticide" value="Thiamethoxam">
+            <label for="pesticide1">Thiamethoxam 12.6% + Lambda Cyhalothrin 9.5% ZC</label>
+            
+            <div id="pesticide1Options" class="radio-group" style="display: none;">
+                <label>
+                    <input type="radio" name="pesticide1Size" value="1000" checked> 1 Liter
+                </label>
+                <label>
+                    <input type="radio" name="pesticide1Size" value="500"> 500 ml
+                </label>
+                <label>
+                    <input type="radio" name="pesticide1Size" value="250"> 250 ml
+                </label>
+            </div>
+        </div>
+        
+        <div class="pesticide-option">
+            <input type="radio" id="pesticide2" name="pesticide" value="Emamectin">
+            <label for="pesticide2">Emamectin Benzoat 5% SG</label>
+            
+            <div id="pesticide2Options" class="radio-group" style="display: none;">
+                <label>
+                    <input type="radio" name="pesticide2Size" value="1000" checked> 1 kg
+                </label>
+                <label>
+                    <input type="radio" name="pesticide2Size" value="500"> 500 gm
+                </label>
+                <label>
+                    <input type="radio" name="pesticide2Size" value="250"> 250 gm
+                </label>
+            </div>
+        </div>
+        
+        <div class="pesticide-option">
+            <input type="radio" id="pesticide3" name="pesticide" value="Both">
+            <label for="pesticide3">Thiamethoxam + Lambda Cyhalothrin + Emamectin Benzoat</label>
+            
+            <div id="pesticide3Options" class="radio-group" style="display: none;">
+                <h4>Thiamethoxam Options:</h4>
+                <label>
+                    <input type="radio" name="pesticide1SizeCombined" value="1000" checked> 1 Liter
+                </label>
+                <label>
+                    <input type="radio" name="pesticide1SizeCombined" value="500"> 500 ml
+                </label>
+                <label>
+                    <input type="radio" name="pesticide1SizeCombined" value="250"> 250 ml
+                </label>
+                
+                <h4>Emamectin Options:</h4>
+                <label>
+                    <input type="radio" name="pesticide2SizeCombined" value="1000" checked> 1 kg
+                </label>
+                <label>
+                    <input type="radio" name="pesticide2SizeCombined" value="500"> 500 gm
+                </label>
+                <label>
+                    <input type="radio" name="pesticide2SizeCombined" value="250"> 250 gm
+                </label>
+            </div>
+        </div>
+        
+        <div class="pesticide-option">
+            <input type="radio" id="pesticide4" name="pesticide" value="Chipko">
+            <label for="pesticide4">Chipko</label>
+            
+            <div id="pesticide4Options" class="radio-group" style="display: none;">
+                <label>
+                    <input type="radio" name="pesticide4Size" value="250" checked> 250 ml
+                </label>
+                <label>
+                    <input type="radio" name="pesticide4Size" value="100"> 100 ml
+                </label>
+            </div>
+        </div>
+        
+        <button id="calculateBtn">Calculate</button>
+        
+        <div class="results" id="results">
+            <h3 id="resultsHeader">Results:</h3>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Language translations
+        const translations = {
+            english: {
+                title: "AGROAIN",
+                bighaLabel: "Enter number of Bigha:",
+                pesticideHeader: "Select Pesticide:",
+                calculateBtn: "Calculate",
+                resultsHeader: "Results:",
+                requiredPerBigha: "Required per Bigha:",
+                totalRequired: "Total Required:",
+                packagesNeeded: "Packets needed:",
+                packageSize: "Packet size:",
+                chipkoNote: "Note: Chipko dosage is fixed at 15ml per bigha.",
+                selectWarning: "Please select a pesticide",
+                bighaWarning: "Please enter number of bigha",
+                sizeWarning: "Please select packet size"
+            },
+            hindi: {
+                title: "एग्रोएन",
+                bighaLabel: "बीघा की संख्या दर्ज करें:",
+                pesticideHeader: "कीटनाशक चुनें:",
+                calculateBtn: "गणना करें",
+                resultsHeader: "परिणाम:",
+                requiredPerBigha: "प्रति बीघा आवश्यक:",
+                totalRequired: "कुल आवश्यक:",
+                packagesNeeded: "आवश्यक पैकेट:",
+                packageSize: "पैकेट आकार:",
+                chipkoNote: "नोट: चिपको की मात्रा 15ml प्रति बीघा निर्धारित है।",
+                selectWarning: "कृपया एक कीटनाशक चुनें",
+                bighaWarning: "कृपया बीघा की संख्या दर्ज करें",
+                sizeWarning: "कृपया पैकेट आकार चुनें"
+            }
+        };
+
+        // Set initial language
+        let currentLang = 'english';
+        updateLanguage(currentLang);
+
+        // Language switcher
+        document.getElementById('language').addEventListener('change', function() {
+            currentLang = this.value;
+            updateLanguage(currentLang);
+        });
+
+        function updateLanguage(lang) {
+            const trans = translations[lang];
+            document.getElementById('title').textContent = trans.title;
+            document.getElementById('bighaLabel').textContent = trans.bighaLabel;
+            document.getElementById('pesticideHeader').textContent = trans.pesticideHeader;
+            document.getElementById('calculateBtn').textContent = trans.calculateBtn;
+            document.getElementById('resultsHeader').textContent = trans.resultsHeader;
+            
+            // Update results if they're already displayed
+            if(document.getElementById('results').style.display === 'block') {
+                calculate();
+            }
+        }
+
+        // Show/hide pesticide options when radio is selected
+        document.querySelectorAll('input[name="pesticide"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Hide all options first
+                document.querySelectorAll('.radio-group').forEach(group => {
+                    group.style.display = 'none';
+                });
+                
+                // Show selected options
+                const selectedValue = this.value;
+                if (selectedValue === "Thiamethoxam") {
+                    document.getElementById('pesticide1Options').style.display = 'block';
+                } else if (selectedValue === "Emamectin") {
+                    document.getElementById('pesticide2Options').style.display = 'block';
+                } else if (selectedValue === "Both") {
+                    document.getElementById('pesticide3Options').style.display = 'block';
+                } else if (selectedValue === "Chipko") {
+                    document.getElementById('pesticide4Options').style.display = 'block';
+                }
+            });
+        });
+
+        // Calculate button click handler
+        document.getElementById('calculateBtn').addEventListener('click', calculate);
+
+        function calculate() {
+            const trans = translations[currentLang];
+            
+            const bigha = parseFloat(document.getElementById('bigha').value);
+            if (isNaN(bigha) || bigha <= 0) {
+                alert(trans.bighaWarning);
+                return;
+            }
+
+            const selectedPesticide = document.querySelector('input[name="pesticide"]:checked');
+            if (!selectedPesticide) {
+                alert(trans.selectWarning);
+                return;
+            }
+
+            let resultHTML = '';
+            const pesticideType = selectedPesticide.value;
+            
+            // Calculate for Thiamethoxam only
+            if (pesticideType === "Thiamethoxam") {
+                const size = document.querySelector('input[name="pesticide1Size"]:checked');
+                if (!size) {
+                    alert(trans.sizeWarning);
+                    return;
+                }
+                
+                const sizeValue = parseInt(size.value);
+                const perBigha = 60; // ml per bigha
+                const totalRequired = perBigha * bigha;
+                const packetsNeeded = Math.ceil(totalRequired / sizeValue);
+                
+                resultHTML += `
+                    <div class="result-item">
+                        <h4>Thiamethoxam 12.6% + Lambda Cyhalothrin 9.5% ZC</h4>
+                        <p>${trans.requiredPerBigha}: <strong>${perBigha} ml</strong></p>
+                        <p>${trans.totalRequired}: <strong>${totalRequired} ml</strong></p>
+                        <p>${trans.packageSize}: ${sizeValue} ml</p>
+                        <p>${trans.packagesNeeded}: <strong>${packetsNeeded}</strong></p>
+                    </div>
+                `;
+            }
+            
+            // Calculate for Emamectin only
+            else if (pesticideType === "Emamectin") {
+                const size = document.querySelector('input[name="pesticide2Size"]:checked');
+                if (!size) {
+                    alert(trans.sizeWarning);
+                    return;
+                }
+                
+                const sizeValue = parseInt(size.value);
+                const perBigha = 70; // gm per bigha
+                const totalRequired = perBigha * bigha;
+                const packetsNeeded = Math.ceil(totalRequired / sizeValue);
+                
+                resultHTML += `
+                    <div class="result-item">
+                        <h4>Emamectin Benzoat 5% SG</h4>
+                        <p>${trans.requiredPerBigha}: <strong>${perBigha} gm</strong></p>
+                        <p>${trans.totalRequired}: <strong>${totalRequired} gm</strong></p>
+                        <p>${trans.packageSize}: ${sizeValue} gm</p>
+                        <p>${trans.packagesNeeded}: <strong>${packetsNeeded}</strong></p>
+                    </div>
+                `;
+            }
+            
+            // Calculate for Both (Thiamethoxam + Emamectin)
+            else if (pesticideType === "Both") {
+                const size1 = document.querySelector('input[name="pesticide1SizeCombined"]:checked');
+                const size2 = document.querySelector('input[name="pesticide2SizeCombined"]:checked');
+                
+                if (!size1 || !size2) {
+                    alert(trans.sizeWarning);
+                    return;
+                }
+                
+                const sizeValue1 = parseInt(size1.value);
+                const sizeValue2 = parseInt(size2.value);
+                const perBigha1 = 50; // ml per bigha when combined
+                const perBigha2 = 50; // gm per bigha when combined
+                
+                const totalRequired1 = perBigha1 * bigha;
+                const totalRequired2 = perBigha2 * bigha;
+                
+                const packetsNeeded1 = Math.ceil(totalRequired1 / sizeValue1);
+                const packetsNeeded2 = Math.ceil(totalRequired2 / sizeValue2);
+                
+                resultHTML += `
+                    <div class="result-item">
+                        <h4>Thiamethoxam 12.6% + Lambda Cyhalothrin 9.5% ZC</h4>
+                        <p>${trans.requiredPerBigha}: <strong>${perBigha1} ml</strong></p>
+                        <p>${trans.totalRequired}: <strong>${totalRequired1} ml</strong></p>
+                        <p>${trans.packageSize}: ${sizeValue1} ml</p>
+                        <p>${trans.packagesNeeded}: <strong>${packetsNeeded1}</strong></p>
+                    </div>
+                    <div class="result-item">
+                        <h4>Emamectin Benzoat 5% SG</h4>
+                        <p>${trans.requiredPerBigha}: <strong>${perBigha2} gm</strong></p>
+                        <p>${trans.totalRequired}: <strong>${totalRequired2} gm</strong></p>
+                        <p>${trans.packageSize}: ${sizeValue2} gm</p>
+                        <p>${trans.packagesNeeded}: <strong>${packetsNeeded2}</strong></p>
+                    </div>
+                `;
+            }
+            
+            // Calculate for Chipko
+            else if (pesticideType === "Chipko") {
+                const size = document.querySelector('input[name="pesticide4Size"]:checked');
+                if (!size) {
+                    alert(trans.sizeWarning);
+                    return;
+                }
+                
+                const sizeValue = parseInt(size.value);
+                const perBigha = 15; // ml per bigha (fixed)
+                const totalRequired = perBigha * bigha;
+                const packetsNeeded = Math.ceil(totalRequired / sizeValue);
+                
+                resultHTML += `
+                    <div class="result-item">
+                        <h4>Chipko</h4>
+                        <p><em>${trans.chipkoNote}</em></p>
+                        <p>${trans.requiredPerBigha}: <strong>${perBigha} ml</strong></p>
+                        <p>${trans.totalRequired}: <strong>${totalRequired} ml</strong></p>
+                        <p>${trans.packageSize}: ${sizeValue} ml</p>
+                        <p>${trans.packagesNeeded}: <strong>${packetsNeeded}</strong></p>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('resultContent').innerHTML = resultHTML;
+            document.getElementById('results').style.display = 'block';
+            
+            // Scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

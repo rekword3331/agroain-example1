@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>Agroain · एडमिन (कस्टम फसल)</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
+    <style>
+        :root { --primary: #2e7d32; --danger: #d32f2f; --accent: #f9f9f9; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+        .admin-box { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); display: none; }
+        .login-box { max-width: 400px; margin: 100px auto; background: white; padding: 30px; border-radius: 15px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        
+        h2 { color: var(--primary); border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-top: 0; }
+        select, input, textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        
+        button { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        button:hover { background: #1b5e20; }
+        button:disabled { background: #a5d6a7; cursor: not-allowed; }
+        
+        .logout-btn { background: #666; width: auto; padding: 8px 15px; float: right; font-size: 13px; margin-top: -5px; }
+        
+        .filter-section { background: var(--accent); padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px solid #eee; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        th, td { border: 1px solid #eee; padding: 12px; text-align: left; vertical-align: middle; }
+        th { background: #f4f4f4; color: #555; }
+        .del-btn { color: var(--danger); cursor: pointer; font-weight: bold; }
+        
+        .crop-tag { background: #e8f5e9; color: var(--primary); padding: 4px 8px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; }
+        .alert-preview { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #666; }
+        .custom-crop-field { margin-top: 5px; display: none; } /* छुपा हुआ शुरू में */
+    </style>
+</head>
+<body>
+
+    <div id="loginScreen" class="login-box">
+        <h2>Agroain Admin</h2>
+        <p>प्रवेश के लिए लॉगिन करें</p>
+        <input type="email" id="loginEmail" placeholder="ईमेल">
+        <input type="password" id="loginPass" placeholder="पासवर्ड">
+        <button onclick="handleLogin()">लॉगिन करें</button>
+    </div>
+
+    <div id="adminPanel" class="admin-box">
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+        <h2>🌾 फसल स्टेज मैनेजर</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <label>फसल चुनें:</label>
+                <select id="cropName" onchange="toggleCustomCrop(this)">
+                    <option value="Garlic">लहसुन (Garlic)</option>
+                    <option value="Soybean">सोयाबीन (Soybean)</option>
+                    <option value="Onion">प्याज (Onion)</option>
+                    <option value="Other">अन्य (Other)</option>
+                </select>
+                <!-- कस्टम फसल का नाम लिखने के लिए इनपुट (शुरू में छुपा) -->
+                <input type="text" id="customCrop" class="custom-crop-field" placeholder="फसल का नाम लिखें (जैसे: गेहूँ)">
+            </div>
+            <div style="display: flex; gap: 10px; align-items: flex-end;">
+                <input type="number" id="startDay" placeholder="शुरू दिन">
+                <input type="number" id="endDay" placeholder="अंतिम दिन">
+            </div>
+        </div>
+
+        <input type="text" id="stageTitle" placeholder="स्टेज का नाम (जैसे: थ्रिप्स नियंत्रण)">
+        <textarea id="stageMsg" rows="2" placeholder="मुख्य सलाह..."></textarea>
+        <input type="text" id="alertText" placeholder="अलर्ट मैसेज (जैसे: शाम को स्प्रे करें)">
+        
+        <button onclick="saveStage()" id="saveBtn">डेटाबेस में सुरक्षित करें</button>
+
+        <div class="filter-section">
+            <h3 style="margin-top:0">📋 एक्टिव रूल्स (Live Stages)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>फसल</th>
+                        <th>दिन (से–तक)</th>
+                        <th>शीर्षक</th>
+                        <th>अलर्ट / सलाह</th>
+                        <th>क्रिया</th>
+                    </tr>
+                </thead>
+                <tbody id="stageList"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // --- Firebase Config (आपकी दी हुई) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAOQp4Ez6omxSL5MDh_cGzzUy1gcf4KkEo",
+            authDomain: "agroain.firebaseapp.com",
+            databaseURL: "https://agroain-default-rtdb.firebaseio.com",
+            projectId: "agroain",
+            storageBucket: "agroain.firebasestorage.app",
+            messagingSenderId: "837977852518",
+            appId: "1:837977852518:web:eebd9baaec310f03e0bba7"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // --- Auth Logic ---
+        function handleLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+            auth.signInWithEmailAndPassword(email, pass).catch(err => alert("लॉगिन फेल: " + err.message));
+        }
+
+        function handleLogout() { auth.signOut(); }
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                loadStages();
+            } else {
+                document.getElementById('loginScreen').style.display = 'block';
+                document.getElementById('adminPanel').style.display = 'none';
+            }
+        });
+
+        // --- फसल ड्रॉपडाउन बदलने पर कस्टम इनपुट दिखाना/छुपाना ---
+        function toggleCustomCrop(selectEl) {
+            const customField = document.getElementById('customCrop');
+            if (selectEl.value === 'Other') {
+                customField.style.display = 'block';
+                customField.required = true;  // जरूरी कर सकते हैं
+            } else {
+                customField.style.display = 'none';
+                customField.required = false;
+                customField.value = '';        // पुराना मान हटा दें
+            }
+        }
+
+        // --- Data Logic ---
+        async function saveStage() {
+            const start = parseInt(document.getElementById('startDay').value);
+            const end = parseInt(document.getElementById('endDay').value);
+            const title = document.getElementById('stageTitle').value.trim();
+            const msg = document.getElementById('stageMsg').value.trim();
+            const alertText = document.getElementById('alertText').value.trim();
+            const cropSelect = document.getElementById('cropName');
+            let crop = cropSelect.value;
+
+            // अगर "Other" चुना है तो कस्टम नाम लें
+            if (crop === 'Other') {
+                const custom = document.getElementById('customCrop').value.trim();
+                if (!custom) {
+                    alert("कृपया कस्टम फसल का नाम लिखें");
+                    return;
+                }
+                crop = custom;  // यही नाम डेटाबेस में जाएगा
+            }
+
+            // मूल जाँच
+            if (!start || !title) {
+                alert("कृपया दिन और टाइटल जरूर भरें");
+                return;
+            }
+            if (end && end < start) {
+                alert("अंतिम दिन, शुरू दिन से कम नहीं हो सकता");
+                return;
+            }
+
+            const data = {
+                crop: crop,
+                start: start,
+                end: end || start,  // अगर end खाली है तो start के बराबर मानें
+                title: title,
+                msg: msg,
+                alert: alertText,
+                timestamp: Date.now()
+            };
+
+            // सेव बटन को disable करें (डबल क्लिक से बचने के लिए)
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.disabled = true;
+            saveBtn.innerText = 'सेव हो रहा है...';
+
+            try {
+                await db.ref('crop_stages').push(data);
+                alert("✅ जानकारी सुरक्षित हो गई!");
+
+                // फ़ील्ड साफ़ करें
+                document.getElementById('stageTitle').value = "";
+                document.getElementById('stageMsg').value = "";
+                document.getElementById('alertText').value = "";
+                document.getElementById('startDay').value = "";
+                document.getElementById('endDay').value = "";
+                document.getElementById('customCrop').value = "";   // कस्टम फील्ड भी खाली
+                cropSelect.value = 'Garlic';  // डिफ़ॉल्ट पर रीसेट
+                toggleCustomCrop(cropSelect); // कस्टम फील्ड छुप जाएगा
+            } catch (error) {
+                alert("❌ सेव करते समय गड़बड़ी: " + error.message);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = 'डेटाबेस में सुरक्षित करें';
+            }
+        }
+
+        function loadStages() {
+            db.ref('crop_stages').orderByChild('crop').on('value', snapshot => {
+                const list = document.getElementById('stageList');
+                list.innerHTML = "";
+                snapshot.forEach(child => {
+                    const v = child.val();
+                    // alert को छोटा दिखाने के लिए (पहले 50 अक्षर)
+                    const shortAlert = v.alert ? (v.alert.length > 50 ? v.alert.substring(0,50)+'…' : v.alert) : '—';
+                    list.innerHTML += `
+                        <tr>
+                            <td><span class="crop-tag">${v.crop || 'अन्य'}</span></td>
+                            <td>${v.start}–${v.end}</td>
+                            <td><b>${v.title || ''}</b></td>
+                            <td class="alert-preview" title="${(v.alert || '') + '\n' + (v.msg || '')}">${shortAlert}</td>
+                            <td><span class="del-btn" onclick="deleteStage('${child.key}')">हटाएं</span></td>
+                        </tr>
+                    `;
+                });
+            });
+        }
+
+        function deleteStage(key) {
+            if(confirm("क्या आप इस रूल को हटाना चाहते हैं?")) {
+                db.ref('crop_stages/' + key).remove()
+                    .catch(err => alert("हटाने में गड़बड़ी: " + err.message));
+            }
+        }
+    </script>
+</body>
+</html>

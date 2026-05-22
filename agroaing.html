@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGROAIN</title>
+    <style>
+        /* --- CSS Styling --- */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px; /* Added padding for smaller screens */
+            box-sizing: border-box; /* Ensures padding doesn't cause overflow */
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .input-group input[type="number"],
+        .input-group select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box; /* Include padding in width */
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s ease;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e9ffe9;
+            border: 1px solid #d4ffd4;
+            border-radius: 6px;
+            text-align: left;
+            display: none; /* Hidden by default */
+        }
+
+        .results p {
+            margin: 8px 0;
+            font-size: 17px;
+            color: #333;
+        }
+
+        .results strong {
+            color: #2e8b57;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AGROAIN</h1>
+
+        <div class="input-group">
+            <label for="biga">Enter Biga:</label>
+            <input type="number" id="biga" min="0" placeholder="e.g., 1, 2.5">
+        </div>
+
+        <div class="input-group">
+            <label for="pesticide">Select Pesticide:</label>
+            <select id="pesticide">
+                <option value="">--Please Select--</option>
+                <option value="thiamethoxam_lambda">Thiamethoxam + Lambda Cyhalothrin 9.5% ZC</option>
+                <option value="emamectin_benzoate">Emamectin Benzoate 5% SG</option>
+                <option value="chipko">Chipko</option>
+            </select>
+        </div>
+
+        <button id="calculateBtn">Calculate</button>
+
+        <div id="results" class="results">
+            </div>
+    </div>
+
+    <script>
+        /* --- JavaScript Logic --- */
+        document.addEventListener('DOMContentLoaded', () => {
+            const bigaInput = document.getElementById('biga');
+            const pesticideSelect = document.getElementById('pesticide');
+            const calculateBtn = document.getElementById('calculateBtn');
+            const resultsDiv = document.getElementById('results');
+
+            calculateBtn.addEventListener('click', calculatePesticide);
+
+            function calculatePesticide() {
+                resultsDiv.innerHTML = ''; // Clear previous results
+                resultsDiv.style.display = 'none'; // Hide results by default
+
+                const biga = parseFloat(bigaInput.value);
+                const selectedPesticide = pesticideSelect.value;
+
+                if (isNaN(biga) || biga <= 0) {
+                    resultsDiv.style.display = 'block';
+                    resultsDiv.classList.add('error');
+                    resultsDiv.innerHTML = '<p>Please enter a valid number for Biga.</p>';
+                    return;
+                }
+
+                if (selectedPesticide === '') {
+                    resultsDiv.style.display = 'block';
+                    resultsDiv.classList.add('error');
+                    resultsDiv.innerHTML = '<p>Please select a pesticide.</p>';
+                    return;
+                }
+
+                resultsDiv.classList.remove('error'); // Remove error class if present
+
+                let thiamethoxam_lambda_needed = 0;
+                let emamectin_benzoate_needed = 0;
+                let chipko_needed = 0;
+
+                switch (selectedPesticide) {
+                    case 'thiamethoxam_lambda':
+                        thiamethoxam_lambda_needed = biga * 60; // 60 ml per biga
+                        break;
+                    case 'emamectin_benzoate':
+                        emamectin_benzoate_needed = biga * 70; // 70 gm per biga
+                        break;
+                    case 'chipko':
+                        chipko_needed = biga * 15; // 15 ml per biga
+                        break;
+                    default:
+                        // This case should ideally not be reached due to select validation
+                        break;
+                }
+
+                let resultsHTML = '';
+
+                if (thiamethoxam_lambda_needed > 0) {
+                    resultsHTML += `<p><strong>Thiamethoxam + Lambda Cyhalothrin 9.5% ZC:</strong> ${thiamethoxam_lambda_needed} ml needed.</p>`;
+                    resultsHTML += `<p>Available Packs: 1 Liter (1000ml), 500ml, 250ml.</p>`;
+                    if (thiamethoxam_lambda_needed > 1000) {
+                        resultsHTML += `<p>Recommended purchase: Approximately ${Math.ceil(thiamethoxam_lambda_needed / 1000)} x 1 Liter bottle(s) or a combination of smaller packs.</p>`;
+                    } else if (thiamethoxam_lambda_needed > 500) {
+                         resultsHTML += `<p>Recommended purchase: 1 x 1 Liter bottle or 2 x 500ml bottles or a combination.</p>`;
+                    } else if (thiamethoxam_lambda_needed > 250) {
+                        resultsHTML += `<p>Recommended purchase: 1 x 500ml bottle or 2 x 250ml bottles or a combination.</p>`;
+                    } else {
+                        resultsHTML += `<p>Recommended purchase: 1 x 250ml bottle or smaller if available.</p>`;
+                    }
+                }
+
+                if (emamectin_benzoate_needed > 0) {
+                    resultsHTML += `<p><strong>Emamectin Benzoate 5% SG:</strong> ${emamectin_benzoate_needed} gm needed.</p>`;
+                    resultsHTML += `<p>Available Packs: 1 kg (1000gm), 500gm, 250gm.</p>`;
+                    if (emamectin_benzoate_needed > 1000) {
+                        resultsHTML += `<p>Recommended purchase: Approximately ${Math.ceil(emamectin_benzoate_needed / 1000)} x 1 kg pack(s) or a combination of smaller packs.</p>`;
+                    } else if (emamectin_benzoate_needed > 500) {
+                        resultsHTML += `<p>Recommended purchase: 1 x 1 kg pack or 2 x 500gm packs or a combination.</p>`;
+                    } else if (emamectin_benzoate_needed > 250) {
+                        resultsHTML += `<p>Recommended purchase: 1 x 500gm pack or 2 x 250gm packs or a combination.</p>`;
+                    } else {
+                        resultsHTML += `<p>Recommended purchase: 1 x 250gm pack or smaller if available.</p>`;
+                    }
+                }
+
+                if (chipko_needed > 0) {
+                    resultsHTML += `<p><strong>Chipko:</strong> ${chipko_needed} ml needed.</p>`;
+                    resultsHTML += `<p>Available Packs: 250ml, 100ml.</p>`;
+                    if (chipko_needed > 250) {
+                        resultsHTML += `<p>Recommended purchase: Approximately ${Math.ceil(chipko_needed / 250)} x 250ml bottle(s) or a combination of smaller packs.</p>`;
+                    } else if (chipko_needed > 100) {
+                        resultsHTML += `<p>Recommended purchase: 1 x 250ml bottle or 2 x 100ml bottles or a combination.</p>`;
+                    } else {
+                        resultsHTML += `<p>Recommended purchase: 1 x 100ml bottle or smaller if available.</p>`;
+                    }
+                }
+
+                if (resultsHTML === '') {
+                    resultsHTML = '<p>No calculation performed. Please check your inputs.</p>';
+                }
+
+                resultsDiv.innerHTML = resultsHTML;
+                resultsDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

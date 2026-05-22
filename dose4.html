@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌱 डोज योजना प्रबंधन - एग्रोएन (एकल/मिश्रण मात्रा) + स्टॉक सर्च</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #f0f2f5;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 30px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,40,0,0.15);
+            position: relative;
+        }
+        .loader-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(3px);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.2s;
+        }
+        .loader-overlay.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #e0e0e0;
+            border-top: 6px solid #2e7d32;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        h1 {
+            color: #1b5e20;
+            margin-bottom: 20px;
+            border-left: 8px solid #2e7d32;
+            padding-left: 20px;
+        }
+        .btn {
+            border: none;
+            border-radius: 40px;
+            padding: 12px 20px;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            color: white;
+            transition: 0.15s;
+            box-shadow: 0 5px 0 rgba(0,0,0,0.2);
+            margin: 5px;
+        }
+        .btn:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+        .btn-green { background: #2e7d32; }
+        .btn-orange { background: #f57c00; }
+        .btn-blue { background: #1976d2; }
+        .btn-red { background: #d32f2f; }
+        .btn-grey { background: #546e7a; }
+
+        .form-box {
+            background: #e8f5e9;
+            border-radius: 28px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 8px solid #2e7d32;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #1b5e20;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 5px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1.5px solid #c8e6c9;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            background: white;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #2e7d32;
+            outline: none;
+            box-shadow: 0 0 0 4px #c8e6c9;
+        }
+        /* सर्च बार और ड्रॉपडाउन स्टाइल */
+        .stock-search-area {
+            background: #fff3e0;
+            border-radius: 30px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-left: 8px solid #f57c00;
+        }
+        .stock-search-wrapper {
+            position: relative;
+        }
+        #stockSearch {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #2e7d32;
+            border-radius: 50px;
+            font-size: 1rem;
+            background: white;
+        }
+        .stock-search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #2e7d32;
+            border-top: none;
+            border-radius: 0 0 20px 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+        .stock-search-results div {
+            padding: 12px 20px;
+            border-bottom: 1px solid #c8e6c9;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .stock-search-results div:hover {
+            background: #e8f5e9;
+            font-weight: bold;
+        }
+        .stock-search-results div:last-child {
+            border-bottom: none;
+        }
+
+        .items-section {
+            margin-top: 20px;
+            border-top: 2px dashed #2e7d32;
+            padding-top: 20px;
+        }
+        .item-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 20px;
+        }
+        .item-row input, .item-row select {
+            flex: 1;
+            min-width: 100px;
+        }
+        .item-row .item-qty-solo { flex: 0.7; }
+        .item-row .item-qty-combo { flex: 0.7; }
+        .item-row .item-unit { flex: 0.6; }
+        .item-row .item-type { flex: 0.7; }
+        .item-row .item-safe { flex: 0.5; }
+        .item-row .item-duration { flex: 0.8; }
+        .item-row .remove-btn {
+            background: #d32f2f;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 10px 15px;
+            font-weight: bold;
+            cursor: pointer;
+            flex: 0 0 auto;
+        }
+        .add-item-btn {
+            background: #2e7d32;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fafafa;
+            border-radius: 24px;
+            overflow: hidden;
+        }
+        th {
+            background: #c8e6c9;
+            color: #1b5e20;
+            padding: 15px 10px;
+        }
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #c8e6c9;
+            vertical-align: top;
+        }
+        .action-cell {
+            white-space: nowrap;
+        }
+        .calculator {
+            background: #fff3e0;
+            border-radius: 28px;
+            padding: 20px;
+            margin-top: 30px;
+            border-left: 8px solid #f57c00;
+        }
+        .calc-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .calc-result {
+            background: white;
+            border-radius: 20px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .small-note {
+            font-size: 0.7rem;
+            color: #2e7d32;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="loader-overlay" id="loaderOverlay">
+            <div class="spinner"></div>
+        </div>
+
+        <h1>🌱 डोज योजना प्रबंधन (एकल/मिश्रण मात्रा)</h1>
+        <p style="margin-bottom: 20px;">यहाँ आप छिड़काव के लिए मिश्रण बना सकते हैं। प्रत्येक दवाई के लिए अलग-अलग मात्रा निर्धारित करें – जब अकेली प्रयोग हो और जब मिश्रण में हो। <strong>नीचे सर्च बार से स्टॉक में उत्पाद ढूँढ़ें और क्लिक करके सीधे जोड़ें।</strong></p>
+
+        <!-- नया सर्च बार (स्टॉक डेटा से कनेक्ट) -->
+        <div class="stock-search-area">
+            <label>🔍 स्टॉक में खोजें (नाम, तकनीकी, बैच नंबर)</label>
+            <div class="stock-search-wrapper">
+                <input type="text" id="stockSearch" placeholder="उदा. इमिडाक्लोप्रिड, बीज, बायर ..." autocomplete="off">
+                <div id="stockSearchResults" class="stock-search-results"></div>
+            </div>
+            <p class="small-note">क्लिक करते ही नीचे दवाई की पंक्ति में नाम अपने आप भर जाएगा।</p>
+        </div>
+
+        <!-- फॉर्म -->
+        <div class="form-box">
+            <input type="hidden" id="editId" value="">
+            <div class="form-group">
+                <label>योजना का नाम *</label>
+                <input type="text" id="planName" placeholder="जैसे: सोयाबीन छिड़काव">
+            </div>
+            <div class="form-group">
+                <label>फसल (वैकल्पिक)</label>
+                <input type="text" id="planCrop" placeholder="जैसे: सोयाबीन, मूंगफली">
+            </div>
+
+            <div class="items-section">
+                <label>दवाइयों की सूची (एकल मात्रा / मिश्रण मात्रा)</label>
+                <div id="itemsContainer"></div>
+                <button type="button" class="add-item-btn" onclick="addItemRow()">➕ दवाई जोड़ें</button>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button class="btn btn-green" id="addBtn" onclick="savePlan()">💾 योजना जोड़ें</button>
+                <button class="btn btn-orange" id="updateBtn" onclick="updatePlan()" style="display:none;">⚡ अपडेट करें</button>
+                <button class="btn btn-grey" id="cancelBtn" onclick="cancelEdit()" style="display:none;">✖ रद्द करें</button>
+            </div>
+        </div>
+
+        <!-- योजनाओं की सूची -->
+        <h2>मौजूदा योजनाएँ</h2>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>नाम</th>
+                        <th>फसल</th>
+                        <th>दवाइयाँ (एकल/मिश्रण, प्रकार, सुरक्षा, अवधि)</th>
+                        <th>कार्रवाई</th>
+                    </tr>
+                </thead>
+                <tbody id="plansList"></tbody>
+            </table>
+        </div>
+
+        <!-- कैलकुलेटर -->
+        <div class="calculator">
+            <h3>🧮 योजना के अनुसार कुल मात्रा निकालें</h3>
+            <p class="small-note">नोट: गणना में एकल मात्रा का उपयोग किया गया है। यदि मिश्रण में प्रयोग करना है तो मात्रा स्वयं समायोजित करें।</p>
+            <div class="calc-row">
+                <select id="calcPlanSelect" style="flex:2;">
+                    <option value="">—योजना चुनें—</option>
+                </select>
+                <input type="number" id="calcBigha" placeholder="बीघा की संख्या" min="1" style="flex:1;">
+                <button class="btn btn-blue" onclick="calculate()">गणना करें</button>
+            </div>
+            <div id="calcResult" class="calc-result" style="display:none;">
+                <h4>आवश्यक मात्रा (एकल प्रयोग हेतु):</h4>
+                <ul id="calcList"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ---------- कॉन्फ़िगरेशन ----------
+        const DB_URL = "https://agroain-default-rtdb.firebaseio.com/";
+        const PLANS_NODE = "dosagePlans";
+        const INVENTORY_NODE = "inventory";
+
+        let allPlans = [];
+        let allStock = [];        // स्टॉक के सारे प्रोडक्ट यहाँ स्टोर होंगे
+        let loaderCounter = 0;
+
+        function showLoader() {
+            loaderCounter++;
+            document.getElementById('loaderOverlay').classList.add('show');
+        }
+        function hideLoader() {
+            loaderCounter--;
+            if (loaderCounter <= 0) {
+                document.getElementById('loaderOverlay').classList.remove('show');
+                loaderCounter = 0;
+            }
+        }
+
+        // ---------- आइटम रो जोड़ना (अब एक पैरामीटर productName भी दे सकते हैं) ----------
+        function addItemRow(item = { 
+            product: '', 
+            qtySolo: '', 
+            qtyCombo: '', 
+            unit: '', 
+            type: 'per_bigha', 
+            safe: 'yes', 
+            duration: '' 
+        }) {
+            const container = document.getElementById('itemsContainer');
+            const row = document.createElement('div');
+            row.className = 'item-row';
+            row.innerHTML = `
+                <input type="text" placeholder="दवाई का नाम" class="item-product" value="${item.product}">
+                <input type="number" placeholder="एकल मात्रा" class="item-qty-solo" value="${item.qtySolo}" min="0" step="0.01">
+                <input type="number" placeholder="मिश्रण मात्रा" class="item-qty-combo" value="${item.qtyCombo}" min="0" step="0.01">
+                <input type="text" placeholder="इकाई (लीटर, ग्राम, बोतल)" class="item-unit" value="${item.unit}">
+                <select class="item-type">
+                    <option value="per_bigha" ${item.type === 'per_bigha' ? 'selected' : ''}>प्रति बीघा</option>
+                    <option value="fixed" ${item.type === 'fixed' ? 'selected' : ''}>फिक्स्ड (पूरे खेत में)</option>
+                </select>
+                <select class="item-safe">
+                    <option value="yes" ${item.safe === 'yes' ? 'selected' : ''}>सुरक्षित (हाँ)</option>
+                    <option value="no" ${item.safe === 'no' ? 'selected' : ''}>असुरक्षित (नहीं)</option>
+                </select>
+                <input type="text" placeholder="अवधि (जैसे 25-30 दिन)" class="item-duration" value="${item.duration}">
+                <button class="remove-btn" onclick="this.parentElement.remove()">✖</button>
+            `;
+            container.appendChild(row);
+        }
+
+        // ---------- स्टॉक डेटा लोड करना (inventory से) ----------
+        async function loadStockData() {
+            try {
+                const res = await fetch(`${DB_URL}${INVENTORY_NODE}.json`);
+                const data = await res.json();
+                allStock = [];
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        allStock.push({ id: key, ...data[key] });
+                    });
+                }
+                console.log("स्टॉक लोड हुआ:", allStock.length);
+            } catch (e) {
+                console.error("स्टॉक लोड नहीं हो सका:", e);
+            }
+        }
+
+        // ---------- सर्च फंक्शन (स्टॉक में ढूँढ़े) ----------
+        function setupStockSearch() {
+            const searchInput = document.getElementById('stockSearch');
+            const resultsDiv = document.getElementById('stockSearchResults');
+
+            searchInput.addEventListener('input', function() {
+                const term = this.value.toLowerCase().trim();
+                if (term === '') {
+                    resultsDiv.style.display = 'none';
+                    resultsDiv.innerHTML = '';
+                    return;
+                }
+
+                // स्टॉक में फिल्टर करें (नाम, तकनीकी, बैच, कंपनी, फसल)
+                const matched = allStock.filter(p => 
+                    (p.name && p.name.toLowerCase().includes(term)) ||
+                    (p.technical && p.technical.toLowerCase().includes(term)) ||
+                    (p.serial && p.serial.toLowerCase().includes(term)) ||
+                    (p.company && p.company.toLowerCase().includes(term)) ||
+                    (p.crops && p.crops.toLowerCase().includes(term))
+                ).slice(0, 10);  // अधिकतम 10 रिजल्ट
+
+                if (matched.length === 0) {
+                    resultsDiv.style.display = 'none';
+                    resultsDiv.innerHTML = '';
+                    return;
+                }
+
+                // रिजल्ट दिखाएँ
+                resultsDiv.innerHTML = '';
+                matched.forEach(p => {
+                    const div = document.createElement('div');
+                    div.textContent = `${p.name} | ${p.technical || ''} | ${p.company || ''} | Batch: ${p.serial || ''}`;
+                    div.setAttribute('data-product-name', p.name);
+                    div.setAttribute('data-pack', p.packSize || '');
+                    div.addEventListener('click', function() {
+                        // जब किसी रिजल्ट पर क्लिक करें, तो नई पंक्ति जोड़ें और नाम प्री-फिल करें
+                        const productName = this.getAttribute('data-product-name');
+                        // वैकल्पिक: पैक साइज से इकाई का अनुमान लगा सकते हैं, लेकिन यूजर को बाद में बदलने देंगे
+                        addItemRow({ product: productName });
+                        searchInput.value = '';          // सर्च खाली करें
+                        resultsDiv.style.display = 'none';
+                        resultsDiv.innerHTML = '';
+                    });
+                    resultsDiv.appendChild(div);
+                });
+                resultsDiv.style.display = 'block';
+            });
+
+            // बाहर क्लिक करने पर ड्रॉपडाउन बंद करें
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+                    resultsDiv.style.display = 'none';
+                }
+            });
+        }
+
+        // ---------- फॉर्म से डेटा इकट्ठा करना ----------
+        function getFormData() {
+            const name = document.getElementById('planName').value.trim();
+            const crop = document.getElementById('planCrop').value.trim();
+            const items = [];
+            const rows = document.querySelectorAll('#itemsContainer .item-row');
+            rows.forEach(row => {
+                const product = row.querySelector('.item-product').value.trim();
+                const qtySolo = parseFloat(row.querySelector('.item-qty-solo').value);
+                const qtyCombo = parseFloat(row.querySelector('.item-qty-combo').value);
+                const unit = row.querySelector('.item-unit').value.trim();
+                const type = row.querySelector('.item-type').value;
+                const safe = row.querySelector('.item-safe').value;
+                const duration = row.querySelector('.item-duration').value.trim();
+                if (product && unit) {
+                    // कम से कम एक मात्रा होनी चाहिए
+                    if (!isNaN(qtySolo) && qtySolo > 0) {
+                        items.push({ product, qtySolo, qtyCombo: isNaN(qtyCombo) ? 0 : qtyCombo, unit, type, safe, duration });
+                    } else if (!isNaN(qtyCombo) && qtyCombo > 0) {
+                        items.push({ product, qtySolo: 0, qtyCombo, unit, type, safe, duration });
+                    }
+                    // अगर दोनों शून्य हैं तो न जोड़ें
+                }
+            });
+            return { name, crop, items };
+        }
+
+        // ---------- सभी योजनाएँ लोड करें ----------
+        async function loadPlans() {
+            showLoader();
+            try {
+                const res = await fetch(`${DB_URL}${PLANS_NODE}.json`);
+                const data = await res.json();
+                allPlans = [];
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        allPlans.push({ id: key, ...data[key] });
+                    });
+                }
+                renderTable();
+                populatePlanSelect();
+            } catch (e) {
+                console.error(e);
+                alert("डेटा लोड नहीं हुआ।");
+            } finally {
+                hideLoader();
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('plansList');
+            tbody.innerHTML = '';
+            if (allPlans.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px;">कोई योजना नहीं। ऊपर फॉर्म से नई योजना जोड़ें।</td></tr>';
+                return;
+            }
+            allPlans.forEach(plan => {
+                const itemsList = plan.items ? plan.items.map(i => 
+                    `${i.product} : एकल ${i.qtySolo || 0} ${i.unit}, मिश्रण ${i.qtyCombo || 0} ${i.unit} (${i.type === 'per_bigha' ? 'प्रति बीघा' : 'फिक्स्ड'})<br>
+                    <small>सुरक्षित: ${i.safe === 'yes' ? 'हाँ' : 'नहीं'}, अवधि: ${i.duration || '—'}</small>`
+                ).join('<br>') : '—';
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${plan.name || '—'}</strong></td>
+                    <td>${plan.crop || '—'}</td>
+                    <td>${itemsList}</td>
+                    <td class="action-cell">
+                        <button class="btn btn-blue" style="padding:5px 10px;" onclick="editPlan('${plan.id}')">✎ संपादन</button>
+                        <button class="btn btn-red" style="padding:5px 10px;" onclick="deletePlan('${plan.id}')">🗑 हटाएँ</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function populatePlanSelect() {
+            const select = document.getElementById('calcPlanSelect');
+            select.innerHTML = '<option value="">—योजना चुनें—</option>';
+            allPlans.forEach(plan => {
+                const option = document.createElement('option');
+                option.value = plan.id;
+                option.textContent = plan.name + (plan.crop ? ` (${plan.crop})` : '');
+                select.appendChild(option);
+            });
+        }
+
+        // ---------- नई योजना सहेजें ----------
+        async function savePlan() {
+            const data = getFormData();
+            if (!data.name || data.items.length === 0) {
+                alert("योजना का नाम और कम से कम एक दवाई (मात्रा सहित) अनिवार्य है।");
+                return;
+            }
+            const btn = document.getElementById('addBtn');
+            btn.innerText = "सेव हो रहा...";
+            btn.disabled = true;
+            showLoader();
+            try {
+                await fetch(`${DB_URL}${PLANS_NODE}.json`, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+                clearForm();
+                loadPlans();
+            } catch (e) {
+                alert("सेव नहीं हुआ।");
+                hideLoader();
+            } finally {
+                btn.innerText = "💾 योजना जोड़ें";
+                btn.disabled = false;
+            }
+        }
+
+        function editPlan(id) {
+            const plan = allPlans.find(p => p.id === id);
+            if (!plan) return;
+            document.getElementById('editId').value = plan.id;
+            document.getElementById('planName').value = plan.name || '';
+            document.getElementById('planCrop').value = plan.crop || '';
+
+            const container = document.getElementById('itemsContainer');
+            container.innerHTML = '';
+            if (plan.items && plan.items.length) {
+                plan.items.forEach(item => addItemRow(item));
+            } else {
+                addItemRow();
+            }
+
+            document.getElementById('addBtn').style.display = 'none';
+            document.getElementById('updateBtn').style.display = 'inline-block';
+            document.getElementById('cancelBtn').style.display = 'inline-block';
+        }
+
+        async function updatePlan() {
+            const id = document.getElementById('editId').value;
+            if (!id) return;
+            const data = getFormData();
+            if (!data.name || data.items.length === 0) {
+                alert("योजना का नाम और कम से कम एक दवाई अनिवार्य है।");
+                return;
+            }
+            const btn = document.getElementById('updateBtn');
+            btn.innerText = "अपडेट हो रहा...";
+            btn.disabled = true;
+            showLoader();
+            try {
+                await fetch(`${DB_URL}${PLANS_NODE}/${id}.json`, {
+                    method: 'PUT',
+                    body: JSON.stringify(data)
+                });
+                cancelEdit();
+                loadPlans();
+            } catch (e) {
+                alert("अपडेट विफल।");
+                hideLoader();
+            } finally {
+                btn.innerText = "⚡ अपडेट करें";
+                btn.disabled = false;
+            }
+        }
+
+        async function deletePlan(id) {
+            if (!confirm("क्या आप निश्चित हैं?")) return;
+            showLoader();
+            try {
+                await fetch(`${DB_URL}${PLANS_NODE}/${id}.json`, { method: 'DELETE' });
+                loadPlans();
+            } catch (e) {
+                alert("हटाने में त्रुटि।");
+                hideLoader();
+            }
+        }
+
+        function cancelEdit() {
+            clearForm();
+            document.getElementById('addBtn').style.display = 'inline-block';
+            document.getElementById('updateBtn').style.display = 'none';
+            document.getElementById('cancelBtn').style.display = 'none';
+        }
+
+        function clearForm() {
+            document.getElementById('editId').value = '';
+            document.getElementById('planName').value = '';
+            document.getElementById('planCrop').value = '';
+            document.getElementById('itemsContainer').innerHTML = '';
+            addItemRow();
+        }
+
+        // ---------- कैलकुलेटर ----------
+        function calculate() {
+            const planId = document.getElementById('calcPlanSelect').value;
+            const bigha = parseFloat(document.getElementById('calcBigha').value);
+            if (!planId) {
+                alert("पहले योजना चुनें।");
+                return;
+            }
+            if (isNaN(bigha) || bigha <= 0) {
+                alert("बीघा की सही संख्या डालें।");
+                return;
+            }
+            const plan = allPlans.find(p => p.id === planId);
+            if (!plan) return;
+
+            const list = document.getElementById('calcList');
+            list.innerHTML = '';
+            let hasItems = false;
+            if (plan.items && plan.items.length) {
+                plan.items.forEach(item => {
+                    let qtyToUse = item.qtySolo || 0;
+                    if (qtyToUse === 0) {
+                        qtyToUse = item.qtyCombo || 0;
+                    }
+                    let total;
+                    if (item.type === 'per_bigha') {
+                        total = qtyToUse * bigha;
+                    } else { // fixed
+                        total = qtyToUse;
+                    }
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>${item.product}</strong> : ${total} ${item.unit} 
+                        (${item.type === 'per_bigha' ? `प्रति बीघा ${qtyToUse} ${item.unit}` : `फिक्स्ड ${qtyToUse} ${item.unit}`})
+                        <br><small>एकल मात्रा: ${item.qtySolo || 0}, मिश्रण मात्रा: ${item.qtyCombo || 0} | सुरक्षित: ${item.safe === 'yes' ? 'हाँ' : 'नहीं'}, अवधि: ${item.duration || '—'}</small>`;
+                    list.appendChild(li);
+                    hasItems = true;
+                });
+            }
+            if (!hasItems) {
+                list.innerHTML = '<li>इस योजना में कोई दवाई नहीं है।</li>';
+            }
+            document.getElementById('calcResult').style.display = 'block';
+        }
+
+        // ---------- पेज लोड होने पर ----------
+        window.onload = async function() {
+            addItemRow(); // एक खाली पंक्ति
+            await loadStockData();    // स्टॉक डेटा पहले लोड करें
+            setupStockSearch();       // सर्च तैयार करें
+            loadPlans();              // योजनाएँ लोड करें
+        };
+    </script>
+</body>
+</html>

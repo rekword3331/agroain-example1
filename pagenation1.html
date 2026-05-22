@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌾 एग्रोएन - स्मार्ट सोयाबीन पैकेज सलाहकार</title>
+    <style>
+        :root {
+            --primary: #1b5e20;
+            --secondary: #2e7d32;
+            --bg-light: #f0f4f0;
+            --white: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: var(--bg-light);
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: var(--white);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 1px solid #c8e6c9;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--white);
+            padding: 20px;
+            border-radius: 18px;
+            text-align: center;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 1.6rem;
+        }
+
+        /* सर्च बार डिजाइन */
+        .search-section {
+            background: #e8f5e9;
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            border: 1.5px solid #a5d6a7;
+        }
+
+        .search-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--primary);
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px;
+            border: 1.5px solid #c8e6c9;
+            border-radius: 15px;
+            background: white;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 4px #c8e6c9;
+        }
+
+        .btn-search {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #1b5e20;
+            transition: 0.2s;
+        }
+
+        .btn-search:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        /* पेजिनेशन (पैकेज विकल्प) बटन्स */
+        .package-pagination {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .pkg-btn {
+            background: white;
+            color: var(--primary);
+            border: 2px solid var(--secondary);
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: 0.3s;
+        }
+
+        .pkg-btn:hover {
+            background: #e8f5e9;
+        }
+
+        .pkg-btn.active {
+            background: var(--secondary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(46,125,50,0.3);
+        }
+
+        /* टेबल रैपर */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 18px;
+            border: 1px solid #c8e6c9;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+            min-width: 800px;
+        }
+
+        th {
+            background: #c8e6c9;
+            color: var(--primary);
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        td {
+            padding: 14px 15px;
+            border-bottom: 1px solid #e8f5e9;
+            vertical-align: middle;
+        }
+
+        .tech-tag {
+            background: #e8f5e9;
+            color: var(--primary);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .price-text {
+            color: #d32f2f;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .summary-card {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border-left: 6px solid #1976d2;
+            color: #0d47a1;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🌾 एग्रोएन स्मार्ट फसल समाधान</h1>
+    </header>
+
+    <div class="search-section">
+        <div class="search-grid">
+            <div>
+                <label>फसल चुनें</label>
+                <select id="cropSelect">
+                    <option value="soybean">सोयाबीन (Soybean)</option>
+                    <option value="garlic">लहसुन (Garlic)</option>
+                </select>
+            </div>
+            <div>
+                <label>फसल की उम्र (दिन दर्ज करें)</label>
+                <input type="number" id="ageInput" placeholder="उदा. 25" min="1">
+            </div>
+            <div>
+                <button class="btn-search" onclick="searchDawai()">🔍 समाधान ढूँढें</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="paginationArea" class="hidden">
+        <label style="text-align: center; margin-bottom: 12px;">👇 उपलब्ध समाधानों (पैकेज) में से एक चुनें:</label>
+        <div class="package-pagination" id="pkgPaginationControls"></div>
+    </div>
+
+    <div id="resultsArea" class="hidden">
+        <div class="summary-card" id="pkgSummary"></div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>क्र.</th>
+                        <th>दवाई / ब्रांड नाम</th>
+                        <th>तकनीकी नाम (Technical)</th>
+                        <th>प्रति बीघा डोज़</th>
+                        <th>कीमत (₹)</th>
+                    </tr>
+                </thead>
+                <tbody id="dawaiTableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- 1. यह आपका "डेटाबेस" है जहाँ पैकेज सेट हैं ---
+    const database = {
+        soybean: {
+            "25": [ // 25 दिन के लिए सोयाबीन के मल्टीपल पैकेज (Pagination groups)
+                {
+                    packageNo: 1,
+                    packageName: "पैकेज 1: स्टैंडर्ड और किफायती डोज़ (7 दवाइयां)",
+                    medicines: [
+                        { name: "इल्लियों की दवा", tech: "Emamectin Benzoate 5% SG", dose: "100 ग्राम", price: 350 },
+                        { name: "फंगीसाइड", tech: "Tebuconazole + Sulphur", dose: "500 ग्राम", price: 450 },
+                        { name: "एनपीके खाद", tech: "NPK 19:19:19", dose: "1 किलो", price: 150 },
+                        { name: "टॉनिक", tech: "Amino Acids + Vitamins", dose: "250 मिली", price: 300 },
+                        { name: "चिपको (Silicon)", tech: "Silicon Spreader", dose: "50 मिली", price: 100 },
+                        { name: "हर्बीसाइड टच", tech: "Imazethapyr", dose: "100 मिली", price: 200 },
+                        { name: "मच्छर नाशक", tech: "Acetamiprid", dose: "100 ग्राम", price: 150 }
+                    ]
+                },
+                {
+                    packageNo: 2,
+                    packageName: "पैकेज 2: हैवी एवं प्रीमियम डोज़ (5 दवाइयां)",
+                    medicines: [
+                        { name: "प्रीमियम इल्ली मार", tech: "Chlorantraniliprole 18.5% SC", dose: "60 मिली", price: 900 },
+                        { name: "प्रीमियम फंगीसाइड", tech: "Azoxystrobin + Difenoconazole", dose: "200 मिली", price: 800 },
+                        { name: "ग्रोथ रेगुलेटर", tech: "Chlormequat Chloride", dose: "250 मिली", price: 350 },
+                        { name: "हैवी टॉनिक", tech: "Seaweed Extract", dose: "500 मिली", price: 400 },
+                        { name: "सुपर सिलिकॉन", tech: "Super Spreader", dose: "50 मिली", price: 150 }
+                    ]
+                },
+                {
+                    packageNo: 3,
+                    packageName: "पैकेज 3: मीडियम सुरक्षा डोज़ (6 दवाइयां)",
+                    medicines: [
+                        { name: "इल्ली मार दवा", tech: "Lambda Cyhalothrin", dose: "250 मिली", price: 250 },
+                        { name: "फंगीसाइड", tech: "Carbendazim + Mancozeb", dose: "500 ग्राम", price: 280 },
+                        { name: "एनपीके", tech: "NPK 12:61:00", dose: "1 किलो", price: 180 },
+                        { name: "ह्यूमिक एसिड", tech: "Humic Acid Liquid", dose: "500 मिली", price: 320 },
+                        { name: "सफेद मक्खी मार", tech: "Thiamethoxam", dose: "100 ग्राम", price: 200 },
+                        { name: "चिपको", tech: "Standard Spreader", dose: "50 मिली", price: 80 }
+                    ]
+                }
+            ]
+        }
+    };
+
+    let activeCrop = "";
+    let activeAge = "";
+    let activePackageIndex = 0; // बाय-डिफ़ॉल्ट 1st पैकेज दिखाएगा
+
+    function searchDawai() {
+        activeCrop = document.getElementById('cropSelect').value;
+        activeAge = document.getElementById('ageInput').value.trim();
+
+        if (!activeAge) {
+            alert("⚠️ कृपया उम्र के दिन डालें!");
+            return;
+        }
+
+        // चेक करें कि हमारे पास उस दिन का डेटा है या नहीं
+        if (database[activeCrop] && database[activeCrop][activeAge]) {
+            activePackageIndex = 0; // पहले वाले पैकेज पर रिसेट करें
+            showPaginationButtons();
+            renderTableData();
+            document.getElementById('paginationArea').classList.remove('hidden');
+            document.getElementById('resultsArea').classList.remove('hidden');
+        } else {
+            alert("🔍 माफ़ी! इस उम्र/फसल के लिए कोई प्री-सेट पैकेज नहीं मिला।");
+            document.getElementById('paginationArea').classList.add('hidden');
+            document.getElementById('resultsArea').classList.add('hidden');
+        }
+    }
+
+    // --- 2. पेजिनेशन बटन्स (1, 2, 3...) जनरेट करना ---
+    function showPaginationButtons() {
+        const controls = document.getElementById('pkgPaginationControls');
+        controls.innerHTML = '';
+
+        const packages = database[activeCrop][activeAge];
+
+        packages.forEach((pkg, index) => {
+            const btn = document.createElement('button');
+            btn.className = `pkg-btn ${index === activePackageIndex ? 'active' : ''}`;
+            btn.innerText = `विकल्प (Option) ${pkg.packageNo}`;
+            btn.onclick = () => {
+                activePackageIndex = index;
+                updateButtonStates();
+                renderTableData();
+            };
+            controls.appendChild(btn);
+        });
+    }
+
+    function updateButtonStates() {
+        const buttons = document.querySelectorAll('.pkg-btn');
+        buttons.forEach((btn, index) => {
+            if (index === activePackageIndex) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    // --- 3. टेबल में चुनिंदा ग्रुप की दवाइयां दिखाना ---
+    function renderTableData() {
+        const tbody = document.getElementById('dawaiTableBody');
+        const summary = document.getElementById('pkgSummary');
+        tbody.innerHTML = '';
+
+        const currentPackage = database[activeCrop][activeAge][activePackageIndex];
+
+        // समरी टाइटल अपडेट करें
+        summary.innerText = `📋 ${currentPackage.packageName}`;
+
+        // दवाइयों की लिस्ट रेंडर करें
+        currentPackage.medicines.forEach((med, index) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td><strong>${med.name}</strong></td>
+                    <td><span class="tech-tag">${med.tech}</span></td>
+                    <td>${med.dose}</td>
+                    <td><span class="price-text">₹ ${med.price}</span></td>
+                </tr>
+            `;
+        });
+    }
+</script>
+
+</body>
+</html>

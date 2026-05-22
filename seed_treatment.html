@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Agroain - Seed Treatment Packages (विस्तृत जानकारी सहित)</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #1b5e20;
+            --accent-color: #4caf50;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-color: #1f2937;
+            --warning-bg: #fff8e1;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 20px 25px;
+            border-radius: 24px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            position: relative;
+        }
+        
+        .back-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--primary-color);
+            font-size: 20px;
+            padding: 10px;
+            border-radius: 50%;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .back-btn:hover {
+            background-color: #e8f5e9;
+        }
+
+        .header h2 {
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 22px;
+            flex-grow: 1;
+            text-align: center;
+            margin-right: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+        select, input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            box-sizing: border-box;
+            font-size: 16px;
+            background: #fefefe;
+        }
+        
+        .calc-btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: background 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .calc-btn:hover {
+            background-color: #144317;
+        }
+
+        .result-box {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f0fff4;
+            border-left: 6px solid var(--accent-color);
+            border-radius: 16px;
+            display: none;
+        }
+
+        .products-area {
+            margin-top: 30px;
+            display: none;
+        }
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 12px;
+        }
+        
+        /* Tab container */
+        .tab-container {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px 0;
+            scrollbar-width: thin;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            background: #e5e7eb;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-weight: 600;
+            color: #4b5563;
+            transition: 0.3s;
+        }
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 10px rgba(27, 94, 32, 0.3);
+        }
+
+        .grid-container {
+            display: flex;
+            justify-content: center;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            padding: 18px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            border-left: 6px solid #e65100;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 100%;
+            transition: 0.2s;
+        }
+        .card-top-row {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .prod-img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 16px;
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+        }
+        .prod-info {
+            flex-grow: 1;
+        }
+        .prod-name {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #e65100;
+            margin: 0;
+        }
+        .prod-tech {
+            font-size: 13px;
+            color: #1b5e20;
+            font-weight: 600;
+            margin: 2px 0;
+        }
+        .prod-company {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .price-tag {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #d32f2f;
+        }
+        .package-items {
+            background: #fff9f0;
+            border: 1px solid #ffe0b5;
+            padding: 12px;
+            border-radius: 20px;
+            margin: 16px 0;
+            width: 100%;
+        }
+        .medicine-item {
+            border-bottom: 1px dashed #ffcc80;
+            padding: 12px 0;
+        }
+        .medicine-item:last-child {
+            border-bottom: none;
+        }
+        .med-name {
+            font-weight: 800;
+            font-size: 1rem;
+            color: #bf360c;
+            margin-bottom: 4px;
+        }
+        .med-dose {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #2c6e2f;
+            background: #e8f5e9;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 30px;
+            margin: 4px 0;
+        }
+        .med-detail, .med-advice, .med-alert {
+            font-size: 0.85rem;
+            margin-top: 8px;
+            padding: 6px 10px;
+            border-radius: 12px;
+            background: white;
+        }
+        .med-detail {
+            border-left: 3px solid #2e7d32;
+            background: #f1f8e9;
+        }
+        .med-advice {
+            border-left: 3px solid #1976d2;
+            background: #e3f2fd;
+        }
+        .med-alert {
+            border-left: 3px solid #d32f2f;
+            background: #ffebee;
+        }
+        .section-label {
+            font-weight: 700;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 4px;
+            color: #555;
+        }
+        .buy-btn {
+            background-color: #e65100;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 1rem;
+            margin-top: 8px;
+        }
+        .buy-btn:hover {
+            background-color: #bf360c;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .no-data {
+            text-align: center;
+            color: #d32f2f;
+            padding: 20px;
+        }
+        hr {
+            margin: 12px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <button class="back-btn" onclick="goBack()" aria-label="Go Back">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <h2>🌱 बीज उपचार पैकेज <span style="font-size: 0.9rem;">(विस्तृत जानकारी)</span></h2>
+    </div>
+
+    <div class="form-group">
+        <label for="crop">1. फसल चुनें / Crop:</label>
+        <select id="crop">
+            <option value="">-- चुनें --</option>
+            <option value="Soyabean">Soyabean (सोयाबीन)</option>
+            <option value="Garlic">Garlic (लहसुन)</option>
+            <option value="Wheat">Wheat (गेहूँ)</option>
+            <option value="Chickpea">Chickpea (चना)</option>
+            <option value="Paddy">Paddy (धान)</option>
+            <option value="Cotton">Cotton (कपास)</option>
+            <option value="Maize">Maize (मक्का)</option>
+            <option value="Mustard">Mustard (सरसों)</option>
+            <option value="Moong">Moong (मूंग)</option>
+            <option value="Urad">Urad (उड़द)</option>
+            <option value="Tur">Pigeon Pea (तुअर)</option>
+            <option value="Onion">Onion (प्याज)</option>
+            <option value="Tomato">Tomato (टमाटर)</option>
+            <option value="Potato">Potato (आलू)</option>
+            <option value="Chilli">Chilli (मिर्च)</option>
+            <option value="Groundnut">Groundnut (मूंगफली)</option>
+            <option value="Bajra">Bajra (बाजरा)</option>
+            <option value="Jowar">Jowar (ज्वार)</option>
+            <option value="Sugarcane">Sugarcane (गन्ना)</option>
+            <option value="Barley">Barley (जौ)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="weight">2. बीज का वज़न (किलोग्राम में):</label>
+        <input type="number" id="weight" placeholder="जैसे 100 किलो" min="1" step="0.5">
+    </div>
+
+    <button class="calc-btn" onclick="fetchPackages()"><i class="fa-solid fa-magnifying-glass"></i> उपयुक्त पैकेज खोजें</button>
+
+    <div id="result" class="result-box">
+        <h3 style="margin-top:0; color:var(--primary-color);">📊 चयन सारांश</h3>
+        <p id="resultText"></p>
+        <p style="font-size: 13px; color: #6b7280; font-style: italic;">
+            * नीचे दिए गए पैकेजों में प्रत्येक दवाई का विवरण, सलाह और नोट/अलर्ट दिखाया गया है।
+        </p>
+    </div>
+
+    <div id="productsArea" class="products-area">
+        <div class="section-title">📦 उपलब्ध बीज उपचार पैकेज</div>
+        <div id="tabMenu" class="tab-container"></div>
+        <div id="cardsGrid" class="grid-container"></div>
+    </div>
+</div>
+
+<script>
+    // Firebase Config (same as your project)
+    const firebaseConfig = {
+        apiKey: "AIzaSyAOQp4Ez6omxSL5MDh_cGzzUy1gcf4KkEo",
+        authDomain: "agroain.firebaseapp.com",
+        databaseURL: "https://agroain-default-rtdb.firebaseio.com",
+        projectId: "agroain",
+        storageBucket: "agroain.firebasestorage.app",
+        messagingSenderId: "837977852518",
+        appId: "1:837977852518:web:eebd9baaec310f03e0bba7",
+        measurementId: "G-J7CG2Z0TMG"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let allPackages = [];
+    let currentWeight = 0;
+    let currentCrop = "";
+
+    function goBack() {
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            // fallback - you can redirect to your admin/dashboard page
+            alert("मुख्य पृष्ठ पर जाने के लिए कृपया एडमिन पैनल खोलें।");
+        }
+    }
+
+    async function fetchPackages() {
+        const cropSelect = document.getElementById('crop');
+        const crop = cropSelect.value;
+        const weight = parseFloat(document.getElementById('weight').value);
+
+        if (!crop || !weight || weight <= 0) {
+            alert("कृपया फसल चुनें और सही वज़न भरें (1 किलो से अधिक)");
+            return;
+        }
+
+        currentWeight = weight;
+        currentCrop = crop;
+
+        const resultDiv = document.getElementById('result');
+        const resultText = document.getElementById('resultText');
+        resultDiv.style.display = 'block';
+        resultText.innerHTML = `🌾 फसल: <strong>${crop}</strong><br>⚖️ बीज वजन: <strong>${weight} किलो</strong>`;
+
+        const area = document.getElementById('productsArea');
+        const grid = document.getElementById('cardsGrid');
+        area.style.display = 'block';
+        grid.innerHTML = '<p style="text-align:center;"><i class="fa-solid fa-spinner fa-pulse"></i> पैकेज लोड हो रहे हैं...</p>';
+
+        try {
+            const pkgSnap = await database.ref('packages').once('value');
+            const pkgData = pkgSnap.val();
+            allPackages = [];
+
+            if (pkgData) {
+                Object.values(pkgData).forEach(pkg => {
+                    const pkgCrop = pkg.crop ? pkg.crop.toLowerCase() : "";
+                    if (pkgCrop.includes(crop.toLowerCase())) {
+                        allPackages.push(pkg);
+                    }
+                });
+            }
+
+            if (allPackages.length === 0) {
+                grid.innerHTML = `<div class="no-data"><i class="fa-solid fa-circle-exclamation"></i> इस फसल (${crop}) के लिए कोई पैकेज नहीं मिला।<br>कृपया पहले पैकेज मेकर से पैकेज बनाएं।</div>`;
+                document.getElementById('tabMenu').innerHTML = '';
+                return;
+            }
+
+            renderTabs();
+
+            // smooth scroll to packages
+            area.scrollIntoView({ behavior: 'smooth' });
+        } catch (err) {
+            console.error("Firebase Error:", err);
+            grid.innerHTML = '<div class="no-data"><i class="fa-solid fa-wifi"></i> डेटा लोड नहीं हो सका। इंटरनेट कनेक्शन चेक करें।</div>';
+        }
+    }
+
+    function renderTabs() {
+        const tabMenu = document.getElementById('tabMenu');
+        tabMenu.innerHTML = '';
+
+        allPackages.forEach((pkg, idx) => {
+            const btn = document.createElement('button');
+            btn.className = idx === 0 ? 'tab-btn active' : 'tab-btn';
+            btn.innerText = pkg.name || `पैकेज #${pkg.pkgNo}`;
+            btn.onclick = () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                showSinglePackage(idx);
+            };
+            tabMenu.appendChild(btn);
+        });
+
+        showSinglePackage(0);
+    }
+
+    // Helper: Conditionally render a block only if value exists and non-empty
+    function renderIfExists(label, value, className) {
+        if (!value || value.trim() === "") return '';
+        return `
+            <div class="${className}">
+                <span class="section-label">${label}</span>
+                <div>${escapeHtml(value)}</div>
+            </div>
+        `;
+    }
+
+    function renderMedicineItem(item) {
+        // item structure: prodName, dose, details, advice, noteAlert
+        const name = escapeHtml(item.prodName || "नाम उपलब्ध नहीं");
+        const dose = escapeHtml(item.dose || "डोज़ नहीं");
+        
+        let detailsHtml = renderIfExists("📄 विवरण (Details)", item.details, "med-detail");
+        let adviceHtml = renderIfExists("💡 सलाह (Advice)", item.advice, "med-advice");
+        let alertHtml = renderIfExists("⚠️ नोट / अलर्ट", item.noteAlert, "med-alert");
+        
+        return `
+            <div class="medicine-item">
+                <div class="med-name">💊 ${name}</div>
+                <div class="med-dose">🧴 मात्रा: ${dose}</div>
+                ${detailsHtml}
+                ${adviceHtml}
+                ${alertHtml}
+            </div>
+        `;
+    }
+
+    function showSinglePackage(index) {
+        const grid = document.getElementById('cardsGrid');
+        grid.innerHTML = '';
+
+        const pkg = allPackages[index];
+        if (!pkg) return;
+
+        const card = document.createElement('div');
+        card.className = 'product-card';
+
+        let displayName = escapeHtml(pkg.name || `📦 पैकेज #${pkg.pkgNo}`);
+        let displayTech = escapeHtml(pkg.technical || "मिश्रण उपचार");
+        let displayImg = pkg.img || 'https://via.placeholder.com/80?text=Package';
+        let displayCompany = escapeHtml(pkg.company || "एग्रोएन कस्टम");
+        let displayPrice = pkg.price ? parseFloat(pkg.price).toFixed(2) : '0';
+        let displayPacking = escapeHtml(pkg.packing || 'N/A');
+        
+        // Build items HTML with full details, advice, alert
+        let itemsHtml = '';
+        if (pkg.items && pkg.items.length > 0) {
+            itemsHtml = pkg.items.map(item => renderMedicineItem(item)).join('');
+        } else {
+            itemsHtml = '<div class="medicine-item">कोई दवाई सूचीबद्ध नहीं</div>';
+        }
+        
+        card.innerHTML = `
+            <div class="card-top-row">
+                <img src="${displayImg}" class="prod-img" onerror="this.src='https://via.placeholder.com/80?text=Package'">
+                <div class="prod-info">
+                    <p class="prod-name">${displayName}</p>
+                    <p class="prod-tech">🔬 ${displayTech}</p>
+                    <p class="prod-company">🏢 ${displayCompany}</p>
+                    <p style="font-size:12px; color:#666; margin:2px 0;">📦 पैकिंग: <strong>${displayPacking}</strong></p>
+                </div>
+                <div style="text-align:right;">
+                    <span class="price-tag">₹${displayPrice}</span>
+                </div>
+            </div>
+            
+            <div class="package-items">
+                <p style="margin:0 0 8px 0; font-weight:800; color:#e65100; font-size:0.9rem;">
+                    <i class="fa-solid fa-kit-medical"></i> पैकेज में शामिल दवाइयाँ (विवरण सहित):
+                </p>
+                ${itemsHtml}
+            </div>
+
+            <button class="buy-btn" onclick="handleBuyNow('${displayName.replace(/'/g, "\\'")}', '${displayPrice}')">
+                <i class="fa-solid fa-cart-shopping"></i> पूरा पैकेज खरीदें
+            </button>
+        `;
+        grid.appendChild(card);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function handleBuyNow(productName, price) {
+        alert(`✅ "${productName}" खरीदने के लिए चुना गया।\n💰 कुल कीमत: ₹${price}\n\n(जल्द ही ऑनलाइन भुगतान सुविधा उपलब्ध होगी। अभी के लिए कृपया हमसे संपर्क करें।)`);
+    }
+</script>
+</body>
+</html>

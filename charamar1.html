@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGROAIN</title>
+    <style>
+        /* --- CSS Styling --- */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 600px; /* Slightly wider for more content */
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .input-group input[type="number"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.3s ease;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e9ffe9;
+            border: 1px solid #d4ffd4;
+            border-radius: 6px;
+            text-align: left;
+            display: none; /* Hidden by default */
+        }
+
+        .results .pesticide-section {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px dotted #ccc;
+        }
+        .results .pesticide-section:last-child {
+            border-bottom: none; /* No border for the last section */
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .results p {
+            margin: 8px 0;
+            font-size: 17px;
+            color: #333;
+        }
+
+        .results strong {
+            color: #2e8b57;
+        }
+
+        .total-summary {
+            margin-top: 25px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #1a5a3a;
+            border-top: 2px solid #4CAF50;
+            padding-top: 15px;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        /* Styles for package selection */
+        .package-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .package-options label {
+            background-color: #f0f0f0;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            font-weight: normal; /* Override bold from input-group label */
+        }
+        .package-options input[type="radio"] {
+            margin-right: 5px;
+            transform: scale(1.2); /* Make radio button slightly larger */
+        }
+        .package-options label:hover {
+            background-color: #e0e0e0;
+        }
+        .package-options input[type="radio"]:checked + span {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AGROAIN</h1>
+
+        <div class="input-group">
+            <label for="biga">Enter Biga:</label>
+            <input type="number" id="biga" min="0" placeholder="e.g., 1, 2.5">
+        </div>
+        
+        <button id="submitBtn">Submit</button>
+
+        <div id="results" class="results">
+            </div>
+    </div>
+
+    <script>
+        /* --- JavaScript Logic --- */
+        document.addEventListener('DOMContentLoaded', () => {
+            const bigaInput = document.getElementById('biga');
+            const submitBtn = document.getElementById('submitBtn');
+            const resultsDiv = document.getElementById('results');
+
+            // Define pesticide data including rates and prices
+            const pesticidesData = {
+                imizathayper: {
+                    name: "Imizathayper 10% SL",
+                    ratePerBiga: 200, // ml per biga (default)
+                    ratePerBigaCombined: 160, // ml per biga when all 4 are selected
+                    unit: "ml",
+                    packs: [
+                        { size: 1000, price: 900 }, // 1 Liter
+                        { size: 500, price: 450 }
+                    ]
+                },
+                iris: {
+                    name: "IRIS",
+                    ratePerBiga: 90, // ml per biga
+                    unit: "ml",
+                    packs: [
+                        { size: 800, price: 1450 },
+                        { size: 400, price: 750 }
+                    ]
+                },
+                centurion: {
+                    name: "Centurion",
+                    fixedQuantityPerImizathayperPack: 400, // ml
+                    unit: "ml",
+                    pricePerPack: 650, // for 400ml pack
+                    dependency: "imizathayper" // This goes with Imizathayper packs
+                },
+                clobin: {
+                    name: "Clobin",
+                    fixedPacksPerImizathayperPack: 1, // 1 pack
+                    unit: "pack",
+                    pricePerPack: 140, // per pack
+                    dependency: "imizathayper" // This goes with Imizathayper packs
+                }
+            };
+
+            submitBtn.addEventListener('click', calculatePesticides);
+
+            /**
+             * Generates HTML for package options and handles user selection for individual pesticides.
+             * @param {string} pesticideKey The key for the pesticide (e.g., 'imizathayper').
+             * @param {Array<Object>} packs An array of pack objects {size, price}.
+             * @param {string} unit The unit of measurement (ml, gm, pack).
+             * @param {number} defaultPackIndex The index of the pack to be initially selected.
+             * @returns {string} HTML string for package options.
+             */
+            const generatePackOptionsHTML = (pesticideKey, packs, unit, defaultPackIndex = 0) => {
+                let optionsHTML = `<div class="package-options" data-pesticide="${pesticideKey}">`;
+                packs.forEach((pack, index) => {
+                    const isChecked = index === defaultPackIndex ? 'checked' : '';
+                    optionsHTML += `
+                        <label>
+                            <input type="radio" name="pack-${pesticideKey}" value="${pack.size}" data-price="${pack.price}" ${isChecked}>
+                            <span>${pack.size}${unit} (₹${pack.price})</span>
+                        </label>
+                    `;
+                });
+                optionsHTML += `</div>`;
+                return optionsHTML;
+            };
+
+            /**
+             * Calculates the cost for a specific amount based on a chosen single pack size.
+             * @param {number} neededAmount The total amount required.
+             * @param {number} selectedPackSize The size of the pack selected by the user.
+             * @param {number} selectedPackPrice The price of the pack selected by the user.
+             * @returns {Object} { recommendedPacks: string, cost: number }
+             */
+            const getCostForSelectedPack = (neededAmount, selectedPackSize, selectedPackPrice) => {
+                if (selectedPackSize === 0 || selectedPackPrice === 0) {
+                    return { recommendedPacks: "Invalid pack selected.", cost: 0 };
+                }
+
+                const numPacks = Math.ceil(neededAmount / selectedPackSize);
+                const totalCost = numPacks * selectedPackPrice;
+                return {
+                    recommendedPacks: `${numPacks} x ${selectedPackSize}${neededAmount === 0 ? '' : (pesticidesData.imizathayper.unit || 'ml')}`,
+                    cost: totalCost
+                };
+            };
+
+            function calculatePesticides() {
+                resultsDiv.innerHTML = ''; // Clear previous results
+                resultsDiv.style.display = 'none'; // Hide results by default
+                resultsDiv.classList.remove('error'); // Remove error class if present
+
+                const biga = parseFloat(bigaInput.value);
+
+                if (isNaN(biga) || biga <= 0) {
+                    resultsDiv.style.display = 'block';
+                    resultsDiv.classList.add('error');
+                    resultsDiv.innerHTML = '<p>Please enter a valid number for Biga.</p>';
+                    return;
+                }
+
+                let overallTotalPayment = 0;
+                let resultsSections = []; // Array to store HTML sections for each pesticide
+
+                // Determine if the combined rate for Imizathayper should be used
+                // The prompt implies that if the combination is used, it's automatic.
+                // Assuming "customer selects 4 dawai" means if Imizethapyr is calculated,
+                // then IRIS, Centurion, and Clobin are also part of the calculation.
+                // For simplicity, we'll assume the special rate kicks in IF all 4 are relevant,
+                // which they are in this single-submit model.
+                const useImizathayperCombinedRate = true; // Based on new requirement, always combine logic if Biga > 0
+
+                // --- Imizathayper Calculation ---
+                const imizathayperData = pesticidesData.imizathayper;
+                const imizathayperRate = useImizathayperCombinedRate ? imizathayperData.ratePerBigaCombined : imizathayperData.ratePerBiga;
+                const imizathayperAmountNeeded = biga * imizathayperRate;
+                
+                // Get default recommended pack for Imizathayper
+                let defaultImizathayperPack = imizathayperData.packs[0]; // Default to largest pack
+                let imizathayperRec = getCostForSelectedPack(imizathayperAmountNeeded, defaultImizathayperPack.size, defaultImizathayperPack.price);
+                overallTotalPayment += imizathayperRec.cost;
+
+                let imizathayperSection = `<div class="pesticide-section">`;
+                imizathayperSection += `<p><strong>Dawai Name: ${imizathayperData.name}</strong></p>`;
+                imizathayperSection += `<p><strong>Total Dawai:</strong> ${imizathayperAmountNeeded} ${imizathayperData.unit}</p>`;
+                imizathayperSection += `<p><strong>Use per Biga:</strong> ${imizathayperRate} ${imizathayperData.unit}</p>`;
+                imizathayperSection += `<p><strong>Select Pack:</strong></p>`;
+                imizathayperSection += generatePackOptionsHTML('imizathayper', imizathayperData.packs, imizathayperData.unit, 0); // Default to first pack (1L)
+                imizathayperSection += `<p><strong>Recommended Packs (Calculated):</strong> <span id="rec-packs-imizathayper">${imizathayperRec.recommendedPacks}</span></p>`;
+                imizathayperSection += `<p><strong>Payment for ${imizathayperData.name}:</strong> ₹<span id="payment-imizathayper">${imizathayperRec.cost}</span></p>`;
+                imizathayperSection += `</div>`;
+                resultsSections.push(imizathayperSection);
+
+                // --- IRIS Calculation ---
+                const irisData = pesticidesData.iris;
+                const irisAmountNeeded = biga * irisData.ratePerBiga;
+
+                let defaultIrisPack = irisData.packs[0]; // Default to largest pack
+                let irisRec = getCostForSelectedPack(irisAmountNeeded, defaultIrisPack.size, defaultIrisPack.price);
+                overallTotalPayment += irisRec.cost;
+
+                let irisSection = `<div class="pesticide-section">`;
+                irisSection += `<p><strong>Dawai Name: ${irisData.name}</strong></p>`;
+                irisSection += `<p><strong>Total Dawai:</strong> ${irisAmountNeeded} ${irisData.unit}</p>`;
+                irisSection += `<p><strong>Use per Biga:</strong> ${irisData.ratePerBiga} ${irisData.unit}</p>`;
+                irisSection += `<p><strong>Select Pack:</strong></p>`;
+                irisSection += generatePackOptionsHTML('iris', irisData.packs, irisData.unit, 0); // Default to first pack (800ml)
+                irisSection += `<p><strong>Recommended Packs (Calculated):</strong> <span id="rec-packs-iris">${irisRec.recommendedPacks}</span></p>`;
+                irisSection += `<p><strong>Payment for ${irisData.name}:</strong> ₹<span id="payment-iris">${irisRec.cost}</span></p>`;
+                irisSection += `</div>`;
+                resultsSections.push(irisSection);
+
+
+                // --- Centurion Calculation (Fixed with Imizathayper) ---
+                const centurionData = pesticidesData.centurion;
+                // "1 liter and 500 ml imazethapyr 10%sl ke sath par pack jaye gi" -> implies for every Imizathayper pack, one Centurion pack is given
+                let centurionPacksCount = imizathayperRec.count; // Use the number of Imizathayper packs calculated
+                let centurionCost = centurionPacksCount * centurionData.pricePerPack;
+                overallTotalPayment += centurionCost;
+
+                let centurionSection = `<div class="pesticide-section">`;
+                centurionSection += `<p><strong>Dawai Name: ${centurionData.name}</strong></p>`;
+                centurionSection += `<p><strong>Total Dawai:</strong> ${centurionData.fixedQuantityPerImizathayperPack} ${centurionData.unit} (per Imizathayper pack)</p>`;
+                centurionSection += `<p><strong>Use per Biga:</strong> Fixed with Imizathayper 10% SL</p>`;
+                centurionSection += `<p><strong>Recommended Package:</strong> ${centurionPacksCount} x ${centurionData.fixedQuantityPerImizathayperPack}${centurionData.unit} pack(s)</p>`;
+                centurionSection += `<p><strong>Payment for ${centurionData.name}:</strong> ₹${centurionCost}</p>`;
+                centurionSection += `</div>`;
+                resultsSections.push(centurionSection);
+
+                // --- Clobin Calculation (Fixed with Imizathayper, always) ---
+                const clobinData = pesticidesData.clobin;
+                // "1 liter and 500 ml imazethapyr 10%sl ke sath par 1 pack jaye gi" -> implies for every Imizathayper pack, one Clobin pack is given
+                let clobinPacksCount = imizathayperRec.count; // Use the number of Imizathayper packs calculated
+                let clobinCost = clobinPacksCount * clobinData.pricePerPack;
+                overallTotalPayment += clobinCost;
+
+                let clobinSection = `<div class="pesticide-section">`;
+                clobinSection += `<p><strong>Dawai Name: ${clobinData.name}</strong></p>`;
+                clobinSection += `<p><strong>Total Dawai:</strong> ${clobinData.fixedPacksPerImizathayperPack} ${clobinData.unit} (per Imizathayper pack)</p>`;
+                clobinSection += `<p><strong>Use per Biga:</strong> Fixed with Imizathayper 10% SL (always included)</p>`;
+                clobinSection += `<p><strong>Recommended Package:</strong> ${clobinPacksCount} x 1 ${clobinData.unit} pack(s)</p>`;
+                clobinSection += `<p><strong>Payment for ${clobinData.name}:</strong> ₹${clobinCost}</p>`;
+                clobinSection += `</div>`;
+                resultsSections.push(clobinSection);
+
+
+                // Combine all sections and add total summary
+                resultsDiv.innerHTML = resultsSections.join('');
+                resultsDiv.innerHTML += `<div class="total-summary">`;
+                resultsDiv.innerHTML += `<p><strong>Overall Total Payment for All Pesticides: ₹<span id="overall-total">${overallTotalPayment}</span></strong></p>`;
+                resultsDiv.innerHTML += `</div>`;
+                resultsDiv.style.display = 'block';
+
+                // Add event listeners for radio buttons AFTER they are in the DOM
+                document.querySelectorAll('.package-options input[type="radio"]').forEach(radio => {
+                    radio.addEventListener('change', updateCalculationsOnPackChange);
+                });
+            }
+
+            // Function to update calculations when a pack option is changed
+            function updateCalculationsOnPackChange(event) {
+                const changedRadio = event.target;
+                const pesticideKey = changedRadio.closest('.package-options').dataset.pesticide;
+                const selectedPackSize = parseFloat(changedRadio.value);
+                const selectedPackPrice = parseFloat(changedRadio.dataset.price);
+
+                const biga = parseFloat(bigaInput.value);
+                if (isNaN(biga) || biga <= 0) return; // Should not happen if initial validation passed
+
+                let newOverallTotalPayment = 0;
+
+                // Recalculate Imizathayper if its pack changed
+                const imizathayperData = pesticidesData.imizathayper;
+                const imizathayperRate = true ? imizathayperData.ratePerBigaCombined : imizathayperData.ratePerBiga; // Always combined rate
+                const imizathayperAmountNeeded = biga * imizathayperRate;
+                
+                let currentImizathayperCost = 0;
+                let currentImizathayperPacksCount = 0;
+
+                if (pesticideKey === 'imizathayper') {
+                    const rec = getCostForSelectedPack(imizathayperAmountNeeded, selectedPackSize, selectedPackPrice);
+                    currentImizathayperCost = rec.cost;
+                    currentImizathayperPacksCount = Math.ceil(imizathayperAmountNeeded / selectedPackSize);
+
+                    document.getElementById('rec-packs-imizathayper').textContent = rec.recommendedPacks;
+                    document.getElementById('payment-imizathayper').textContent = rec.cost;
+                } else {
+                    // Get current selected Imizathayper pack
+                    const currentImizathayperRadio = document.querySelector('input[name="pack-imizathayper"]:checked');
+                    if (currentImizathayperRadio) {
+                        const currentSize = parseFloat(currentImizathayperRadio.value);
+                        const currentPrice = parseFloat(currentImizathayperRadio.dataset.price);
+                        const rec = getCostForSelectedPack(imizathayperAmountNeeded, currentSize, currentPrice);
+                        currentImizathayperCost = rec.cost;
+                        currentImizathayperPacksCount = Math.ceil(imizathayperAmountNeeded / currentSize);
+                    }
+                }
+                newOverallTotalPayment += currentImizathayperCost;
+
+
+                // Recalculate IRIS if its pack changed
+                const irisData = pesticidesData.iris;
+                const irisAmountNeeded = biga * irisData.ratePerBiga;
+                
+                let currentIrisCost = 0;
+                if (pesticideKey === 'iris') {
+                    const rec = getCostForSelectedPack(irisAmountNeeded, selectedPackSize, selectedPackPrice);
+                    currentIrisCost = rec.cost;
+                    document.getElementById('rec-packs-iris').textContent = rec.recommendedPacks;
+                    document.getElementById('payment-iris').textContent = rec.cost;
+                } else {
+                    const currentIrisRadio = document.querySelector('input[name="pack-iris"]:checked');
+                    if (currentIrisRadio) {
+                        const currentSize = parseFloat(currentIrisRadio.value);
+                        const currentPrice = parseFloat(currentIrisRadio.dataset.price);
+                        currentIrisCost = getCostForSelectedPack(irisAmountNeeded, currentSize, currentPrice).cost;
+                    }
+                }
+                newOverallTotalPayment += currentIrisCost;
+
+
+                // Recalculate Centurion and Clobin based on (potentially new) Imizathayper pack count
+                const centurionData = pesticidesData.centurion;
+                const clobinData = pesticidesData.clobin;
+
+                let centurionCost = currentImizathayperPacksCount * centurionData.pricePerPack;
+                let clobinCost = currentImizathayperPacksCount * clobinData.pricePerPack;
+                
+                newOverallTotalPayment += centurionCost + clobinCost;
+
+                document.querySelector('.pesticide-section:nth-child(3) p:nth-child(4)').textContent = `Recommended Package: ${currentImizathayperPacksCount} x ${centurionData.fixedQuantityPerImizathayperPack}${centurionData.unit} pack(s)`;
+                document.querySelector('.pesticide-section:nth-child(3) p:nth-child(5)').textContent = `Payment for ${centurionData.name}: ₹${centurionCost}`;
+
+                document.querySelector('.pesticide-section:nth-child(4) p:nth-child(4)').textContent = `Recommended Package: ${currentImizathayperPacksCount} x 1 ${clobinData.unit} pack(s)`;
+                document.querySelector('.pesticide-section:nth-child(4) p:nth-child(5)').textContent = `Payment for ${clobinData.name}: ₹${clobinCost}`;
+
+
+                document.getElementById('overall-total').textContent = newOverallTotalPayment;
+            }
+        });
+    </script>
+</body>
+</html>

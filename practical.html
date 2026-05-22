@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agroain - UPL Saaf Product View</title>
+    <style>
+        /* Body and Background */
+        body {
+            background-color: #f2f4f7;
+            margin: 0;
+            padding: 10px;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Main Card */
+        .product-focus-card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 380px;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid #e0e6ed;
+        }
+
+        /* Top Image Section */
+        .image-container {
+            background: #ffffff;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            /* Shadow to make the bottle look 3D */
+            filter: drop-shadow(0 8px 12px rgba(0,0,0,0.15));
+        }
+
+        .category-tag {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: #0056b3;
+            color: white;
+            padding: 5px 12px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 50px;
+            text-transform: uppercase;
+        }
+
+        /* Product Details Section */
+        .details-section {
+            padding: 20px;
+        }
+
+        .brand-name {
+            color: #ff6600;
+            font-weight: 700;
+            font-size: 12px;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .product-title {
+            font-size: 30px;
+            font-weight: 800;
+            color: #1a202c;
+            margin: 0 0 10px 0;
+        }
+
+        .tech-info {
+            background: #f1f8ff;
+            border-left: 4px solid #0056b3;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #2c5282;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        /* Highlights Grid */
+        .highlights {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .highlight-item {
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid #edf2f7;
+        }
+
+        .h-label {
+            font-size: 10px;
+            color: #718096;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .h-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        /* Bottom Price & Button */
+        .footer-action {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            background: #f8fafc;
+            border-top: 1px solid #edf2f7;
+        }
+
+        .price-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .old-price {
+            font-size: 13px;
+            color: #a0aec0;
+            text-decoration: line-through;
+        }
+
+        .new-price {
+            font-size: 24px;
+            font-weight: 800;
+            color: #2d3748;
+        }
+
+        .btn-add {
+            background: #0056b3;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 12px rgba(0, 86, 179, 0.3);
+        }
+
+        .btn-add:active {
+            transform: scale(0.96);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="product-focus-card">
+        <div class="image-container">
+            <span class="category-tag">Fungicide</span>
+            <img src="https://www.upl-ltd.com/in/assets/images/product-images/SAAF.png" alt="UPL Saaf">
+        </div>
+
+        <div class="details-section">
+            <span class="brand-name">UPL LIMITED</span>
+            <h1 class="product-title">SAAF</h1>
+            
+            <div class="tech-info">
+                <b>Technical Name:</b><br>
+                Carbendazim 12% + Mancozeb 63% WP
+            </div>
+
+            <div class="highlights">
+                <div class="highlight-item">
+                    <span class="h-label">Dosage</span>
+                    <span class="h-value">2g / Litre water</span>
+                </div>
+                <div class="highlight-item">
+                    <span class="h-label">Target Crops</span>
+                    <span class="h-value">Garlic, Chilli, Potato</span>
+                </div>
+                <div class="highlight-item">
+                    <span class="h-label">Action</span>
+                    <span class="h-value">Contact & Systemic</span>
+                </div>
+                <div class="highlight-item">
+                    <span class="h-label">Control</span>
+                    <span class="h-value">Blight, Leaf Spot</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-action">
+            <div class="price-container">
+                <span class="old-price">MRP ₹820</span>
+                <span class="new-price">₹650.00</span>
+            </div>
+            <button class="btn-add">Order Now</button>
+        </div>
+    </div>
+
+</body>
+</html>
