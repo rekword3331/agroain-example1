@@ -5,7 +5,7 @@
 // Firebase Config & Initialization (Fixed for v9 Compat)
 // ==========================================
 const firebaseConfig = {
-    databaseURL: "https://agroain-default-rtdb.firebaseio.com/"
+    databaseURL: "https://agroain-default-rtdb.firebaseio.com/",projectId: "agroain" 
 };
 
 // initializeApp aur database nikalne ka sahi v9 compat tarika
