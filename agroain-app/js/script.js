@@ -5,13 +5,18 @@
 // Firebase Config & Initialization (Fixed for v9 Compat)
 // ==========================================
 const firebaseConfig = {
-    databaseURL: "https://agroain-default-rtdb.firebaseio.com/",
-    projectId: "agroain" 
-};
-
-// initializeApp aur database nikalne ka sahi v9 compat tarika
-const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.database(app); // Yahan app pass karna zaroori hai
+  apiKey: "AIzaSyAOQp4Ez6omxSL5MDh_cGzzUy1gcf4KkEo",
+  authDomain: "agroain.firebaseapp.com",
+  databaseURL: "https://agroain-default-rtdb.firebaseio.com",
+  projectId: "agroain",
+  storageBucket: "agroain.firebasestorage.app",
+  messagingSenderId: "837977852518",
+  appId: "1:837977852518:web:eebd9baaec310f03e0bba7",
+  measurementId: "G-J7CG2Z0TMG"
+};// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+// Yahan app pass karna zaroori hai
 
 // ==========================================
 // Crop Name Mapping (English value ↔ Hindi display)
