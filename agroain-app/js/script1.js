@@ -1,5 +1,8 @@
 // ==========================================
-// Firebase Config & Initialization (Fixed & Cleaned)
+// Firebase Config
+// ==========================================
+// ==========================================
+// Firebase Config & Initialization (Fixed for v9 Compat)
 // ==========================================
 const firebaseConfig = {
   apiKey: "AIzaSyAOQp4Ez6omxSL5MDh_cGzzUy1gcf4KkEo",
@@ -10,24 +13,33 @@ const firebaseConfig = {
   messagingSenderId: "837977852518",
   appId: "1:837977852518:web:eebd9baaec310f03e0bba7",
   measurementId: "G-J7CG2Z0TMG"
-};
-
-// ग्लोबल वेरिएबल्स (बिना डुप्लीकेट डिक्लेरेशन के)
-let db;
+};// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+let app, db;
 
 try {
     if (typeof firebase !== 'undefined') {
         if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+            app = firebase.initializeApp(firebaseConfig);
+        } else {
+            app = firebase.app();
         }
+        // Compat स्क्रिप्ट्स के साथ डेटाबेस निकालने का सही तरीका:
         db = firebase.database(); 
-        console.log("✅ Agroain Firebase Realtime Database कनेक्ट हो गया!");
+        console.log("✅ Firebase Realtime Database सफलतापूर्वक कनेक्ट हो गया!");
     } else {
-        console.error("❌ Firebase SDK लोड नहीं हुई। index.html में स्क्रिप्ट टैग चेक करें।");
+        console.error("❌ Firebase SDK लोड नहीं हुई। index.html चेक करें।");
     }
 } catch (e) {
     console.error("❌ Firebase Initialization Error:", e);
 }
+// Yahan app pass karna zaroori hai
+
+// ==========================================
+// Crop Name Mapping (English value ↔ Hindi display)
+// ==========================================
+// ... baki ka saara code bilkul same rahega ...
 
 // ==========================================
 // Crop Name Mapping (English value ↔ Hindi display)
@@ -115,9 +127,6 @@ window.onload = async () => {
     const mainContainer = document.getElementById('mainContainer');
     
     try {
-        if (!db) {
-            throw new Error("डेटाबेस कनेक्शन उपलब्ध नहीं है।");
-        }
         await Promise.all([loadInventory(), loadPackages()]);
         if (loader) loader.classList.add('hidden');
         if (mainContainer) mainContainer.classList.add('visible');
@@ -127,7 +136,7 @@ window.onload = async () => {
         console.error("Error loading page:", error);
         if (loader) loader.classList.add('hidden');
         if (mainContainer) mainContainer.classList.add('visible');
-        alert("डेटा लोड करने में समस्या आई। कृपया पेज रिफ्रेश करें।");
+        alert("कुछ गड़बड़ हो गई। कृपया पेज को रिफ्रेश करें।");
     }
 };
 
@@ -138,14 +147,14 @@ async function loadInventory() {
     try {
         const snapshot = await db.ref('inventory').once('value');
         const data = snapshot.val();
-        allProducts = []; 
+        allProducts = []; // पुरानी इन्वेंटरी साफ करें
         if (data) {
             for (let key in data) {
                 if (data.hasOwnProperty(key)) {
                     let p = data[key];
                     if (p) {
                         p.id = key;
-                        allProducts.push(p); 
+                        allProducts.push(p); // बिना फ़िल्टर के सीधे पुश करें
                     }
                 }
             }
@@ -260,19 +269,31 @@ function doesCropMatch(pkgCrop, searchCrop) {
 // ==========================================
 // Dose Calculation
 // ==========================================
+// ==========================================
+// 1. Dose Calculation Function
+// ==========================================
 function getDosePerBigha(doseSprayText) {
+    // अगर डोज़ खाली है या डैश है, तो 0 वापस करो
     if (!doseSprayText || doseSprayText === "—") return 0;
+
+    // स्मार्ट Regex: यह 'biga', 'bigha', 'per', 'par' और एक्स्ट्रा स्पेस सबको संभाल लेगा
     const regex = /(\d+)\s*(ml|g|gm)\s*\/\s*(?:per|par)?\s*(?:bigha|biga)/i;
     const match = doseSprayText.match(regex);
+
+    // अगर परफेक्ट मैच मिल जाता है (जैसे 100ml/par biga)
     if (match && match[1]) {
         return parseInt(match[1], 10);
     }
+
+    // बैकअप तरीका: अगर ऊपर का नियम फेल हो जाए, तो टेक्स्ट में से जो भी पहला नंबर मिले उसे निकाल लो
     const fallbackMatch = doseSprayText.match(/(\d+)/);
     if (fallbackMatch && fallbackMatch[1]) {
         return parseInt(fallbackMatch[1], 10);
     }
+
     return 0;
 }
+
 
 function normalizeTechnicalName(tech) {
     if (!tech) return '';
@@ -300,8 +321,10 @@ function calculateOptimalCombination(totalRequired, currentProduct) {
     let availablePacks = [];
     const currentTech = normalizeTechnicalName(currentProduct.technical);
 
+    // 1. Pure database (allProducts) me se SAME TECHNICAL ki sabhi dawayian nikalna
     allProducts.forEach(p => {
         if (normalizeTechnicalName(p.technical) === currentTech) {
+            // Agar product me packs array hai
             if (p.packs && Array.isArray(p.packs) && p.packs.length > 0) {
                 p.packs.forEach(pack => {
                     availablePacks.push({
@@ -313,6 +336,7 @@ function calculateOptimalCombination(totalRequired, currentProduct) {
                     });
                 });
             } 
+            // Agar single packing data hai
             else if (p.packSize && p.price) {
                 availablePacks.push({
                     name: p.name,
@@ -327,6 +351,7 @@ function calculateOptimalCombination(totalRequired, currentProduct) {
 
     if (availablePacks.length === 0) return { combo: [], totalPrice: 0 };
 
+    // 2. Sorting: Target brand ko pehle preference, fir badi packing ko preference
     availablePacks.sort((a, b) => {
         if (a.isTargetBrand !== b.isTargetBrand) {
             return a.isTargetBrand ? -1 : 1;
@@ -338,6 +363,7 @@ function calculateOptimalCombination(totalRequired, currentProduct) {
     let combo = [];
     let totalPrice = 0;
 
+    // 3. Pehle searched brand ke bade packs se maximum zaroorat poori karein
     for (let pack of availablePacks) {
         if (remaining <= 0) break;
         if (!pack.isTargetBrand) continue;
@@ -350,8 +376,10 @@ function calculateOptimalCombination(totalRequired, currentProduct) {
         }
     }
 
+    // 4. SMART FIX: Agar abhi bhi kuch dawa bachi hai (Wastage rokne ke liye)
     if (remaining > 0) {
         let bestOption = null;
+
         for (let pack of availablePacks) {
             if (pack.size >= remaining) {
                 if (!bestOption || pack.price < bestOption.price) {
@@ -359,10 +387,12 @@ function calculateOptimalCombination(totalRequired, currentProduct) {
                 }
             }
         }
+
         if (!bestOption) {
             availablePacks.sort((a, b) => a.price - b.price);
             bestOption = availablePacks[0];
         }
+
         if (bestOption) {
             let existing = combo.find(c => c.name === bestOption.name && c.size === bestOption.size);
             if (existing) {
@@ -377,6 +407,7 @@ function calculateOptimalCombination(totalRequired, currentProduct) {
 
     return { combo, totalPrice };
 }
+
 
 // ==========================================
 // Card Rendering Functions
@@ -409,10 +440,20 @@ function renderPackageCard(pkg, bigha) {
     `;
 }
 
+// ==========================================
+// 2. Card Rendering Function
+// ==========================================
+// ==========================================
+// 2. Card Rendering Function (Fix for pure number packSize)
+// ==========================================
+// ==========================================
+// 2. Card Rendering Function (HTML & Object Fix)
+// ==========================================
 function renderProductCardWithPacks(docData, totalBigha) {
     if (Array.isArray(docData)) {
         docData = docData[0];
     }
+
     if (!docData || !docData.name) return '';
 
     const dosePerBigha = getDosePerBigha(docData.doseSpray);
@@ -424,17 +465,25 @@ function renderProductCardWithPacks(docData, totalBigha) {
 
     if (dosePerBigha > 0 && totalRequiredDose > 0) {
         doseDisplay = `💧 ${dosePerBigha} ml या g / बीघा (कुल जरूरत: ${totalRequiredDose} ml/g)`;
+        
+        // Naye cross-company wale algorithm se combination nikalna
         const result = calculateOptimalCombination(totalRequiredDose, docData);
         
         if (result.combo && result.combo.length > 0) {
             totalPriceDisplay = result.totalPrice.toFixed(2);
+            
+            // UI me packing aur company details ko sundar tarike se dikhana
             packingDetails = result.combo.map(c => {
                 const unit = (docData.packSize && typeof docData.packSize === 'string' && docData.packSize.includes('ml')) ? 'ml' : 'g';
+                
+                // Agar customer ka fayda karne ke liye koi doosri sasti company jodi gayi hai
                 if (c.name.toLowerCase().trim() !== docData.name.toLowerCase().trim()) {
                     return `<span style="color: #e65100; font-weight: bold; background: #fff3e0; padding: 2px 6px; border-radius: 4px; display: inline-block; margin: 2px 0;">
                                 🔄 विकल्प: ${c.name} (${c.company}) - ${c.size}${unit} के ${c.count} पैकेट
                             </span>`;
-                } else {
+                } 
+                // Agar main searched brand ki hi packing mili hai
+                else {
                     return `<span>📦 ${c.name} - ${c.size}${unit} के ${c.count} पैकेट</span>`;
                 }
             }).join("<br>");
@@ -477,8 +526,18 @@ function renderProductCardWithPacks(docData, totalBigha) {
     `;
 }
 
+
+
+function showPackAlert(productName, price, hasSmallPack) {
+    if (hasSmallPack) {
+        alert(`⚠️ "${productName}" के लिए छोटी पैकिंग का उपयोग हुआ है।\nकुल: ₹${price.toFixed(2)}`);
+    } else {
+        alert(`💰 "${productName}" की कुल दवा कीमत: ₹${price.toFixed(2)}`);
+    }
+}
+
 // ==========================================
-// Main Content Renderer (Unified)
+// Main Content Renderer (Unified - No Tabs)
 // ==========================================
 function renderUnifiedContent() {
     const resultDiv = document.getElementById('result');
@@ -498,6 +557,7 @@ function renderUnifiedContent() {
     resultDiv.appendChild(unifiedContent);
 
     let html = '';
+    
 
     if (currentSearchMode === 'day') {
         if (filteredPackages.length > 0) {
@@ -529,6 +589,7 @@ function renderUnifiedContent() {
                 groups = groups.slice(0, 10);
             }
 
+            // ✅ यहाँ ग्लोबल itemsPerPage का ही इस्तेमाल करें ताकि क्रैश न हो
             const totalGroups = groups.length;
             const totalPages = Math.ceil(totalGroups / itemsPerPage);
             if (currentProductPage > totalPages) currentProductPage = 1;
@@ -565,6 +626,7 @@ function renderUnifiedContent() {
     unifiedContent.innerHTML = html;
 }
 
+
 function renderPaginationHTML(totalItems, currentPage, itemsPerPage, goToPageFunction) {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     if (totalPages <= 1) return '';
@@ -589,6 +651,7 @@ function goToProductPage(page) {
     document.getElementById('unifiedContent')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// वैंकल्पिक नाम सुधारा गया
 function goToPackagePage(page) {
     currentPackagePage = page;
     renderUnifiedContent();
@@ -596,7 +659,7 @@ function goToPackagePage(page) {
 }
 
 // ==========================================
-// Search Handlers
+// Search Handler
 // ==========================================
 async function handleSmartSearch() {
     const yesRadio = document.querySelector('input[name="buwai"][value="yes"]');
@@ -668,6 +731,7 @@ async function handleSownCase() {
         else {
             const searchLower = inputVal.toLowerCase().trim();
             
+            // ✅ नाम, टेक्निकल नाम या कंपनी... कुछ भी लिखने पर खोजेगा
             filteredProducts = allProducts.filter(p => {
                 if (!p) return false;
                 const pName = p.name ? p.name.toLowerCase() : '';
@@ -707,6 +771,7 @@ async function handleSownCase() {
             currentProductPage = 1;
         }
         
+        // ✅ सर्च खत्म होने पर कंटेंट रेंडर करें
         renderUnifiedContent();
 
     } catch (err) {
@@ -722,31 +787,32 @@ async function handleSownCase() {
     }
 }
 
+
 async function loadCropStagesAdvice(day) {
     try {
         const snapshot = await db.ref('crop_stages').once('value');
         let stagesHtml = "";
         let stageFound = false;
 
-        if (snapshot.exists()) {
-            snapshot.forEach(child => {
-                const stage = child.val();
-                if (stage && stage.crop && doesCropMatch(stage.crop, currentCrop) && day >= stage.start && day <= stage.end) {
-                    stagesHtml += `
-                        <div class="success-box crop-stage-advice">
-                            <h3 style="margin-top:0; color:var(--dark, #333);"><i class="fa-solid fa-leaf"></i> ${escapeHtml(stage.title)}</h3>
-                            <p>${escapeHtml(stage.msg)}</p>
-                            ${stage.alert ? `<div class="alert-info">⚠️ ${escapeHtml(stage.alert)}</div>` : ''}
-                        </div>`;
-                    stageFound = true;
-                }
-            });
-        }
+        snapshot.forEach(child => {
+            const stage = child.val();
+            if (stage.crop && doesCropMatch(stage.crop, currentCrop) && day >= stage.start && day <= stage.end) {
+                stagesHtml += `
+                    <div class="success-box crop-stage-advice">
+                        <h3 style="margin-top:0; color:var(--dark, #333);"><i class="fa-solid fa-leaf"></i> ${escapeHtml(stage.title)}</h3>
+                        <p>${escapeHtml(stage.msg)}</p>
+                        ${stage.alert ? `<div class="alert-info">⚠️ ${escapeHtml(stage.alert)}</div>` : ''}
+                    </div>`;
+                stageFound = true;
+            }
+        });
 
         if (!stageFound) {
             stagesHtml = `<div class='success-box crop-stage-advice'>ℹ️ ${currentCropHindi} के ${day} दिन के लिए सामान्य देखरेख जारी रखें।</div>`;
         }
+        
         window._cropStagesHTML = stagesHtml;
+        
     } catch (e) {
         console.error("Stages load error:", e);
         window._cropStagesHTML = "<div class='success-box'>⚠️ फसल अवस्था जानकारी लोड नहीं हो पाई।</div>";
@@ -832,3 +898,4 @@ function closeZoom() {
         modal.style.display = "none";
     }
 }
+        
