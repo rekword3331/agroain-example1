@@ -147,14 +147,14 @@ async function loadInventory() {
     try {
         const snapshot = await db.ref('inventory').once('value');
         const data = snapshot.val();
-        allProducts = []; // पहले पुरानी इन्वेंटरी साफ करें
+        allProducts = []; // पुरानी इन्वेंटरी साफ करें
         if (data) {
             for (let key in data) {
                 if (data.hasOwnProperty(key)) {
                     let p = data[key];
-                    if (p && p.cat && p.cat.toLowerCase().trim() === 'dawai') {
+                    if (p) {
                         p.id = key;
-                        allProducts.push(p);
+                        allProducts.push(p); // बिना फ़िल्टर के सीधे पुश करें
                     }
                 }
             }
