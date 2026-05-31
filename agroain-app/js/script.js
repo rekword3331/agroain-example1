@@ -4,7 +4,7 @@
 const firebaseConfig = {
   apiKey: "AIzaSyAOQp4Ez6omxSL5MDh_cGzzUy1gcf4KkEo",
   authDomain: "agroain.firebaseapp.com",
-  databaseURL: "https://agroain-default-rtdb.firebaseio.com/",
+  databaseURL: "https://agroain-default-rtdb.firebaseio.com",
   projectId: "agroain",
   storageBucket: "agroain.firebasestorage.app",
   messagingSenderId: "837977852518",
