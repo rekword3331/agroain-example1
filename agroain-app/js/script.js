@@ -13,6 +13,7 @@ const firebaseConfig = {
 };
 
 // ग्लोबल वेरिएबल्स (बिना डुप्लीकेट डिक्लेरेशन के)
+
 let db;
 
 try {
@@ -21,12 +22,12 @@ try {
             firebase.initializeApp(firebaseConfig);
         }
         db = firebase.database(); 
-        console.log("✅ Agroain Firebase Realtime Database कनेक्ट हो गया!");
+        console.log("✅ Firebase SDK Loaded");
     } else {
-        console.error("❌ Firebase SDK लोड नहीं हुई। index.html में स्क्रिप्ट टैग चेक करें।");
+        alert("❌ भईया, index.html में Firebase की स्क्रिप्ट लोड नहीं हो पा रही है! इंटरनेट या स्क्रिप्ट टैग चेक करें।");
     }
 } catch (e) {
-    console.error("❌ Firebase Initialization Error:", e);
+    alert("❌ Firebase सेटअप में दिक्कत: " + e.message);
 }
 
 // ==========================================
