@@ -16,6 +16,24 @@ const firebaseConfig = {
 };// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
+let app, db;
+
+try {
+    if (typeof firebase !== 'undefined') {
+        if (!firebase.apps.length) {
+            app = firebase.initializeApp(firebaseConfig);
+        } else {
+            app = firebase.app();
+        }
+        // Compat स्क्रिप्ट्स के साथ डेटाबेस निकालने का सही तरीका:
+        db = firebase.database(); 
+        console.log("✅ Firebase Realtime Database सफलतापूर्वक कनेक्ट हो गया!");
+    } else {
+        console.error("❌ Firebase SDK लोड नहीं हुई। index.html चेक करें।");
+    }
+} catch (e) {
+    console.error("❌ Firebase Initialization Error:", e);
+}
 // Yahan app pass karna zaroori hai
 
 // ==========================================
