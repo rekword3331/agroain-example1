@@ -449,42 +449,44 @@ function renderPackageCard(pkg, bigha) {
 // ==========================================
 // 2. Card Rendering Function (HTML & Object Fix)
 // ==========================================
+// ==========================================
+// Card Rendering Functions (Updated for Clean Units)
+// ==========================================
 function renderProductCardWithPacks(docData, totalBigha) {
     if (Array.isArray(docData)) {
         docData = docData[0];
     }
-
     if (!docData || !docData.name) return '';
 
     const dosePerBigha = getDosePerBigha(docData.doseSpray);
     const totalRequiredDose = dosePerBigha * totalBigha; 
+
+    // यूनिट तय करना: अगर packSize या doseSpray में 'ml' लिखा है तो 'ml', नहीं तो 'gram'
+    const isLiquid = (docData.packSize && typeof docData.packSize === 'string' && docData.packSize.toLowerCase().includes('ml')) || 
+                     (docData.doseSpray && typeof docData.doseSpray === 'string' && docData.doseSpray.toLowerCase().includes('ml'));
+    
+    const unit = isLiquid ? 'ml' : 'gram';
 
     let doseDisplay = "💧 —";
     let packingDetails = "पैकिंग जानकारी उपलब्ध नहीं";
     let totalPriceDisplay = "0.00";
 
     if (dosePerBigha > 0 && totalRequiredDose > 0) {
-        doseDisplay = `💧 ${dosePerBigha} ml या g / बीघा (कुल जरूरत: ${totalRequiredDose} ml/g)`;
+        // बदलाव: अब 'ml या g' की जगह साफ़-साफ़ सटीक यूनिट और 'बीघा' हिंदी में दिखेगा
+        doseDisplay = `💧 ${dosePerBigha} ${unit} / बीघा (कुल जरूरत: ${totalRequiredDose} ${unit})`;
         
-        // Naye cross-company wale algorithm se combination nikalna
         const result = calculateOptimalCombination(totalRequiredDose, docData);
         
         if (result.combo && result.combo.length > 0) {
             totalPriceDisplay = result.totalPrice.toFixed(2);
-            
-            // UI me packing aur company details ko sundar tarike se dikhana
             packingDetails = result.combo.map(c => {
-                const unit = (docData.packSize && typeof docData.packSize === 'string' && docData.packSize.includes('ml')) ? 'ml' : 'g';
-                
-                // Agar customer ka fayda karne ke liye koi doosri sasti company jodi gayi hai
+                // नीचे पैकेट्स की यूनिट के लिए भी इसी 'unit' का इस्तेमाल करेंगे (ml या gram)
                 if (c.name.toLowerCase().trim() !== docData.name.toLowerCase().trim()) {
                     return `<span style="color: #e65100; font-weight: bold; background: #fff3e0; padding: 2px 6px; border-radius: 4px; display: inline-block; margin: 2px 0;">
-                                🔄 विकल्प: ${c.name} (${c.company}) - ${c.size}${unit} के ${c.count} पैकेट
+                                🔄 विकल्प: ${c.name} (${c.company}) - ${c.size} ${unit} के ${c.count} पैकेट
                             </span>`;
-                } 
-                // Agar main searched brand ki hi packing mili hai
-                else {
-                    return `<span>📦 ${c.name} - ${c.size}${unit} के ${c.count} पैकेट</span>`;
+                } else {
+                    return `<span>📦 ${c.name} - ${c.size} ${unit} के ${c.count} पैकेट</span>`;
                 }
             }).join("<br>");
         }

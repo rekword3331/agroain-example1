@@ -410,6 +410,9 @@ function renderPackageCard(pkg, bigha) {
     `;
 }
 
+// ==========================================
+// Card Rendering Functions (Updated for Clean Units)
+// ==========================================
 function renderProductCardWithPacks(docData, totalBigha) {
     if (Array.isArray(docData)) {
         docData = docData[0];
@@ -419,24 +422,32 @@ function renderProductCardWithPacks(docData, totalBigha) {
     const dosePerBigha = getDosePerBigha(docData.doseSpray);
     const totalRequiredDose = dosePerBigha * totalBigha; 
 
+    // यूनिट तय करना: अगर packSize या doseSpray में 'ml' लिखा है तो 'ml', नहीं तो 'gram'
+    const isLiquid = (docData.packSize && typeof docData.packSize === 'string' && docData.packSize.toLowerCase().includes('ml')) || 
+                     (docData.doseSpray && typeof docData.doseSpray === 'string' && docData.doseSpray.toLowerCase().includes('ml'));
+    
+    const unit = isLiquid ? 'ml' : 'gram';
+
     let doseDisplay = "💧 —";
     let packingDetails = "पैकिंग जानकारी उपलब्ध नहीं";
     let totalPriceDisplay = "0.00";
 
     if (dosePerBigha > 0 && totalRequiredDose > 0) {
-        doseDisplay = `💧 ${dosePerBigha} ml या g / बीघा (कुल जरूरत: ${totalRequiredDose} ml/g)`;
+        // बदलाव: अब 'ml या g' की जगह साफ़-साफ़ सटीक यूनिट और 'बीघा' हिंदी में दिखेगा
+        doseDisplay = `💧 ${dosePerBigha} ${unit} / बीघा (कुल जरूरत: ${totalRequiredDose} ${unit})`;
+        
         const result = calculateOptimalCombination(totalRequiredDose, docData);
         
         if (result.combo && result.combo.length > 0) {
             totalPriceDisplay = result.totalPrice.toFixed(2);
             packingDetails = result.combo.map(c => {
-                const unit = (docData.packSize && typeof docData.packSize === 'string' && docData.packSize.includes('ml')) ? 'ml' : 'g';
+                // नीचे पैकेट्स की यूनिट के लिए भी इसी 'unit' का इस्तेमाल करेंगे (ml या gram)
                 if (c.name.toLowerCase().trim() !== docData.name.toLowerCase().trim()) {
                     return `<span style="color: #e65100; font-weight: bold; background: #fff3e0; padding: 2px 6px; border-radius: 4px; display: inline-block; margin: 2px 0;">
-                                🔄 विकल्प: ${c.name} (${c.company}) - ${c.size}${unit} के ${c.count} पैकेट
+                                दूसरा विकल्प: ${c.name} (${c.company}) - ${c.size} ${unit} का ${c.count} पैकेट
                             </span>`;
                 } else {
-                    return `<span>📦 ${c.name} - ${c.size}${unit} के ${c.count} पैकेट</span>`;
+                    return `<span>📦 ${c.name} - ${c.size} ${unit} के ${c.count} पैकेट</span>`;
                 }
             }).join("<br>");
         }
@@ -480,6 +491,9 @@ function renderProductCardWithPacks(docData, totalBigha) {
 
 // ==========================================
 // Main Content Renderer (Unified)
+// ==========================================
+// ==========================================
+// Main Content Renderer (Unified - Updated for 1 Product Per Page)
 // ==========================================
 function renderUnifiedContent() {
     const resultDiv = document.getElementById('result');
@@ -531,14 +545,19 @@ function renderUnifiedContent() {
             }
 
             const totalGroups = groups.length;
-            const totalPages = Math.ceil(totalGroups / itemsPerPage);
+            
+            // बदलाव: दवाई सर्च होने पर एक पेज पर केवल 1 ही दवाई (ग्रुप) दिखाएंगे
+            const productsPerPage = 1; 
+            
+            const totalPages = Math.ceil(totalGroups / productsPerPage);
             if (currentProductPage > totalPages) currentProductPage = 1;
             
-            const start = (currentProductPage - 1) * itemsPerPage;
-            const end = Math.min(start + itemsPerPage, totalGroups);
+            const start = (currentProductPage - 1) * productsPerPage;
+            const end = Math.min(start + productsPerPage, totalGroups);
             const pageGroups = groups.slice(start, end);
 
-            html += renderPaginationHTML(totalGroups, currentProductPage, itemsPerPage, 'goToProductPage');
+            // पेजिनेशन बटन अब 1 आइटम के हिसाब से बनेंगे
+            html += renderPaginationHTML(totalGroups, currentProductPage, productsPerPage, 'goToProductPage');
 
             pageGroups.forEach(group => {
                 html += renderProductCardWithPacks(group, currentBigha);
@@ -565,6 +584,7 @@ function renderUnifiedContent() {
 
     unifiedContent.innerHTML = html;
 }
+
 
 function renderPaginationHTML(totalItems, currentPage, itemsPerPage, goToPageFunction) {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
