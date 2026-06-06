@@ -413,6 +413,9 @@ function renderPackageCard(pkg, bigha) {
 // ==========================================
 // Card Rendering Functions (Updated for Clean Units)
 // ==========================================
+// ==========================================
+// Card Rendering Functions (Updated for Clean Units & Product Details)
+// ==========================================
 function renderProductCardWithPacks(docData, totalBigha) {
     if (Array.isArray(docData)) {
         docData = docData[0];
@@ -433,7 +436,6 @@ function renderProductCardWithPacks(docData, totalBigha) {
     let totalPriceDisplay = "0.00";
 
     if (dosePerBigha > 0 && totalRequiredDose > 0) {
-        // बदलाव: अब 'ml या g' की जगह साफ़-साफ़ सटीक यूनिट और 'बीघा' हिंदी में दिखेगा
         doseDisplay = `💧 ${dosePerBigha} ${unit} / बीघा (कुल जरूरत: ${totalRequiredDose} ${unit})`;
         
         const result = calculateOptimalCombination(totalRequiredDose, docData);
@@ -441,7 +443,6 @@ function renderProductCardWithPacks(docData, totalBigha) {
         if (result.combo && result.combo.length > 0) {
             totalPriceDisplay = result.totalPrice.toFixed(2);
             packingDetails = result.combo.map(c => {
-                // नीचे पैकेट्स की यूनिट के लिए भी इसी 'unit' का इस्तेमाल करेंगे (ml या gram)
                 if (c.name.toLowerCase().trim() !== docData.name.toLowerCase().trim()) {
                     return `<span style="color: #e65100; font-weight: bold; background: #fff3e0; padding: 2px 6px; border-radius: 4px; display: inline-block; margin: 2px 0;">
                                 दूसरा विकल्प: ${c.name} (${c.company}) - ${c.size} ${unit} का ${c.count} पैकेट
@@ -462,6 +463,14 @@ function renderProductCardWithPacks(docData, totalBigha) {
     const img = docData.img || 'https://via.placeholder.com/150?text=Agroain';
     const techName = docData.technical || '—';
     const companyName = docData.company || '—';
+    
+    // डेटाबेस से extraDetails निकालना
+    const extraDetailsText = docData.extraDetails || '';
+    
+    // अगर extraDetails है, तो ही उसका HTML बनेगा, नहीं तो खाली रहेगा
+    const detailsDisplay = extraDetailsText 
+        ? `<p class="med-details" style="margin: 6px 0; color: #555; font-size: 0.95rem;"><strong>📋 विवरण:</strong> ${escapeHtml(extraDetailsText)}</p>` 
+        : '';
 
     return `
         <div class="product-card">
@@ -473,6 +482,7 @@ function renderProductCardWithPacks(docData, totalBigha) {
                     <h4 class="med-name">${safeName}</h4>
                     <p class="med-tech">🧪 ${escapeHtml(techName)}</p>
                     <p class="med-company">🏢 ${escapeHtml(companyName)}</p>
+                    ${detailsDisplay}
                     <p id="dose-${safeId}"><strong>${doseDisplay}</strong></p>
                     <div id="pack-${safeId}" style="font-size: 0.95rem; margin: 8px 0; line-height: 1.4;">
                         ${packingDetails}
@@ -489,7 +499,6 @@ function renderProductCardWithPacks(docData, totalBigha) {
     `;
 }
 
-// ==========================================
 // Main Content Renderer (Unified)
 // ==========================================
 // ==========================================
