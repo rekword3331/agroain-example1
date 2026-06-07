@@ -382,29 +382,150 @@ function calculateOptimalCombination(totalRequired, currentProduct) {
 // ==========================================
 // Card Rendering Functions
 // ==========================================
-function renderPackageCard(pkg, bigha) {
-    const name = pkg.name || 'पैकेज';
-    const price = pkg.price || 0;
-    const details = pkg.details || pkg.extraDetails || '—';
-    const img = pkg.img || 'https://via.placeholder.com/150?text=No+Image';
-    const doseInfo = pkg.dosePerBigha ? `डोज़: ${pkg.dosePerBigha}` : '';
+function renderPackageCard(pkg, bighaInput) {
+    // अगर यूजर ने बीघा नहीं डाला है तो डिफ़ॉल्ट 1 बीघा मानेंगे
+    const bigha = parseFloat(bighaInput) || 1;
+    
+    const name = pkg.name || pkg.company || 'स्मार्ट सुरक्षा पैकेज';
     const safeName = escapeHtml(name).replace(/'/g, "\\'");
 
-    return `
-        <div class="package-card">
-            <div class="med-content-wrapper">
-                <div class="med-left">
-                    <img src="${img}" class="med-photo zoomable" onclick="openZoom(this.src)" onerror="this.src='https://via.placeholder.com/150?text=Agroain'" alt="${safeName}">
+    let itemsHtml = '';
+    let packageTotalPrice = 0; // पूरे पैकेज का ग्रैंड टोटल
+
+    if (pkg.items && Array.isArray(pkg.items)) {
+        itemsHtml = `<div class="package-items-container" style="margin-top: 12px; border-top: 1px dashed #ccc; padding-top: 10px;">
+            <h5 style="margin: 0 0 10px 0; color: #2e7d32; font-size: 1rem;"><i class="fa-solid fa-flask"></i> पैकेज में शामिल दवाइयाँ (${bigha} बीघा खेत के लिए):</h5>`;
+        
+        pkg.items.forEach((item, index) => {
+            const itemImg = item.img || 'https://via.placeholder.com/150?text=Agroain';
+            const currentProdName = (item.prodName || item.name || '').trim();
+            
+            // 1. डोज़ में से सिर्फ नंबर निकालना (जैसे "70 ml /par bigha" -> 70)
+            const rawDose = item.dose || '';
+            const doseMatch = rawDose.match(/(\d+(\.\d+)?)/);
+            const dosePerBigha = doseMatch ? parseFloat(doseMatch[1]) : 0;
+            const totalDoseNeeded = dosePerBigha * bigha; // कुल खेत के लिए आवश्यक मात्रा
+
+            // यूनिट तय करना (ml या gm)
+            const isGm = rawDose.toLowerCase().includes('gm') || rawDose.includes('ग्राम');
+            const unitStr = isGm ? 'gm' : 'ml';
+
+            // 2. SMART INVENTORY MATCHING (allProducts एरे से बेस्ट पैकिंग ढूंढना)
+            let bestPackName = item.packing || '—';
+            let bestPrice = parseFloat(item.price) || 0;
+            let finalBillText = '';
+
+            // allProducts में से इस नाम की सभी पैकिंग्स छानना
+            if (typeof allProducts !== 'undefined' && Array.isArray(allProducts) && currentProdName) {
+                const matchedVariants = allProducts.filter(p => 
+                    p.name && p.name.trim().toLowerCase() === currentProdName.toLowerCase()
+                );
+
+                if (matchedVariants.length > 0) {
+                    let lowestCostForRequirement = Infinity;
+                    let bestVariant = null;
+                    let bestQtyCount = 1;
+
+                    matchedVariants.forEach(variant => {
+                        const vPackRaw = variant.packSize || variant.packing || '';
+                        const vPrice = parseFloat(variant.price) || 0;
+                        
+                        // पैकिंग साइज में से नंबर निकालना (जैसे "500ml" या "1 Liter" -> 500 या 1000)
+                        const vPackMatch = vPackRaw.match(/(\d+(\.\d+)?)/);
+                        let vPackNum = vPackMatch ? parseFloat(vPackMatch[1]) : 0;
+
+                        // अगर पैकिंग में Liter/L लिखा है तो उसे ml में बदलना (1 Liter = 1000 ml)
+                        if (!isGm && (vPackRaw.toLowerCase().includes('liter') || vPackRaw.toLowerCase().includes(' l'))) {
+                            if (vPackNum < 10) vPackNum = vPackNum * 1000; 
+                        }
+
+                        if (vPackNum > 0 && vPrice > 0 && totalDoseNeeded > 0) {
+                            // इस पैकिंग की कितनी बोतल/डिब्बे लगेंगे ताकि कुल जरूरत पूरी हो सके
+                            const qtyNeeded = Math.ceil(totalDoseNeeded / vPackNum);
+                            const totalCostWithThisVariant = qtyNeeded * vPrice;
+
+                            // जो वैरिएंट सबसे कम खर्चे में काम निपटाए, उसे चुनना
+                            if (totalCostWithThisVariant < lowestCostForRequirement) {
+                                lowestCostForRequirement = totalCostWithThisVariant;
+                                bestVariant = variant;
+                                bestQtyCount = qtyNeeded;
+                            }
+                        }
+                    });
+
+                    // अगर बेस्ट मैच मिल गया तो डेटा अपडेट करें
+                    if (bestVariant) {
+                        bestPackName = bestVariant.packSize || bestVariant.packing || '—';
+                        bestPrice = lowestCostForRequirement;
+                        finalBillText = `(${bestPackName} की ${bestQtyCount} पैकिंग लगेगी)`;
+                    } else {
+                        // बैकअप: अगर कैलकुलेशन फेल हो तो पुराना प्रति-ml रेट लॉजिक
+                        const packMatch = packSizeRaw.match(/(\d+(\.\d+)?)/);
+                        const basePackSize = packMatch ? parseFloat(packMatch[1]) : 1;
+                        bestPrice = (bestPrice / basePackSize) * totalDoseNeeded;
+                    }
+                } else {
+                    // अगर इन्वेंट्री में यह नाम नहीं मिला तो पुराना बैकअप (Price * Bigha)
+                    bestPrice = bestPrice * bigha;
+                }
+            } else {
+                bestPrice = bestPrice * bigha;
+            }
+
+            // ग्रैंड टोटल में इस बेस्ट पैकिंग की कीमत जोड़ें
+            packageTotalPrice += bestPrice;
+
+            // कुल डोज़ को स्क्रीन पर सुंदर दिखाने के लिए (ml को लीटर में बदलना)
+            let totalDoseDisplay = '';
+            if (totalDoseNeeded > 0) {
+                if (!isGm && totalDoseNeeded >= 1000) {
+                    totalDoseDisplay = `कुल मात्रा: ${(totalDoseNeeded / 1000).toFixed(2)} लीटर (${dosePerBigha} ml/बीघा)`;
+                } else {
+                    totalDoseDisplay = `कुल मात्रा: ${totalDoseNeeded.toFixed(0)} ${unitStr} (${dosePerBigha} ${unitStr}/बीघा)`;
+                }
+            } else {
+                totalDoseDisplay = `डोज़: ${rawDose}`;
+            }
+            
+            itemsHtml += `
+                <div class="item-sub-card" style="display: flex; gap: 10px; margin-bottom: 8px; background: #f9f9f9; padding: 8px; border-radius: 6px; border-left: 3px solid #4CAF50;">
+                    <img src="${itemImg}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" alt="${escapeHtml(currentProdName)}">
+                    <div style="flex: 1; font-size: 0.9rem;">
+                        <h6 style="margin: 0; font-size: 0.95rem; color: #333; font-weight: bold;">${index + 1}. ${escapeHtml(currentProdName || 'दवाई')} (${escapeHtml(item.company || '—')})</h6>
+                        <p style="margin: 2px 0; color: #666; font-size: 0.85rem;">🧪 ${escapeHtml(item.technical || '—')}</p>
+                        
+                        <p style="margin: 2px 0; font-weight: bold; color: #e65100;">${escapeHtml(totalDoseDisplay)}</p>
+                        
+                        <p style="margin: 2px 0; color: #555; font-size: 0.85rem;"><i class="fa-solid fa-box"></i> <strong>सुझाई गई पैकिंग:</strong> ${escapeHtml(bestPackName)} ${escapeHtml(finalBillText)}</p>
+                        
+                        <p style="margin: 2px 0; font-weight: bold; color: #2e7d32; font-size: 0.95rem;">💰 कीमत: ₹${bestPrice.toFixed(2)}</p>
+                        ${item.advice ? `<p style="margin: 2px 0; color: #2e7d32; font-size: 0.85rem;">💡 सलाह: ${escapeHtml(item.advice)}</p>` : ''}
+                    </div>
                 </div>
-                <div class="med-right">
-                    <h4 class="med-name">${escapeHtml(name)}</h4>
-                    <p><strong>💰 कीमत:</strong> ₹${price}</p>
-                    ${doseInfo ? `<p><strong>💧 ${doseInfo}</strong></p>` : ''}
-                    <p>📋 ${escapeHtml(details)}</p>
+            `;
+        });
+        itemsHtml += `</div>`;
+    } else {
+        packageTotalPrice = (parseFloat(pkg.price) || 0) * bigha;
+    }
+
+    return `
+        <div class="package-card" style="border: 1px solid #4CAF50; border-radius: 12px; padding: 12px; margin-bottom: 15px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+            <div class="med-content-wrapper" style="margin-bottom: 10px;">
+                <div class="med-right" style="width: 100%;">
+                    <h4 class="med-name" style="color: #1b5e20; margin: 0 0 4px 0; font-size: 1.25rem; font-weight: bold;">${escapeHtml(name)}</h4>
+                    ${pkg.noteAlert ? `<p style="margin: 4px 0; color: #d32f2f; font-size: 0.9rem;">⚠️ <strong>जरूरी सूचना:</strong> ${escapeHtml(pkg.noteAlert)}</p>` : ''}
                 </div>
             </div>
-            <button class="buy-btn" onclick="handleBuyNow('${safeName}', '₹${price}')">
-                <i class="fa-solid fa-cart-shopping"></i> अभी खरीदें
+            
+            ${itemsHtml}
+            
+            <div class="package-total-summary" style="margin-top: 15px; padding-top: 10px; border-top: 2px solid #4CAF50; text-align: right;">
+                <h4 style="margin: 0; color: #1b5e20; font-size: 1.15rem;">📦 ${bigha} बीघा पैकेज का कुल मूल्य: <span style="color: #e65100; font-size: 1.35rem; font-weight: bold;">₹${packageTotalPrice.toFixed(2)}</span></h4>
+            </div>
+            
+            <button class="buy-btn" onclick="handleBuyNow('${safeName}', '₹${packageTotalPrice.toFixed(2)}')" style="margin-top: 12px; width: 100%;">
+                <i class="fa-solid fa-cart-shopping"></i> अभी पैकेज खरीदें
             </button>
         </div>
     `;
@@ -535,9 +656,28 @@ function renderUnifiedContent() {
 
             pageItems.forEach(pkg => {
                 html += renderPackageCard(pkg, currentBigha);
+                // बदलाव: पैकेज की प्राइस को भी टोटल में जोड़ें ताकि बटन पर सही अमाउंट आये
+                if(pkg.price) {
+                    window._cardPrices.push(parseFloat(pkg.price));
+                }
             });
 
             html += renderPaginationHTML(filteredPackages.length, currentPackagePage, itemsPerPage, 'goToPackagePage');
+            
+            // बदलाव: पैकेज के लिए भी नीचे 'अभी सभी खरीदें' का कुल मूल्य वाला कार्ड दिखेगा
+            const allGrandTotal = window._cardPrices.reduce((sum, price) => sum + price, 0);
+            if (allGrandTotal > 0 && grandTotalContainer) {
+                grandTotalContainer.innerHTML = `
+                    <div class="grand-total-card">
+                        <h3>🛒 पैकेज का कुल मूल्य</h3>
+                        <div class="final-amount">₹${allGrandTotal.toFixed(2)}</div>
+                        <button class="grand-buy-btn" onclick="handleBuyNow('यह पूरा पैकेज', '₹${allGrandTotal.toFixed(2)}')">
+                            <i class="fa-solid fa-cart-shopping"></i> अभी पूरा पैकेज खरीदें
+                        </button>
+                    </div>
+                `;
+                grandTotalContainer.style.display = 'block';
+            }
         } else {
             if (window._cropStagesHTML) {
                 html += window._cropStagesHTML;
@@ -554,8 +694,6 @@ function renderUnifiedContent() {
             }
 
             const totalGroups = groups.length;
-            
-            // बदलाव: दवाई सर्च होने पर एक पेज पर केवल 1 ही दवाई (ग्रुप) दिखाएंगे
             const productsPerPage = 1; 
             
             const totalPages = Math.ceil(totalGroups / productsPerPage);
@@ -565,7 +703,6 @@ function renderUnifiedContent() {
             const end = Math.min(start + productsPerPage, totalGroups);
             const pageGroups = groups.slice(start, end);
 
-            // पेजिनेशन बटन अब 1 आइटम के हिसाब से बनेंगे
             html += renderPaginationHTML(totalGroups, currentProductPage, productsPerPage, 'goToProductPage');
 
             pageGroups.forEach(group => {
@@ -593,7 +730,6 @@ function renderUnifiedContent() {
 
     unifiedContent.innerHTML = html;
 }
-
 
 function renderPaginationHTML(totalItems, currentPage, itemsPerPage, goToPageFunction) {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -687,7 +823,12 @@ async function handleSownCase() {
             
             filteredPackages = allPackages.filter(pkg => {
                 const cropMatch = doesCropMatch(pkg.crop, currentCrop);
-                const ageMatch = day >= (pkg.ageMin || 0) && day <= (pkg.ageMax || 999);
+                
+                // बदलाव: यहाँ String को Number में बदला गया है ताकि 25 दिन मैच हो सके
+                const minAge = parseInt(pkg.ageMin || 0, 10);
+                const maxAge = parseInt(pkg.ageMax || 999, 10);
+                const ageMatch = day >= minAge && day <= maxAge;
+                
                 const typeMatch = !((pkg.packageType || '').includes('पहले') && day > 0);
                 return cropMatch && ageMatch && typeMatch;
             });

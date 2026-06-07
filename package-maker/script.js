@@ -145,11 +145,13 @@ function clearMedicineForm() {
 function clearAllForms() {
     document.getElementById('inpPkgNo').value = '';
     document.getElementById('inpCrop').value = '';
+    document.getElementById('inpPkgName').value = ''; // नाम का इनपुट खाली करने के लिए
     currentPackageList = [];
     renderPackageTable();
     clearMedicineForm();
     clearOtherPackageFields();
 }
+
 
 function showMessage(message, isSuccess = true) {
     const msgEl = document.getElementById('addMessage');
@@ -265,10 +267,11 @@ function escapeHtml(str) {
 async function savePackageToFirebase() {
     const pkgNo = document.getElementById('inpPkgNo').value.trim();
     const cropValue = document.getElementById('inpCrop').value.trim();
+    const pkgName = document.getElementById('inpPkgName').value.trim(); // नया नाम बॉक्स
     const packageType = document.getElementById('inpPackageType').value;
     
-    if(!pkgNo || !cropValue) { 
-        alert("❌ पैकेज नंबर और फसल का नाम जरूरी है!"); 
+    if(!pkgNo || !cropValue || !pkgName) { 
+        alert("❌ पैकेज नंबर, फसल और पैकेज का नाम तीनों जरूरी हैं!"); 
         return; 
     }
     if(currentPackageList.length === 0) { 
@@ -279,6 +282,7 @@ async function savePackageToFirebase() {
     const data = {
         pkgNo: pkgNo,
         crop: cropValue,
+        name: pkgName, // अब डेटाबेस में 'name' फ़ील्ड भी सेव होगी
         packageType: packageType,
         technical: document.getElementById('inpPkgTechnical').value,
         company: document.getElementById('inpPkgCompany').value,
@@ -408,9 +412,10 @@ function loadPkg(id) {
         // 1. Basic Fields
         document.getElementById('inpPkgNo').value = p.pkgNo || '';
         document.getElementById('inpCrop').value = p.crop || '';
+        document.getElementById('inpPkgName').value = p.name || p.company || ''; // पुराना नाम यहाँ लोड होगा
         document.getElementById('inpPackageType').value = p.packageType || "बुवाई से पहले";
         
-        // 2. Extra Fields (Jo ab save bhi ho rahe hain)
+        // 2. Extra Fields
         document.getElementById('inpPkgTechnical').value = p.technical || '';
         document.getElementById('inpPkgCompany').value = p.company || '';
         document.getElementById('inpPkgPrice').value = p.price || 0;
