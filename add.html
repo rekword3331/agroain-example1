@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>Professional Agro-Ad Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; gap: 20px; padding: 20px; background: #eef2e9; }
+        .controls { width: 350px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        #ad-preview { width: 400px; padding: 20px; background: white; border: 5px solid #2e7d32; border-radius: 15px; text-align: center; }
+        .header { background: #2e7d32; color: white; padding: 15px; font-size: 28px; font-weight: bold; border-radius: 5px; margin-bottom: 10px; }
+        #preview-img { max-width: 200px; margin: 10px 0; border: 1px solid #ccc; }
+        .product-name { color: #2e7d32; font-size: 20px; font-weight: bold; }
+        .features { text-align: left; margin: 15px 0; font-size: 14px; line-height: 1.5; }
+        .footer-box { background: #333; color: white; padding: 10px; border-radius: 5px; margin-top: 10px; }
+        input, textarea { width: 90%; margin: 5px 0; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #2e7d32; color: white; border: none; padding: 12px; width: 100%; cursor: pointer; border-radius: 5px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <h3>Ad Details Bharein:</h3>
+        <input type="text" id="brand" placeholder="Brand Name (e.g. UPL)">
+        <input type="text" id="product" placeholder="Product Name (e.g. Centurion EZ)">
+        <input type="file" id="imgInput" accept="image/*">
+        <textarea id="points" rows="4" placeholder="Features (Ek line mein ek)"></textarea>
+        <input type="text" id="address" placeholder="Address (Gram/Tehsil/Jila)">
+        <input type="text" id="phone" placeholder="Phone Number">
+        <button onclick="downloadAd()">Download Ad (PNG)</button>
+    </div>
+
+    <div id="ad-preview">
+        <div class="header">एग्रोएन</div>
+        <div class="product-name" id="disp-brand">---</div>
+        <div id="disp-product" style="font-weight:bold;">---</div>
+        <img id="preview-img" src="" alt="Product" style="display:none;">
+        <ul class="features" id="disp-points"></ul>
+        <div class="footer-box">
+            <div id="disp-address">पता: ---</div>
+            <div style="font-size: 20px; margin-top:5px;">📞 <span id="disp-phone">0000000000</span></div>
+            <div style="font-size: 12px; margin-top:5px;">🚚 होम डिलीवरी उपलब्ध है</div>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('input, textarea').forEach(el => {
+            el.addEventListener('input', () => {
+                document.getElementById('disp-brand').innerText = document.getElementById('brand').value;
+                document.getElementById('disp-product').innerText = document.getElementById('product').value;
+                document.getElementById('disp-address').innerText = "पता: " + document.getElementById('address').value;
+                document.getElementById('disp-phone').innerText = document.getElementById('phone').value;
+                
+                const pointsList = document.getElementById('disp-points');
+                pointsList.innerHTML = '';
+                document.getElementById('points').value.split('\n').forEach(p => {
+                    if(p) pointsList.innerHTML += `<li>${p}</li>`;
+                });
+            });
+        });
+
+        document.getElementById('imgInput').addEventListener('change', function() {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('preview-img');
+                img.src = e.target.result;
+                img.style.display = 'inline-block';
+            }
+            reader.readAsDataURL(this.files[0]);
+        });
+
+        function downloadAd() {
+            html2canvas(document.querySelector("#ad-preview")).then(canvas => {
+                let link = document.createElement('a');
+                link.download = 'agro-ad.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+    </script>
+</body>
+</html>

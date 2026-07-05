@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Agro Marketing Poster Generator</title>
+    <!-- html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- QR Code -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <!-- ColorThief for Auto Theme -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&family=Mukta:wght@400;700&family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #eef2e9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        h2 { color: #2e7d32; margin-bottom: 10px; }
+        .main-container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            max-width: 1300px;
+        }
+        /* Controls */
+        .controls {
+            flex: 1 1 380px;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 450px;
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+        .controls h3 { border-bottom: 2px solid #2e7d32; padding-bottom: 5px; margin-bottom: 15px; color: #2e7d32; }
+        .controls label { display: block; font-weight: bold; margin: 10px 0 3px; font-size: 14px; }
+        .controls input, .controls textarea, .controls select { width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-family: inherit; }
+        .controls textarea { resize: vertical; }
+        .row { display: flex; gap: 10px; align-items: center; margin: 8px 0; }
+        .row label { margin: 0; white-space: nowrap; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+        button {
+            background: #2e7d32; color: white; border: none;
+            padding: 10px 12px; border-radius: 8px; font-weight: bold;
+            cursor: pointer; transition: 0.2s; font-size: 14px;
+        }
+        button:hover { filter: brightness(1.1); }
+        .btn-outline { background: white; color: #2e7d32; border: 2px solid #2e7d32; }
+        .btn-outline:hover { background: #f0f9f0; }
+        .danger { border-color: red !important; }
+
+        /* Preview Area */
+        .preview-wrapper { flex: 2 1 700px; }
+        #ad-preview {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border: 5px solid #2e7d32;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+            transition: all 0.3s;
+        }
+        /* Two Column Grid */
+        .poster-grid {
+            display: grid;
+            grid-template-columns: 45% 55%;
+            gap: 20px;
+            padding: 25px;
+            position: relative;
+            z-index: 2;
+        }
+        .overlay {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(255,255,255,0.75);
+            z-index: 1;
+        }
+        /* Drag zones */
+        .draggable { cursor: move; user-select: none; }
+        .dragging { opacity: 0.8; }
+
+        .header-section {
+            background: linear-gradient(90deg, #0d5b18, #2e7d32);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+            position: relative;
+            z-index: 3;
+        }
+        .header-section h1 { font-size: 32px; margin: 0; }
+        .subtitle { font-size: 14px; margin-top: 5px; }
+        .company-logo { height: 40px; margin-right: 10px; vertical-align: middle; }
+
+        .left-col { display: flex; flex-direction: column; align-items: center; }
+        .product-img-wrapper { position: relative; margin: 10px 0; }
+        #preview-img {
+            max-width: 100%; max-height: 250px;
+            filter: drop-shadow(0 15px 25px rgba(0,0,0,0.4));
+            border-radius: 10px;
+        }
+        .crop-section, .weed-section { display: flex; gap: 10px; margin: 10px 0; justify-content: center; }
+        .crop-circle, .weed-circle {
+            width: 55px; height: 55px; border-radius: 50%;
+            background-size: cover; background-position: center;
+            border: 2px solid #2e7d32;
+        }
+
+        .right-col { }
+        .feature-card {
+            background: white;
+            border-radius: 20px;
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+        }
+        .feature-icon { font-size: 24px; min-width: 35px; text-align: center; }
+
+        .contact-box {
+            background: white; border-radius: 15px; padding: 15px;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1); margin-top: 20px;
+        }
+        .big-phone { font-size: 40px; font-weight: bold; color: #2e7d32; text-align: center; }
+        .address-line { margin: 4px 0; }
+
+        .home-delivery {
+            background: #2e7d32; color: white; text-align: center;
+            padding: 12px; font-size: 18px; margin-top: 15px;
+            border-radius: 10px; position: relative; z-index: 3;
+        }
+        .product-desc { font-size: 13px; color: #555; margin-top: 3px; }
+
+        /* Template variations */
+        .template-2 .poster-grid { grid-template-columns: 1fr; }
+        .template-3 .poster-grid { grid-template-columns: 50% 50%; }
+        .template-4 .poster-grid { grid-template-columns: 60% 40%; }
+        .template-5 .poster-grid { grid-template-columns: 40% 60%; }
+
+        @media (max-width: 768px) {
+            .main-container { flex-direction: column; }
+            .poster-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <h2>🌾 Ultimate Agro Poster Generator</h2>
+    <div class="main-container">
+        <!-- Controls -->
+        <div class="controls">
+            <h3>📋 Poster Settings</h3>
+
+            <label>📄 Template</label>
+            <select id="templateSelect">
+                <option value="1">Template 1 (Classic Left-Right)</option>
+                <option value="2">Template 2 (Single Column)</option>
+                <option value="3">Template 3 (Equal Columns)</option>
+                <option value="4">Template 4 (Product Big)</option>
+                <option value="5">Template 5 (Features Big)</option>
+            </select>
+
+            <label>🖼️ Poster Background</label>
+            <input type="file" id="bgInput" accept="image/*">
+            <button id="setBgDefault">Default कृषि बैकग्राउंड</button>
+
+            <label>🏷️ Header Text</label>
+            <input type="text" id="headerText" value="एग्रोएन">
+            <label>🧪 Subtitle 1</label><input type="text" id="sub1" value="✓ सही DOSE">
+            <label>🧪 Subtitle 2</label><input type="text" id="sub2" value="✓ सही मात्रा">
+            <label>🧪 Subtitle 3</label><input type="text" id="sub3" value="✓ बेहतरीन QUALITY">
+
+            <label>🏢 Company Logo</label><input type="file" id="companyLogoInput">
+            <label>🏷️ Product Logo (UPL style)</label><input type="file" id="productLogoInput">
+
+            <label>📦 Product Name</label><input type="text" id="productName" value="Centurion EZ">
+            <label>🧴 Product Description</label><input type="text" id="productDesc" value="Clethodim 13% EC">
+            <label>🖼️ Product Image</label><input type="file" id="imgInput">
+
+            <div class="row">
+                <label>🎨 Auto Color Theme</label>
+                <button id="autoThemeBtn">Generate from Image</button>
+            </div>
+
+            <label>📝 Features (एक लाइन में एक)</label>
+            <textarea id="points" rows="4">फसलों में तेज़ असर
+कीटों से 100% सुरक्षा
+लंबे समय तक सुरक्षा
+तेज़ी से अवशोषण</textarea>
+
+            <div id="featureIconsEditor"></div>
+
+            <label>🌾 Crop Images (URLs)</label>
+            <input type="text" id="crop1" value="https://cdn-icons-png.flaticon.com/128/2917/2917995.png" placeholder="धान">
+            <input type="text" id="crop2" value="https://cdn-icons-png.flaticon.com/128/2917/2917996.png" placeholder="गेहूं">
+            <input type="text" id="crop3" value="https://cdn-icons-png.flaticon.com/128/2917/2917997.png" placeholder="ज्वार">
+            <input type="text" id="crop4" value="https://cdn-icons-png.flaticon.com/128/2917/2917998.png" placeholder="मक्का">
+
+            <label>🌿 Weed Images (URLs)</label>
+            <input type="text" id="weed1" value="https://cdn-icons-png.flaticon.com/128/4230/4230567.png">
+            <input type="text" id="weed2" value="https://cdn-icons-png.flaticon.com/128/4230/4230570.png">
+            <input type="text" id="weed3" value="https://cdn-icons-png.flaticon.com/128/4230/4230573.png">
+
+            <label>📍 Address</label>
+            <input type="text" id="gram" placeholder="ग्राम">
+            <input type="text" id="tehsil" placeholder="तहसील">
+            <input type="text" id="jila" placeholder="जिला">
+
+            <label>📞 Phone</label><input type="tel" id="phone" value="8319489418">
+
+            <div class="btn-group">
+                <button id="downloadBtn">📥 Download</button>
+                <button id="whatsappBtn" class="btn-outline" style="background:#25D366;color:white;border:none;">💬 WhatsApp</button>
+            </div>
+
+            <button id="removeBgBtn">🧪 AI Background Remove (Simulate)</button>
+        </div>
+
+        <!-- Preview -->
+        <div class="preview-wrapper">
+            <div id="ad-preview" class="draggable-container">
+                <div class="overlay"></div>
+                <div class="poster-grid">
+                    <!-- Left Column -->
+                    <div class="left-col">
+                        <div class="header-section draggable" id="headerDrag">
+                            <img id="companyLogoPreview" class="company-logo" style="display:none;">
+                            <h1 id="dispHeader">एग्रोएन</h1>
+                            <div class="subtitle" id="dispSubtitle"></div>
+                        </div>
+                        <div class="product-img-wrapper draggable" id="productDrag">
+                            <img id="preview-img" src="" alt="Product" style="display:none;">
+                            <img id="productLogoPreview" style="max-height:35px; margin-top:5px; display:none;">
+                            <div id="dispProduct" style="font-weight:bold; font-size:18px;"></div>
+                            <div id="dispDesc" class="product-desc"></div>
+                        </div>
+                        <div class="crop-section">
+                            <div class="crop-circle" id="cropImg1"></div>
+                            <div class="crop-circle" id="cropImg2"></div>
+                            <div class="crop-circle" id="cropImg3"></div>
+                            <div class="crop-circle" id="cropImg4"></div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="right-col">
+                        <div id="dispPoints"></div>
+                        <div class="weed-section">
+                            <div class="weed-circle" id="weedImg1"></div>
+                            <div class="weed-circle" id="weedImg2"></div>
+                            <div class="weed-circle" id="weedImg3"></div>
+                        </div>
+                        <div class="contact-box draggable" id="contactDrag">
+                            <div class="big-phone">📞 <span id="dispPhone">8319489418</span></div>
+                            <div id="dispAddress" class="address-line"></div>
+                            <div class="qr-container" id="qrContainer" style="text-align:center;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="home-delivery">🚚 होम डिलीवरी उपलब्ध है</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ---- DOM references ----
+            const templateSelect = document.getElementById('templateSelect');
+            const adPreview = document.getElementById('ad-preview');
+            const posterGrid = adPreview.querySelector('.poster-grid');
+            const overlay = adPreview.querySelector('.overlay');
+
+            const headerText = document.getElementById('headerText');
+            const sub1 = document.getElementById('sub1');
+            const sub2 = document.getElementById('sub2');
+            const sub3 = document.getElementById('sub3');
+            const productName = document.getElementById('productName');
+            const productDesc = document.getElementById('productDesc');
+            const points = document.getElementById('points');
+            const gram = document.getElementById('gram');
+            const tehsil = document.getElementById('tehsil');
+            const jila = document.getElementById('jila');
+            const phone = document.getElementById('phone');
+            const imgInput = document.getElementById('imgInput');
+            const companyLogoInput = document.getElementById('companyLogoInput');
+            const productLogoInput = document.getElementById('productLogoInput');
+            const bgInput = document.getElementById('bgInput');
+
+            // preview elements
+            const dispHeader = document.getElementById('dispHeader');
+            const dispSubtitle = document.getElementById('dispSubtitle');
+            const companyLogoPreview = document.getElementById('companyLogoPreview');
+            const previewImg = document.getElementById('preview-img');
+            const productLogoPreview = document.getElementById('productLogoPreview');
+            const dispProduct = document.getElementById('dispProduct');
+            const dispDesc = document.getElementById('dispDesc');
+            const dispPoints = document.getElementById('dispPoints');
+            const dispAddress = document.getElementById('dispAddress');
+            const dispPhone = document.getElementById('dispPhone');
+            const qrContainer = document.getElementById('qrContainer');
+
+            // ---- Update Preview ----
+            function updatePreview() {
+                dispHeader.innerText = headerText.value || 'एग्रोएन';
+                const subLines = [sub1.value, sub2.value, sub3.value].filter(s => s.trim() !== '');
+                dispSubtitle.innerHTML = subLines.map(s => `<div>${s}</div>`).join('');
+
+                dispProduct.innerText = productName.value || '';
+                dispDesc.innerText = productDesc.value || '';
+
+                // Features as cards with icons
+                dispPoints.innerHTML = '';
+                const lines = points.value.split('\n').filter(l => l.trim());
+                const iconSelects = document.querySelectorAll('.feature-icon-select');
+                lines.forEach((line, index) => {
+                    const icon = iconSelects[index] ? iconSelects[index].value : '✅';
+                    const card = document.createElement('div');
+                    card.className = 'feature-card';
+                    card.innerHTML = `<span class="feature-icon">${icon}</span><span>${line}</span>`;
+                    dispPoints.appendChild(card);
+                });
+
+                // Address
+                const addrParts = [];
+                if(gram.value.trim()) addrParts.push(`📍 ग्राम: ${gram.value}`);
+                if(tehsil.value.trim()) addrParts.push(`📍 तहसील: ${tehsil.value}`);
+                if(jila.value.trim()) addrParts.push(`📍 जिला: ${jila.value}`);
+                dispAddress.innerHTML = addrParts.join('<br>') || '';
+
+                dispPhone.innerText = phone.value || '0000000000';
+                updateQRCode();
+
+                // Crop images
+                ['crop1','crop2','crop3','crop4'].forEach((id,i)=>{
+                    const url = document.getElementById(id).value;
+                    const el = document.getElementById(`cropImg${i+1}`);
+                    if(url) el.style.backgroundImage = `url(${url})`;
+                });
+                // Weed images
+                ['weed1','weed2','weed3'].forEach((id,i)=>{
+                    const url = document.getElementById(id).value;
+                    const el = document.getElementById(`weedImg${i+1}`);
+                    if(url) el.style.backgroundImage = `url(${url})`;
+                });
+            }
+
+            // QR Code
+            function updateQRCode() {
+                qrContainer.innerHTML = '';
+                const phoneVal = phone.value.trim();
+                if(phoneVal.length >= 10) {
+                    new QRCode(qrContainer, {
+                        text: `tel:${phoneVal}`,
+                        width: 70, height: 70,
+                        colorDark: "#000", colorLight: "#fff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                }
+            }
+
+            // Feature Icons Editor
+            function buildFeatureIconsEditor() {
+                const container = document.getElementById('featureIconsEditor');
+                container.innerHTML = '<label>🖼️ Feature Icons (per line)</label>';
+                const icons = ['✅','🌾','🛡️','⚡','🕒','📈','🧪','☘️','🧑‍🌾','🚜','🍃','🐛','🌱'];
+                const lines = points.value.split('\n').filter(l => l.trim());
+                lines.forEach((line, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'row';
+                    const select = document.createElement('select');
+                    select.className = 'feature-icon-select';
+                    icons.forEach(ic => {
+                        const opt = document.createElement('option');
+                        opt.value = ic; opt.textContent = ic;
+                        select.appendChild(opt);
+                    });
+                    select.value = '✅';
+                    div.innerHTML = `<span>Line ${idx+1}:</span>`;
+                    div.appendChild(select);
+                    container.appendChild(div);
+                });
+            }
+
+            // Event listeners
+            [headerText,sub1,sub2,sub3,productName,productDesc,points,gram,tehsil,jila,phone,
+             document.getElementById('crop1'),document.getElementById('crop2'),document.getElementById('crop3'),document.getElementById('crop4'),
+             document.getElementById('weed1'),document.getElementById('weed2'),document.getElementById('weed3')
+            ].forEach(el => el.addEventListener('input', () => { updatePreview(); buildFeatureIconsEditor(); }));
+            points.addEventListener('input', buildFeatureIconsEditor);
+
+            // Image uploads
+            imgInput.addEventListener('change', function(e){
+                const file = e.target.files[0];
+                if(file){
+                    const reader = new FileReader();
+                    reader.onload = ev => { previewImg.src = ev.target.result; previewImg.style.display='block'; };
+                    reader.readAsDataURL(file);
+                }
+            });
+            companyLogoInput.addEventListener('change', function(e){
+                const file = e.target.files[0];
+                if(file){
+                    const reader = new FileReader();
+                    reader.onload = ev => { companyLogoPreview.src = ev.target.result; companyLogoPreview.style.display='inline-block'; };
+                    reader.readAsDataURL(file);
+                }
+            });
+            productLogoInput.addEventListener('change', function(e){
+                const file = e.target.files[0];
+                if(file){
+                    const reader = new FileReader();
+                    reader.onload = ev => { productLogoPreview.src = ev.target.result; productLogoPreview.style.display='block'; };
+                    reader.readAsDataURL(file);
+                }
+            });
+            bgInput.addEventListener('change', function(e){
+                const file = e.target.files[0];
+                if(file){
+                    const reader = new FileReader();
+                    reader.onload = ev => { adPreview.style.backgroundImage = `url(${ev.target.result})`; };
+                    reader.readAsDataURL(file);
+                }
+            });
+            document.getElementById('setBgDefault').addEventListener('click', ()=>{
+                adPreview.style.backgroundImage = `url('https://images.unsplash.com/photo-1500076656116-558758c991c1?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80')`;
+            });
+
+            // Template change
+            templateSelect.addEventListener('change', function(){
+                adPreview.className = adPreview.className.replace(/template-\d/g, '').trim();
+                adPreview.classList.add(`template-${this.value}`);
+            });
+
+            // Auto Color Theme
+            document.getElementById('autoThemeBtn').addEventListener('click', function(){
+                if(previewImg.src && previewImg.complete){
+                    const colorThief = new ColorThief();
+                    const img = previewImg;
+                    if(img.naturalWidth === 0) return;
+                    const dominant = colorThief.getColor(img);
+                    const hex = `#${dominant.map(c=>c.toString(16).padStart(2,'0')).join('')}`;
+                    document.querySelector('.header-section').style.background = `linear-gradient(90deg, ${hex}, ${adjustColor(hex, -20)})`;
+                    adPreview.style.borderColor = hex;
+                } else {
+                    alert('पहले product image अपलोड करें।');
+                }
+            });
+            function adjustColor(hex, percent) {
+                // simple darker
+                let R = parseInt(hex.substring(1,3),16);
+                let G = parseInt(hex.substring(3,5),16);
+                let B = parseInt(hex.substring(5,7),16);
+                R = Math.max(0, R+percent); G=Math.max(0,G+percent); B=Math.max(0,B+percent);
+                return `#${R.toString(16).padStart(2,'0')}${G.toString(16).padStart(2,'0')}${B.toString(16).padStart(2,'0')}`;
+            }
+
+            // Drag & Drop
+            const draggables = document.querySelectorAll('.draggable');
+            let dragEl = null, offsetX, offsetY;
+            draggables.forEach(el => {
+                el.addEventListener('mousedown', function(e){
+                    dragEl = this;
+                    const rect = dragEl.getBoundingClientRect();
+                    offsetX = e.clientX - rect.left;
+                    offsetY = e.clientY - rect.top;
+                    dragEl.style.position = 'relative';
+                    dragEl.style.zIndex = 10;
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+            });
+            function onMouseMove(e){
+                if(!dragEl) return;
+                dragEl.style.left = (e.clientX - offsetX - dragEl.parentElement.getBoundingClientRect().left) + 'px';
+                dragEl.style.top = (e.clientY - offsetY - dragEl.parentElement.getBoundingClientRect().top) + 'px';
+            }
+            function onMouseUp(){
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                dragEl = null;
+            }
+
+            // AI Background Remove Simulation
+            document.getElementById('removeBgBtn').addEventListener('click', function(){
+                if(!previewImg.src) return alert('पहले product image अपलोड करें।');
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = previewImg.naturalWidth;
+                canvas.height = previewImg.naturalHeight;
+                ctx.drawImage(previewImg, 0,0);
+                const imageData = ctx.getImageData(0,0,canvas.width, canvas.height);
+                const data = imageData.data;
+                for(let i=0; i<data.length; i+=4){
+                    // remove green-ish background (simple threshold)
+                    const r=data[i], g=data[i+1], b=data[i+2];
+                    if(g > r+20 && g > b+20){
+                        data[i+3] = 0; // transparent
+                    }
+                }
+                ctx.putImageData(imageData,0,0);
+                previewImg.src = canvas.toDataURL();
+                alert('Simple background removal applied. For real AI use remove.bg API.');
+            });
+
+            // Download
+            document.getElementById('downloadBtn').addEventListener('click', ()=>{
+                html2canvas(adPreview, {scale:2, useCORS:true}).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = 'agro-poster.png';
+                    link.href = canvas.toDataURL();
+                    link.click();
+                });
+            });
+
+            // WhatsApp
+            document.getElementById('whatsappBtn').addEventListener('click', ()=>{
+                const text = `${headerText.value}\n${productName.value}\n${productDesc.value}\n📞 ${phone.value}`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+            });
+
+            // Init
+            buildFeatureIconsEditor();
+            updatePreview();
+            document.getElementById('setBgDefault').click();
+        })();
+    </script>
+</body>
+</html>

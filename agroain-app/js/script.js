@@ -301,25 +301,28 @@ function calculateOptimalCombination(totalRequired, currentProduct) {
     let availablePacks = [];
     const currentTech = normalizeTechnicalName(currentProduct.technical);
 
+    // 1. डेटाबेस से सभी उपलब्ध पैक्स को सही साइज़ के साथ इकट्ठा करना
     allProducts.forEach(p => {
         if (normalizeTechnicalName(p.technical) === currentTech) {
-            if (p.packs && Array.isArray(p.packs) && p.packs.length > 0) {
-                p.packs.forEach(pack => {
-                    availablePacks.push({
-                        name: p.name,
-                        company: p.company,
-                        size: parseInt(pack.size || pack.packSize, 10),
-                        price: parseFloat(pack.price),
-                        isTargetBrand: (p.name.toLowerCase().trim() === currentProduct.name.toLowerCase().trim())
-                    });
-                });
-            } 
-            else if (p.packSize && p.price) {
+            // पैकिंग साइज़ निकालना
+            let pSizeRaw = (p.packSize || p.packing || '').toString().toLowerCase();
+            let sizeNum = 0;
+            const match = pSizeRaw.match(/(\d+(\.\d+)?)/);
+            
+            if (match) {
+                sizeNum = parseFloat(match[1]);
+                // फिक्स: अगर 'l' है (लेकिन 'ml' नहीं) तो 1000 से गुणा करें
+                if (pSizeRaw.includes('l') && !pSizeRaw.includes('ml')) {
+                    sizeNum = sizeNum * 1000;
+                }
+            }
+
+            if (sizeNum > 0) {
                 availablePacks.push({
                     name: p.name,
                     company: p.company,
-                    size: parseInt(p.packSize, 10),
-                    price: parseFloat(p.price),
+                    size: sizeNum, // यह अब सही ml में होगा (जैसे 500 या 1000)
+                    price: parseFloat(p.price) || 0,
                     isTargetBrand: (p.name.toLowerCase().trim() === currentProduct.name.toLowerCase().trim())
                 });
             }
@@ -328,10 +331,9 @@ function calculateOptimalCombination(totalRequired, currentProduct) {
 
     if (availablePacks.length === 0) return { combo: [], totalPrice: 0 };
 
+    // 2. सॉर्ट करना: पहले टारगेट ब्रांड, फिर बड़े साइज़ वाले पैक्स
     availablePacks.sort((a, b) => {
-        if (a.isTargetBrand !== b.isTargetBrand) {
-            return a.isTargetBrand ? -1 : 1;
-        }
+        if (a.isTargetBrand !== b.isTargetBrand) return a.isTargetBrand ? -1 : 1;
         return b.size - a.size;
     });
 
@@ -339,41 +341,28 @@ function calculateOptimalCombination(totalRequired, currentProduct) {
     let combo = [];
     let totalPrice = 0;
 
+    // 3. कॉम्बिनेशन बनाना
     for (let pack of availablePacks) {
         if (remaining <= 0) break;
+        
+        // केवल टारगेट ब्रांड के पैक्स का उपयोग करें
         if (!pack.isTargetBrand) continue;
 
-        const count = Math.floor(remaining / pack.size);
+        let count = Math.floor(remaining / pack.size);
         if (count > 0) {
             combo.push({ ...pack, count });
             totalPrice += count * pack.price;
-            remaining -= count * pack.size;
+            remaining -= (count * pack.size);
         }
     }
 
+    // 4. अगर कुछ डोज़ बाकी रह गया है, तो एक और पैकेट जोड़ें
     if (remaining > 0) {
-        let bestOption = null;
-        for (let pack of availablePacks) {
-            if (pack.size >= remaining) {
-                if (!bestOption || pack.price < bestOption.price) {
-                    bestOption = pack;
-                }
-            }
-        }
-        if (!bestOption) {
-            availablePacks.sort((a, b) => a.price - b.price);
-            bestOption = availablePacks[0];
-        }
-        if (bestOption) {
-            let existing = combo.find(c => c.name === bestOption.name && c.size === bestOption.size);
-            if (existing) {
-                existing.count += 1;
-            } else {
-                combo.push({ ...bestOption, count: 1 });
-            }
-            totalPrice += bestOption.price;
-            remaining -= bestOption.size;
-        }
+        let bestPack = availablePacks.find(p => p.isTargetBrand && p.size >= remaining);
+        if (!bestPack) bestPack = availablePacks.find(p => p.isTargetBrand) || availablePacks[0];
+        
+        combo.push({ ...bestPack, count: 1 });
+        totalPrice += bestPack.price;
     }
 
     return { combo, totalPrice };
@@ -565,9 +554,10 @@ function renderProductCardWithPacks(docData, totalBigha) {
     const dosePerBigha = getDosePerBigha(docData.doseSpray);
     const totalRequiredDose = dosePerBigha * totalBigha; 
 
-    // यूनिट तय करना: अगर packSize या doseSpray में 'ml' लिखा है तो 'ml', नहीं तो 'gram'
-    const isLiquid = (docData.packSize && typeof docData.packSize === 'string' && docData.packSize.toLowerCase().includes('ml')) || 
-                     (docData.doseSpray && typeof docData.doseSpray === 'string' && docData.doseSpray.toLowerCase().includes('ml'));
+    // यूनिट चेक करना (ml या gm)
+    const isLiquid = (docData.packSize && String(docData.packSize).toLowerCase().includes('ml')) || 
+                     (docData.doseSpray && String(docData.doseSpray).toLowerCase().includes('ml')) ||
+                     (docData.packSize && String(docData.packSize).toLowerCase().includes('l'));
     
     const unit = isLiquid ? 'ml' : 'gram';
 
@@ -578,18 +568,36 @@ function renderProductCardWithPacks(docData, totalBigha) {
     if (dosePerBigha > 0 && totalRequiredDose > 0) {
         doseDisplay = `💧 ${dosePerBigha} ${unit} / बीघा (कुल जरूरत: ${totalRequiredDose} ${unit})`;
         
+        // --- फिक्स: यहाँ से `variants` का लॉजिक सही किया गया है ---
+        let variants = allProducts.filter(p => 
+            p.name && p.name.trim().toLowerCase() === docData.name.trim().toLowerCase()
+        ).map(p => {
+            const pSizeRaw = (p.packSize || p.packing || '').toString();
+            const match = pSizeRaw.match(/(\d+(\.\d+)?)/);
+            let sizeNum = match ? parseFloat(match[1]) : 0;
+
+            // अगर 'L' या 'Liter' है तो 1000 से गुणा करें
+            if (isLiquid && (pSizeRaw.toLowerCase().includes('l') || pSizeRaw.toLowerCase().includes('liter'))) {
+                // यह चेक करना जरूरी है कि पहले से ml में तो नहीं है (जैसे 1000ml)
+                if (!pSizeRaw.toLowerCase().includes('ml') && sizeNum < 50) { 
+                    sizeNum = sizeNum * 1000;
+                }
+            }
+            return {
+                original: p,
+                size: sizeNum,
+                price: parseFloat(p.price) || 0,
+                label: pSizeRaw
+            };
+        }).filter(v => v.size > 0 && v.price > 0);
+
+        // सही वैरिएंट्स के साथ कैलकुलेशन
         const result = calculateOptimalCombination(totalRequiredDose, docData);
         
         if (result.combo && result.combo.length > 0) {
             totalPriceDisplay = result.totalPrice.toFixed(2);
             packingDetails = result.combo.map(c => {
-                if (c.name.toLowerCase().trim() !== docData.name.toLowerCase().trim()) {
-                    return `<span style="color: #e65100; font-weight: bold; background: #fff3e0; padding: 2px 6px; border-radius: 4px; display: inline-block; margin: 2px 0;">
-                                दूसरा विकल्प: ${c.name} (${c.company}) - ${c.size} ${unit} का ${c.count} पैकेट
-                            </span>`;
-                } else {
-                    return `<span>📦 ${c.name} - ${c.size} ${unit} के ${c.count} पैकेट</span>`;
-                }
+                return `<span>📦 ${c.name} - ${c.size} ${unit} के ${c.count} पैकेट</span>`;
             }).join("<br>");
         }
     }
@@ -603,14 +611,7 @@ function renderProductCardWithPacks(docData, totalBigha) {
     const img = docData.img || 'https://via.placeholder.com/150?text=Agroain';
     const techName = docData.technical || '—';
     const companyName = docData.company || '—';
-    
-    // डेटाबेस से extraDetails निकालना
-    const extraDetailsText = docData.extraDetails || '';
-    
-    // अगर extraDetails है, तो ही उसका HTML बनेगा, नहीं तो खाली रहेगा
-    const detailsDisplay = extraDetailsText 
-        ? `<p class="med-details" style="margin: 6px 0; color: #555; font-size: 0.95rem;"><strong>📋 विवरण:</strong> ${escapeHtml(extraDetailsText)}</p>` 
-        : '';
+    const detailsDisplay = docData.extraDetails ? `<p class="med-details" style="margin: 6px 0; color: #555; font-size: 0.95rem;"><strong>📋 विवरण:</strong> ${escapeHtml(docData.extraDetails)}</p>` : '';
 
     return `
         <div class="product-card">
@@ -784,14 +785,51 @@ function goToPackagePage(page) {
 // ==========================================
 // Search Handlers
 // ==========================================
+// ==========================================
+// UPDATED: Search Handler (Now perfectly synced with handleSownCase)
+// ==========================================
 async function handleSmartSearch() {
-    const yesRadio = document.querySelector('input[name="buwai"][value="yes"]');
-    if (yesRadio && yesRadio.checked) {
-        await handleSownCase();
+    const searchInput = document.getElementById('searchInput').value.trim();
+    
+    // 1. अगर इनपुट खाली है तो रोकें
+    if (!searchInput) {
+        alert("कृपया दवाई का नाम, कंपनी या फसल के दिन लिखें।");
+        return;
+    }
+
+    // 2. पूरे सर्च लॉजिक के लिए handleSownCase का उपयोग करें
+    // यह फंक्शन आपके द्वारा लिखे गए पूरे डेटाबेस और लॉजिक को प्रोसेस करेगा
+    await handleSownCase();
+}
+
+// ==========================================
+// EXTRA: Enter की सपोर्ट के लिए (इसे भी जोड़ लें)
+// ==========================================
+document.getElementById('searchInput').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+        handleSmartSearch();
+    }
+});
+
+function performTextSearch(query) {
+    const queryLower = query.toLowerCase();
+    const resultDiv = document.getElementById('result');
+    
+    // मान लीजिए allProducts आपका डेटाबेस का एरे है
+    // इसे अपने डेटा के अनुसार बदलें
+    const filteredProducts = allProducts.filter(item => 
+        item.name.toLowerCase().includes(queryLower) || 
+        item.company.toLowerCase().includes(queryLower) ||
+        item.tech.toLowerCase().includes(queryLower)
+    );
+
+    if (filteredProducts.length === 0) {
+        resultDiv.innerHTML = "<p>माफ करें, कोई परिणाम नहीं मिला।</p>";
     } else {
-        await handleNotSownCase();
+        renderResults(filteredProducts); // परिणाम दिखाने वाला फंक्शन
     }
 }
+
 
 async function handleSownCase() {
     if (isSearching) return;
@@ -806,14 +844,22 @@ async function handleSownCase() {
     }
     
     try {
-        const bighaInput = document.getElementById('bigha');
+        const bighaSelect = document.getElementById('bigha');
+        const customBighaInput = document.getElementById('customBigha');
         const cropSelect = document.getElementById('cropSelect');
         const searchInput = document.getElementById('searchInput');
         const resTitle = document.getElementById('resTitle');
         const resultDiv = document.getElementById('result');
         const grandTotalContainer = document.getElementById('grandTotalContainer');
 
-        currentBigha = bighaInput ? (parseFloat(bighaInput.value) || 1) : 1;
+        // --- फिक्स: 'अन्य' (other) इनपुट हैंडलिंग ---
+        if (bighaSelect && bighaSelect.value === 'other') {
+            currentBigha = parseFloat(customBighaInput.value) || 1;
+        } else {
+            currentBigha = bighaSelect ? (parseFloat(bighaSelect.value) || 1) : 1;
+        }
+        // ------------------------------------------
+
         currentCrop = cropSelect ? cropSelect.value : '';
         currentCropHindi = getCropHindiName(currentCrop);
         
@@ -843,12 +889,9 @@ async function handleSownCase() {
             
             filteredPackages = allPackages.filter(pkg => {
                 const cropMatch = doesCropMatch(pkg.crop, currentCrop);
-                
-                // बदलाव: यहाँ String को Number में बदला गया है ताकि 25 दिन मैच हो सके
                 const minAge = parseInt(pkg.ageMin || 0, 10);
                 const maxAge = parseInt(pkg.ageMax || 999, 10);
                 const ageMatch = day >= minAge && day <= maxAge;
-                
                 const typeMatch = !((pkg.packageType || '').includes('पहले') && day > 0);
                 return cropMatch && ageMatch && typeMatch;
             });
@@ -1004,9 +1047,120 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
-function handleBuyNow(productName, price) {
-    alert(`✅ "${productName}" खरीदने के लिए चुना गया।\n💰 कीमत: ${price}\n(जल्द ही ऑनलाइन भुगतान सुविधा उपलब्ध होगी।)`);
+// ==========================================
+// Razorpay Payment Gateway Integration
+// ==========================================
+// ==========================================
+// Razorpay Payment Gateway Integration (Complete)
+// ==========================================
+function handleBuyNow(productOrPackageName, price) {
+    // 1. कीमत से '₹' का साइन और कॉमा हटाकर शुद्ध नंबर निकालें (उदा: "₹1,250.50" -> 1250.50)
+    let numericPrice = parseFloat(price.replace(/[^\d.]/g, ''));
+    
+    if (isNaN(numericPrice) || numericPrice <= 0) {
+        alert("❌ भुगतान राशि सही नहीं है।");
+        return;
+    }
+
+    // 2. रेज़रपे पैसे हमेशा 'पैसे' (Paise) में लेता है (₹1 = 100 पैसे)
+    let amountInPaise = Math.round(numericPrice * 100);
+
+    // 3. किसान से बुनियादी जानकारी लें (ताकि पेमेंट रसीद भेजी जा सके)
+    let customerName = prompt("अपना नाम दर्ज करें:");
+    if (!customerName) return;
+
+    let customerPhone = prompt("अपना 10 अंकों का मोबाइल नंबर दर्ज करें:");
+    if (!customerPhone || customerPhone.length < 10) {
+        alert("⚠️ सही मोबाइल नंबर जरूरी है।");
+        return;
+    }
+
+    // 4. Razorpay के ऑप्शंस कॉन्फ़िगर करें (UPI को Force करने के साथ)
+    const options = {
+        "key": "rzp_test_SYcsMs0hCrXw6K", // ⚠️ यहाँ अपनी असली Razorpay API Key पेस्ट करें
+        "amount": amountInPaise, 
+        "currency": "INR",
+        "name": "Agroain",
+        "description": `${productOrPackageName} (${currentBigha} बीघा खेत के लिए)`,
+        "image": "https://via.placeholder.com/150?text=Agroain", // यहाँ अपना लोगो लिंक डाल सकते हैं
+        
+        // 👇 यह कॉन्फ़िगरेशन रेज़रपे को UPI ऑप्शन दिखाने के लिए मजबूर करेगा
+        "config": {
+            "display": {
+                "blocks": {
+                    "banks": {
+                        "name": "All Payment Options",
+                        "instruments": [
+                            { "method": "upi" }, // UPI को सबसे ऊपर प्राथमिकता देगा
+                            { "method": "card" },
+                            { "method": "netbanking" },
+                            { "method": "wallet" }
+                        ]
+                    }
+                },
+                "sequence": ["block.banks"],
+                "preferences": { "show_default_blocks": true }
+            }
+        },
+
+        "handler": function (response) {
+            // यह फंक्शन तब चलेगा जब पेमेंट सफलतापूर्वक पूरा हो जाएगा
+            alert(`🎉 भुगतान सफल रहा!\nपेमेंट ID: ${response.razorpay_payment_id}`);
+            
+            // पेमेंट सफल होने के बाद ऑर्डर डेटाबेस में सेव करने का फंक्शन
+            saveSuccessfulOrder(response.razorpay_payment_id, productOrPackageName, numericPrice, customerName, customerPhone);
+        },
+        "prefill": {
+            "name": customerName,
+            "contact": customerPhone
+        },
+        "theme": {
+            "color": "#4CAF50" // आपकी वेबसाइट की थीम के अनुसार ग्रीन कलर
+        },
+        "modal": {
+            "ondismiss": function(){
+                alert("❌ भुगतान रद्द कर दिया गया था।");
+            }
+        }
+    };
+
+    // 5. Razorpay का चेकआउट पॉपअप खोलें
+    const rzp = new Razorpay(options);
+    rzp.open();
 }
+
+// ==========================================
+// Firebase में सफल ऑर्डर सेव करने का फंक्शन
+// ==========================================
+async function saveSuccessfulOrder(paymentId, itemName, finalPrice, name, phone) {
+    if (!db) {
+        console.error("Firebase उपलब्ध नहीं है, लेकिन पेमेंट सफल रहा। ID:", paymentId);
+        return;
+    }
+    
+    try {
+        const orderData = {
+            paymentId: paymentId,
+            customerName: name.trim(),
+            customerPhone: phone.trim(),
+            itemName: itemName,
+            amountPaid: finalPrice,
+            crop: currentCropHindi || "सामान्य",
+            bigha: currentBigha,
+            status: "Paid / Confirmed",
+            timestamp: new Date().toISOString()
+        };
+
+        // Firebase में 'successful_orders' नाम के नोड में डेटा सुरक्षित करना
+        await db.ref('successful_orders').push(orderData);
+        console.log("✅ Order & Payment Details saved to Firebase!");
+        
+    } catch (error) {
+        console.error("❌ डेटाबेस में ऑर्डर सेव करने में त्रुटि:", error);
+        alert("भुगतान सफल रहा, लेकिन डेटाबेस सिंक में समस्या आई। कृपया अपनी पेमेंट ID नोट रखें: " + paymentId);
+    }
+}
+
 
 function openZoom(src) {
     const modal = document.getElementById('imageModal');
@@ -1023,3 +1177,34 @@ function closeZoom() {
         modal.style.display = "none";
     }
 }
+async function saveSuccessfulOrder(paymentId, itemName, finalPrice, name, phone) {
+    if (!db) {
+        console.error("Firebase उपलब्ध नहीं है, लेकिन पेमेंट सफल रहा। ID:", paymentId);
+        return;
+    }
+    
+    try {
+        const orderData = {
+            paymentId: paymentId,
+            customerName: name.trim(),
+            customerPhone: phone.trim(),
+            itemName: itemName,
+            amountPaid: finalPrice,
+            crop: currentCropHindi || "सामान्य",
+            bigha: currentBigha,
+            status: "Paid / Confirmed",
+            timestamp: new Date().toISOString()
+        };
+
+        // Firebase में 'successful_orders' नाम के नोड में डेटा सुरक्षित करना
+        await db.ref('successful_orders').push(orderData);
+        console.log("✅ Order & Payment Details saved to Firebase!");
+        
+        // चाहें तो यहाँ से किसान को किसी थैंक यू (Success) पेज पर भेज सकते हैं
+        // window.location.href = "success.html";
+    } catch (error) {
+        console.error("❌ डेटाबेस में ऑर्डर सेव करने में त्रुटि:", error);
+        alert("भुगतान सफल रहा, लेकिन डेटाबेस सिंक में समस्या आई। कृपया अपनी पेमेंट ID नोट रखें: " + paymentId);
+    }
+}
+

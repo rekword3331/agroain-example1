@@ -5,20 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Agroain · स्मार्ट फसल सलाह</title>
 
-    <!-- Firebase -->
-    <!-- इसे बदलें (https:// लगाएँ) -->
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-    <!-- Page Loader Spinner -->
     <div class="page-loader" id="pageLoader">
         <div class="spinner"></div>
         <div class="loader-text">🌾 Agroain लोड हो रहा है...</div>
@@ -26,7 +21,6 @@
     </div>
 
     <div class="container" id="mainContainer">
-        <!-- Header -->
         <div class="header">
             <h1>Agroain</h1>
             <div class="crop-selector">
@@ -56,64 +50,49 @@
             <div class="subtitle">स्मार्ट सुरक्षा · पैकेज और दवाइयाँ</div>
         </div>
 
-        <!-- Input Section -->
         <div class="section">
             <label>🧾 आपकी जमीन कितने बीघा है?</label>
-            <select id="bigha">
+            <select id="bigha" onchange="checkBighaOption()">
                 <option value="1">1 बीघा</option>
                 <option value="2">2 बीघा</option>
-                <option value="3">3 बीघा</option>
-                <option value="4">4 बीघा</option>
                 <option value="5">5 बीघा</option>
-                <option value="6">6 बीघा</option>
-                <option value="8">8 बीघा</option>
                 <option value="10">10 बीघा</option>
-                <option value="12">12 बीघा</option>
-                <option value="15">15 बीघा</option>
                 <option value="20">20 बीघा</option>
-                <option value="25">25 बीघा</option>
-                <option value="30">30 बीघा</option>
                 <option value="50">50 बीघा</option>
+                <option value="other">अन्य (लिखें)</option>
             </select>
 
-            <label>🌱 क्या आपने अपनी फसल की बुवाई कर दी है?</label>
-            <div class="radio-group">
-                <label><input type="radio" name="buwai" value="yes" checked onchange="toggleBuwaiOptions()"> हाँ</label>
-                <label><input type="radio" name="buwai" value="no" onchange="toggleBuwaiOptions()"> नहीं</label>
-            </div>
+            <!-- Custom Bigha Input (Default hidden) -->
+            <input type="number" id="customBigha" placeholder="कितने बीघा है?" style="display:none; margin-top: 10px;">
 
-            <div id="yesContainer">
-                <label>📅 फसल कितने दिन की है? <span class="label-hint">(या दवाई / तकनीकी / कंपनी का नाम लिखें)</span></label>
-                <input type="text" id="searchInput" placeholder="जैसे: 25, इमिडाक्लोप्रिड, सिंजेंटा, Bayer ..." autocomplete="off">
-            </div>
-
-            <div id="noContainer" class="hidden">
-                <label>🧴 कृपया चुनें:</label>
-                <div class="option-buttons">
-                    <div id="seedTreatmentBtn" class="option-btn selected" onclick="selectPreOption('seed')">🌾 बीज उपचार</div>
-                    <div id="preSowingBtn" class="option-btn" onclick="selectPreOption('presowing')">🧪 बुवाई से पहले की दवाई (खेत)</div>
-                </div>
-                <input type="hidden" id="selectedPreOption" value="seed">
-            </div>
+            <label style="margin-top: 15px;">📅 फसल कितने दिन की है? <span class="label-hint">(या दवाई / तकनीकी / कंपनी का नाम लिखें)</span></label>
+            <input type="text" id="searchInput" placeholder="जैसे: 25, इमिडाक्लोप्रिड, सिंजेंटा, Bayer ..." autocomplete="off">
 
             <button onclick="handleSmartSearch()">🔍 दवाई और पैकेज देखें</button>
         </div>
 
-        <!-- Result Section (Unified - No Tabs) -->
         <div id="result">
             <h3 id="resTitle">🔍 परिणाम</h3>
-            <!-- Grand Total Container -->
             <div id="grandTotalContainer"></div>
         </div>
     </div>
     
-    <!-- Image Zoom Modal -->
     <div id="imageModal" class="image-modal" onclick="closeZoom()">
         <span class="modal-close">&times;</span>
         <img id="modalImg" src="" alt="Zoomed Product">
     </div>
 
-    <!-- Custom JS -->
     <script src="js/script.js"></script>
+    <script>
+        function checkBighaOption() {
+            const bighaSelect = document.getElementById('bigha');
+            const customBigha = document.getElementById('customBigha');
+            if (bighaSelect.value === 'other') {
+                customBigha.style.display = 'block';
+            } else {
+                customBigha.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>
