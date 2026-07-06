@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agroain Admin - ऑर्डर नोटिफिकेशन</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 15px; background: #f5f5f5; }
+        .order-card { background: white; border-radius: 8px; padding: 12px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn { padding: 8px 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h2>🔔 एडमिन पैनल - लाइव ऑर्डर</h2>
+    <button class="btn" onclick="requestPermission()">नोटिफिकेशन चालू करें</button>
+    <div id="orders-container"></div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-messaging-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAOQp4Ez6omxSL5MDh_cGzzUy1gcf4KkEo",
+            authDomain: "agroain.firebaseapp.com",
+            databaseURL: "https://agroain-default-rtdb.firebaseio.com",
+            projectId: "agroain",
+            storageBucket: "agroain.firebasestorage.app",
+            messagingSenderId: "837977852518",
+            appId: "1:837977852518:web:eebd9baaec310f03e0bba7",
+            measurementId: "G-J7CG2Z0TMG"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const messaging = firebase.messaging();
+
+        // ⚠️ यहाँ अपनी VAPID Key डालें (Firebase Console -> Cloud Messaging -> Web Push certificates)
+        const vapidKey = "BMNQ7-r1RgBbDEoGxnOwEeSf-7-WYpJUnOkrhKl6XtXP4e-65ELjsRKr9zngGsu0Y6xpNa8l6Dmh5CToN-bHMcQ ";
+
+        async function requestPermission() {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    const token = await messaging.getToken({ vapidKey: vapidKey });
+                    console.log('FCM Token:', token);
+                    // यह टोकन डेटाबेस में admin_token नोड में सेव करें
+                    await db.ref('admin_token').set(token);
+                    alert('✅ नोटिफिकेशन चालू! अब आपको ऑर्डर की सूचना मिलेगी।');
+                } else {
+                    alert('⚠️ नोटिफिकेशन की अनुमति ज़रूरी है।');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('❌ अनुमति लेने में दिक्कत: ' + err.message);
+            }
+        }
+
+        // रियल-टाइम ऑर्डर दिखाना
+        const ordersRef = db.ref('successful_orders');
+        ordersRef.on('child_added', (snapshot) => {
+            const order = snapshot.val();
+            displayOrder(order);
+        });
+
+        function displayOrder(order) {
+            const container = document.getElementById('orders-container');
+            const card = document.createElement('div');
+            card.className = 'order-card';
+            card.innerHTML = `
+                <strong>🛒 ${order.itemName}</strong>
+                <p>📞 ${order.customerName} | 📱 ${order.customerPhone}</p>
+                <p>📍 ${order.customerAddress} - ${order.customerPincode}</p>
+                <p>🌾 फसल: ${order.crop} | 📐 बीघा: ${order.bigha}</p>
+                <p>💰 ₹${order.amountPaid} | 🕒 ${new Date(order.timestamp).toLocaleString()}</p>
+                <p style="color:green;">✅ ${order.status} | ID: ${order.paymentId}</p>
+            `;
+            container.prepend(card);
+        }
+
+        // पेज लोड होने पर पुराने ऑर्डर दिखाएँ
+        ordersRef.once('value', (snapshot) => {
+            const container = document.getElementById('orders-container');
+            container.innerHTML = '';
+            snapshot.forEach((child) => {
+                displayOrder(child.val());
+            });
+        });
+    </script>
+</body>
+</html>

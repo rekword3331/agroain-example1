@@ -1,0 +1,24 @@
+<html>
+<body>
+<button onclick="pay()">Test UPI ₹1</button>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+function pay() {
+  var options = {
+    key: "rzp_test_SYcsMs0hCrXw6K",   // आपकी टेस्ट Key
+    amount: 100,                       // ₹1.00
+    currency: "INR",
+    name: "Test",
+    description: "Test Payment",
+    handler: function(response) {
+      alert("Payment ID: " + response.razorpay_payment_id);
+    },
+    prefill: { contact: "9999999999" },
+    theme: { color: "#4CAF50" }
+  };
+  var rzp = new Razorpay(options);
+  rzp.open();
+}
+</script>
+</body>
+</html>

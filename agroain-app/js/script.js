@@ -1,5 +1,5 @@
 // ==========================================
-// Firebase Config & Initialization (Fixed & Cleaned)
+// Firebase Config & Initialization
 // ==========================================
 const firebaseConfig = {
   apiKey: "AIzaSyAOQp4Ez6omxSL5MDh_cGzzUy1gcf4KkEo",
@@ -11,8 +11,6 @@ const firebaseConfig = {
   appId: "1:837977852518:web:eebd9baaec310f03e0bba7",
   measurementId: "G-J7CG2Z0TMG"
 };
-
-// ग्लोबल वेरिएबल्स (बिना डुप्लीकेट डिक्लेरेशन के)
 
 let db;
 
@@ -296,34 +294,29 @@ function groupProducts(products) {
 }
 
 function calculateOptimalCombination(totalRequired, currentProduct) {
-    if (totalRequired <= 0) return { combo: [], totalPrice: 0 };
+    if (!totalRequired || totalRequired <= 0) return { combo: [], totalPrice: 0 };
 
     let availablePacks = [];
-    const currentTech = normalizeTechnicalName(currentProduct.technical);
+    const currentTech = currentProduct.technical ? normalizeTechnicalName(currentProduct.technical) : '';
 
-    // 1. डेटाबेस से सभी उपलब्ध पैक्स को सही साइज़ के साथ इकट्ठा करना
     allProducts.forEach(p => {
+        if (!p.technical) return;
         if (normalizeTechnicalName(p.technical) === currentTech) {
-            // पैकिंग साइज़ निकालना
             let pSizeRaw = (p.packSize || p.packing || '').toString().toLowerCase();
             let sizeNum = 0;
             const match = pSizeRaw.match(/(\d+(\.\d+)?)/);
-            
             if (match) {
                 sizeNum = parseFloat(match[1]);
-                // फिक्स: अगर 'l' है (लेकिन 'ml' नहीं) तो 1000 से गुणा करें
                 if (pSizeRaw.includes('l') && !pSizeRaw.includes('ml')) {
                     sizeNum = sizeNum * 1000;
                 }
             }
-
             if (sizeNum > 0) {
                 availablePacks.push({
-                    name: p.name,
-                    company: p.company,
-                    size: sizeNum, // यह अब सही ml में होगा (जैसे 500 या 1000)
+                    name: p.name || 'दवाई',
+                    size: sizeNum,
                     price: parseFloat(p.price) || 0,
-                    isTargetBrand: (p.name.toLowerCase().trim() === currentProduct.name.toLowerCase().trim())
+                    isTargetBrand: (p.name && currentProduct.name && p.name.trim().toLowerCase() === currentProduct.name.trim().toLowerCase())
                 });
             }
         }
@@ -331,39 +324,52 @@ function calculateOptimalCombination(totalRequired, currentProduct) {
 
     if (availablePacks.length === 0) return { combo: [], totalPrice: 0 };
 
-    // 2. सॉर्ट करना: पहले टारगेट ब्रांड, फिर बड़े साइज़ वाले पैक्स
-    availablePacks.sort((a, b) => {
-        if (a.isTargetBrand !== b.isTargetBrand) return a.isTargetBrand ? -1 : 1;
-        return b.size - a.size;
-    });
+    availablePacks.sort((a, b) => b.size - a.size);
 
     let remaining = totalRequired;
-    let combo = [];
+    let rawCombo = [];
     let totalPrice = 0;
 
-    // 3. कॉम्बिनेशन बनाना
     for (let pack of availablePacks) {
         if (remaining <= 0) break;
-        
-        // केवल टारगेट ब्रांड के पैक्स का उपयोग करें
         if (!pack.isTargetBrand) continue;
-
         let count = Math.floor(remaining / pack.size);
         if (count > 0) {
-            combo.push({ ...pack, count });
+            rawCombo.push({ ...pack, count });
             totalPrice += count * pack.price;
-            remaining -= (count * pack.size);
+            remaining -= count * pack.size;
         }
     }
 
-    // 4. अगर कुछ डोज़ बाकी रह गया है, तो एक और पैकेट जोड़ें
     if (remaining > 0) {
-        let bestPack = availablePacks.find(p => p.isTargetBrand && p.size >= remaining);
-        if (!bestPack) bestPack = availablePacks.find(p => p.isTargetBrand) || availablePacks[0];
-        
-        combo.push({ ...bestPack, count: 1 });
-        totalPrice += bestPack.price;
+        let suitablePacks = availablePacks.filter(p => p.isTargetBrand && p.size >= remaining);
+        if (suitablePacks.length === 0) {
+            suitablePacks = availablePacks.filter(p => p.size >= remaining);
+        }
+        if (suitablePacks.length === 0) {
+            suitablePacks = availablePacks.filter(p => p.isTargetBrand);
+            if (suitablePacks.length === 0) suitablePacks = availablePacks;
+        }
+        if (suitablePacks.length > 0) {
+            let bestPack = suitablePacks.reduce((min, p) => p.size < min.size ? p : min);
+            rawCombo.push({ ...bestPack, count: 1 });
+            totalPrice += bestPack.price;
+        }
     }
+
+    // समान साइज़ वाली एंट्री को मर्ज करें
+    const mergedMap = new Map();
+    rawCombo.forEach(entry => {
+        const key = entry.size + '||' + entry.name;
+        if (mergedMap.has(key)) {
+            let existing = mergedMap.get(key);
+            existing.count += entry.count;
+            existing.price += entry.price * entry.count;
+        } else {
+            mergedMap.set(key, { ...entry });
+        }
+    });
+    const combo = Array.from(mergedMap.values());
 
     return { combo, totalPrice };
 }
@@ -387,101 +393,50 @@ function renderPackageCard(pkg, bighaInput) {
             const itemImg = item.img || 'https://via.placeholder.com/150?text=Agroain';
             const currentProdName = (item.prodName || item.name || '').trim();
             
-            // 1. डोज़ से नंबर अलग करना (जैसे "70 ml /par bigha" -> 70)
             const rawDose = item.dose || '';
             const doseMatch = rawDose.match(/(\d+(\.\d+)?)/);
             const dosePerBigha = doseMatch ? parseFloat(doseMatch[1]) : 0;
             const totalDoseNeeded = dosePerBigha * bigha; 
 
-            const isGm = rawDose.toLowerCase().includes('gm') || rawDose.includes('ग्राम');
-            const unitStr = isGm ? 'gm' : 'ml';
+            // --- यूनिट डिटेक्शन फिक्स (gm/ml) ---
+            let unitStr = 'ml';
+            const rawDoseLower = rawDose.toLowerCase();
+            const isGmByDose = rawDoseLower.includes('gm') || rawDoseLower.includes('ग्राम');
+            const matchedProduct = allProducts.find(p => 
+                p.name && p.name.trim().toLowerCase() === currentProdName.toLowerCase()
+            );
+            if (matchedProduct) {
+                const pSizeLower = (matchedProduct.packSize || '').toLowerCase();
+                const pTechLower = (matchedProduct.technical || '').toLowerCase();
+                if (isGmByDose || 
+                    pSizeLower.includes('gm') || pSizeLower.includes('g') || pSizeLower.includes('ग्राम') ||
+                    pTechLower.includes('wp') || pTechLower.includes('wg') || pTechLower.includes('df') || pTechLower.includes('sg')) {
+                    unitStr = 'gm';
+                }
+            }
+            const isGm = unitStr === 'gm';
+            // --------------------------------
 
-            // डिफ़ॉल्ट वैल्यू बैकअप के लिए
             let finalPrice = (parseFloat(item.price) || 0) * bigha;
             let finalPackageSuggestion = item.packing || '—';
 
-            // 2. SUPER SMART COMBO & VALUE OPTIMIZATION LOGIC
-            if (typeof allProducts !== 'undefined' && Array.isArray(allProducts) && currentProdName && totalDoseNeeded > 0) {
-                
-                // इन्वेंट्री से इस दवा के सभी उपलब्ध वैरिएंट्स निकालना
-                let variants = allProducts.filter(p => 
-                    p.name && p.name.trim().toLowerCase() === currentProdName.toLowerCase()
-                ).map(p => {
-                    const pSizeRaw = p.packSize || p.packing || '';
-                    const match = pSizeRaw.match(/(\d+(\.\d+)?)/);
-                    let sizeNum = match ? parseFloat(match[1]) : 0;
-
-                    // लीटर को ml में बदलना (1 Liter = 1000ml)
-                    if (!isGm && (pSizeRaw.toLowerCase().includes('liter') || pSizeRaw.toLowerCase().includes(' l'))) {
-                        if (sizeNum < 10) sizeNum = sizeNum * 1000;
-                    }
-                    return {
-                        original: p,
-                        size: sizeNum,
-                        price: parseFloat(p.price) || 0,
-                        label: pSizeRaw
-                    };
-                }).filter(v => v.size > 0 && v.price > 0);
-
-                if (variants.length > 0) {
-                    // वैरिएंट्स को साइज के हिसाब से बड़े से छोटे क्रम में सेट करना
-                    variants.sort((a, b) => b.size - a.size);
-
-                    // --- तरीका 1: मिक्स्ड/टुकड़े पैकिंग का बेस्ट कॉम्बिनेशन बनाना ---
-                    let tempDose = totalDoseNeeded;
-                    let comboItems = [];
-                    let comboTotalPrice = 0;
-
-                    // घटते क्रम में बड़ी से छोटी पैकिंग चेक करना
-                    for (let i = 0; i < variants.length; i++) {
-                        if (tempDose <= 0) break;
-                        
-                        // अगर यह आखरी (सबसे छोटा) वैरिएंट है और डोज़ अभी भी बाकी है, तो बची हुई मात्रा पूरी ले लो
-                        if (i === variants.length - 1) {
-                            let qty = Math.ceil(tempDose / variants[i].size);
-                            if (qty > 0) {
-                                comboItems.push({ label: variants[i].label, qty: qty });
-                                comboTotalPrice += qty * variants[i].price;
-                                tempDose = 0;
-                            }
-                        } else {
-                            // बड़ी पैकिंग पूरी-पूरी कितनी बार आ सकती है
-                            let qty = Math.floor(tempDose / variants[i].size);
-                            if (qty > 0) {
-                                comboItems.push({ label: variants[i].label, qty: qty });
-                                comboTotalPrice += qty * variants[i].price;
-                                tempDose -= qty * variants[i].size;
-                            }
-                        }
-                    }
-
-                    // --- तरीका 2: ठीक बड़ी सिंगल पैकिंग का नियम (Value For Money) ---
-                    // ढूंढें कि क्या कोई ऐसी अकेली बड़ी पैकिंग है जो कुल जरूरत को अकेले पूरा कर दे
-                    let singleBiggerVariant = null;
-                    for (let i = variants.length - 1; i >= 0; i--) {
-                        if (variants[i].size >= totalDoseNeeded) {
-                            singleBiggerVariant = variants[i];
-                            break; // सबसे छोटी बड़ी पैकिंग जो जरूरत पूरा करे
-                        }
-                    }
-
-                    // --- दोनों तरीकों की तुलना (असली दिमाग यहाँ है) ---
-                    if (singleBiggerVariant && singleBiggerVariant.price <= comboTotalPrice) {
-                        // अगर बड़ी बोतल की कीमत मिक्स कॉम्बिनेशन के बराबर या उससे सस्ती है!
-                        finalPrice = singleBiggerVariant.price;
-                        finalPackageSuggestion = `${singleBiggerVariant.label} की 1 पैकिंग (फायदेमंद सौदा)`;
-                    } else if (comboItems.length > 0) {
-                        // वरना टुकड़ों वाला मिक्स कॉम्बिनेशन ही बेस्ट है
-                        finalPrice = comboTotalPrice;
-                        finalPackageSuggestion = comboItems.map(c => `${c.label} की ${c.qty} पैकिंग`).join(' + ');
+            if (allProducts && Array.isArray(allProducts) && currentProdName && totalDoseNeeded > 0) {
+                if (matchedProduct) {
+                    const comboResult = calculateOptimalCombination(totalDoseNeeded, {
+                        name: matchedProduct.name,
+                        technical: matchedProduct.technical
+                    });
+                    if (comboResult.combo && comboResult.combo.length > 0) {
+                        finalPrice = comboResult.totalPrice;
+                        finalPackageSuggestion = comboResult.combo
+                            .map(c => `${c.size} ${unitStr} के ${c.count} पैकेट`)
+                            .join(' + ');
                     }
                 }
             }
 
-            // ग्रैंड टोटल में जोड़ें
             packageTotalPrice += finalPrice;
 
-            // कुल डोज़ का सुंदर प्रदर्शन (ml को लीटर में दिखाना)
             let totalDoseDisplay = '';
             if (totalDoseNeeded > 0) {
                 if (!isGm && totalDoseNeeded >= 1000) {
@@ -501,8 +456,6 @@ function renderPackageCard(pkg, bighaInput) {
                         <p style="margin: 2px 0; color: #666; font-size: 0.85rem;">🧪 ${escapeHtml(item.technical || '—')}</p>
                         
                         <p style="margin: 2px 0; font-weight: bold; color: #e65100;">${escapeHtml(totalDoseDisplay)}</p>
-                        
-                        <!-- यहाँ दिखेगा एकदम परफेक्ट मिक्स या वैल्यू कॉम्बो सुझाव -->
                         <p style="margin: 2px 0; color: #555; font-size: 0.85rem;"><i class="fa-solid fa-box"></i> <strong> पैकिंग:</strong> <span style="color: #1b5e20; font-weight: bold;">${escapeHtml(finalPackageSuggestion)}</span></p>
                         
                         <p style="margin: 2px 0; font-weight: bold; color: #2e7d32; font-size: 0.95rem;">💰 कीमत: ₹${finalPrice.toFixed(2)}</p>
@@ -538,13 +491,6 @@ function renderPackageCard(pkg, bighaInput) {
     `;
 }
 
-
-// ==========================================
-// Card Rendering Functions (Updated for Clean Units)
-// ==========================================
-// ==========================================
-// Card Rendering Functions (Updated for Clean Units & Product Details)
-// ==========================================
 function renderProductCardWithPacks(docData, totalBigha) {
     if (Array.isArray(docData)) {
         docData = docData[0];
@@ -554,7 +500,6 @@ function renderProductCardWithPacks(docData, totalBigha) {
     const dosePerBigha = getDosePerBigha(docData.doseSpray);
     const totalRequiredDose = dosePerBigha * totalBigha; 
 
-    // यूनिट चेक करना (ml या gm)
     const isLiquid = (docData.packSize && String(docData.packSize).toLowerCase().includes('ml')) || 
                      (docData.doseSpray && String(docData.doseSpray).toLowerCase().includes('ml')) ||
                      (docData.packSize && String(docData.packSize).toLowerCase().includes('l'));
@@ -568,30 +513,6 @@ function renderProductCardWithPacks(docData, totalBigha) {
     if (dosePerBigha > 0 && totalRequiredDose > 0) {
         doseDisplay = `💧 ${dosePerBigha} ${unit} / बीघा (कुल जरूरत: ${totalRequiredDose} ${unit})`;
         
-        // --- फिक्स: यहाँ से `variants` का लॉजिक सही किया गया है ---
-        let variants = allProducts.filter(p => 
-            p.name && p.name.trim().toLowerCase() === docData.name.trim().toLowerCase()
-        ).map(p => {
-            const pSizeRaw = (p.packSize || p.packing || '').toString();
-            const match = pSizeRaw.match(/(\d+(\.\d+)?)/);
-            let sizeNum = match ? parseFloat(match[1]) : 0;
-
-            // अगर 'L' या 'Liter' है तो 1000 से गुणा करें
-            if (isLiquid && (pSizeRaw.toLowerCase().includes('l') || pSizeRaw.toLowerCase().includes('liter'))) {
-                // यह चेक करना जरूरी है कि पहले से ml में तो नहीं है (जैसे 1000ml)
-                if (!pSizeRaw.toLowerCase().includes('ml') && sizeNum < 50) { 
-                    sizeNum = sizeNum * 1000;
-                }
-            }
-            return {
-                original: p,
-                size: sizeNum,
-                price: parseFloat(p.price) || 0,
-                label: pSizeRaw
-            };
-        }).filter(v => v.size > 0 && v.price > 0);
-
-        // सही वैरिएंट्स के साथ कैलकुलेशन
         const result = calculateOptimalCombination(totalRequiredDose, docData);
         
         if (result.combo && result.combo.length > 0) {
@@ -640,13 +561,8 @@ function renderProductCardWithPacks(docData, totalBigha) {
     `;
 }
 
+// ==========================================
 // Main Content Renderer (Unified)
-// ==========================================
-// ==========================================
-// Main Content Renderer (Unified - Updated for 1 Product Per Page)
-// ==========================================
-// ==========================================
-// Main Content Renderer (Unified - Fixed for 1 Package Per Page Tabs)
 // ==========================================
 function renderUnifiedContent() {
     const resultDiv = document.getElementById('result');
@@ -669,7 +585,6 @@ function renderUnifiedContent() {
 
     if (currentSearchMode === 'day') {
         if (filteredPackages.length > 0) {
-            // बदलाव: अब पैकेज के लिए भी 1 ही आइटम प्रति पेज दिखाएंगे (1 Package Per Page)
             const packagesPerPage = 1; 
             
             const totalPages = Math.ceil(filteredPackages.length / packagesPerPage);
@@ -679,21 +594,16 @@ function renderUnifiedContent() {
             const end = start + packagesPerPage;
             const pageItems = filteredPackages.slice(start, end);
 
-            // फसल की अवस्था और सलाह (Crop Stage Advice) ऊपर ही दिखेगी
             if (window._cropStagesHTML) {
                 html += window._cropStagesHTML;
             }
 
-            // पेजिनेशन के सुंदर बटन [ 1 ] [ 2 ] [ 3 ] पैकेज कार्ड के ठीक ऊपर दिखेंगे
             html += renderPaginationHTML(filteredPackages.length, currentPackagePage, packagesPerPage, 'goToPackagePage');
 
-            // स्क्रीन पर केवल वर्तमान (Current) 1 ही पैकेज रेंडर होगा
             pageItems.forEach(pkg => {
                 html += renderPackageCard(pkg, currentBigha);
             });
 
-            // नोट: पैकेज का ग्रैंड टोटल अंदर ही `packageTotalPrice` से हैंडल हो रहा है, 
-            // इसलिए यहाँ अलग से नीचे 'अभी सभी खरीदें' वाले बड़े कार्ड को छुपा दिया है ताकि किसान कन्फ्यूज न हो।
             if (grandTotalContainer) {
                 grandTotalContainer.style.display = 'none';
             }
@@ -701,7 +611,7 @@ function renderUnifiedContent() {
             if (window._cropStagesHTML) {
                 html += window._cropStagesHTML;
             }
-            html += "<p class='no-results'>😕 इस फसल and दिन के लिए कोई पैकेज नहीं मिला।</p>";
+            html += "<p class='no-results'>😕 इस फसल और दिन के लिए कोई पैकेज नहीं मिला।</p>";
         }
     } 
     else if (currentSearchMode === 'name' || currentSearchMode === 'technical') {
@@ -722,7 +632,6 @@ function renderUnifiedContent() {
             const end = Math.min(start + productsPerPage, totalGroups);
             const pageGroups = groups.slice(start, end);
 
-            // दवाइयों के सर्च रिजल्ट के लिए भी पेजिनेशन बटन ऊपर देखेंगे
             html += renderPaginationHTML(totalGroups, currentProductPage, productsPerPage, 'goToProductPage');
 
             pageGroups.forEach(group => {
@@ -750,7 +659,6 @@ function renderUnifiedContent() {
 
     unifiedContent.innerHTML = html;
 }
-
 
 function renderPaginationHTML(totalItems, currentPage, itemsPerPage, goToPageFunction) {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -785,26 +693,17 @@ function goToPackagePage(page) {
 // ==========================================
 // Search Handlers
 // ==========================================
-// ==========================================
-// UPDATED: Search Handler (Now perfectly synced with handleSownCase)
-// ==========================================
 async function handleSmartSearch() {
     const searchInput = document.getElementById('searchInput').value.trim();
     
-    // 1. अगर इनपुट खाली है तो रोकें
     if (!searchInput) {
         alert("कृपया दवाई का नाम, कंपनी या फसल के दिन लिखें।");
         return;
     }
 
-    // 2. पूरे सर्च लॉजिक के लिए handleSownCase का उपयोग करें
-    // यह फंक्शन आपके द्वारा लिखे गए पूरे डेटाबेस और लॉजिक को प्रोसेस करेगा
     await handleSownCase();
 }
 
-// ==========================================
-// EXTRA: Enter की सपोर्ट के लिए (इसे भी जोड़ लें)
-// ==========================================
 document.getElementById('searchInput').addEventListener('keypress', function (e) {
     if (e.key === 'Enter') {
         handleSmartSearch();
@@ -815,8 +714,6 @@ function performTextSearch(query) {
     const queryLower = query.toLowerCase();
     const resultDiv = document.getElementById('result');
     
-    // मान लीजिए allProducts आपका डेटाबेस का एरे है
-    // इसे अपने डेटा के अनुसार बदलें
     const filteredProducts = allProducts.filter(item => 
         item.name.toLowerCase().includes(queryLower) || 
         item.company.toLowerCase().includes(queryLower) ||
@@ -826,10 +723,9 @@ function performTextSearch(query) {
     if (filteredProducts.length === 0) {
         resultDiv.innerHTML = "<p>माफ करें, कोई परिणाम नहीं मिला।</p>";
     } else {
-        renderResults(filteredProducts); // परिणाम दिखाने वाला फंक्शन
+        renderResults(filteredProducts);
     }
 }
-
 
 async function handleSownCase() {
     if (isSearching) return;
@@ -852,13 +748,11 @@ async function handleSownCase() {
         const resultDiv = document.getElementById('result');
         const grandTotalContainer = document.getElementById('grandTotalContainer');
 
-        // --- फिक्स: 'अन्य' (other) इनपुट हैंडलिंग ---
         if (bighaSelect && bighaSelect.value === 'other') {
             currentBigha = parseFloat(customBighaInput.value) || 1;
         } else {
             currentBigha = bighaSelect ? (parseFloat(bighaSelect.value) || 1) : 1;
         }
-        // ------------------------------------------
 
         currentCrop = cropSelect ? cropSelect.value : '';
         currentCropHindi = getCropHindiName(currentCrop);
@@ -1050,22 +944,15 @@ function escapeHtml(str) {
 // ==========================================
 // Razorpay Payment Gateway Integration
 // ==========================================
-// ==========================================
-// Razorpay Payment Gateway Integration (Complete)
-// ==========================================
 function handleBuyNow(productOrPackageName, price) {
-    // 1. कीमत से '₹' का साइन और कॉमा हटाकर शुद्ध नंबर निकालें (उदा: "₹1,250.50" -> 1250.50)
     let numericPrice = parseFloat(price.replace(/[^\d.]/g, ''));
-    
     if (isNaN(numericPrice) || numericPrice <= 0) {
         alert("❌ भुगतान राशि सही नहीं है।");
         return;
     }
 
-    // 2. रेज़रपे पैसे हमेशा 'पैसे' (Paise) में लेता है (₹1 = 100 पैसे)
     let amountInPaise = Math.round(numericPrice * 100);
 
-    // 3. किसान से बुनियादी जानकारी लें (ताकि पेमेंट रसीद भेजी जा सके)
     let customerName = prompt("अपना नाम दर्ज करें:");
     if (!customerName) return;
 
@@ -1075,47 +962,43 @@ function handleBuyNow(productOrPackageName, price) {
         return;
     }
 
-    // 4. Razorpay के ऑप्शंस कॉन्फ़िगर करें (UPI को Force करने के साथ)
+    let customerAddress = prompt("अपना पूरा पता दर्ज करें (गाँव, ज़िला, राज्य):");
+    if (!customerAddress) {
+        alert("⚠️ डिलीवरी के लिए पता ज़रूरी है।");
+        return;
+    }
+
+    let customerPincode = prompt("अपना 6 अंकों का पिन कोड दर्ज करें:");
+    if (!customerPincode || customerPincode.length !== 6 || isNaN(customerPincode)) {
+        alert("⚠️ सही 6 अंकों का पिन कोड जरूरी है।");
+        return;
+    }
+
     const options = {
-        "key": "rzp_test_SYcsMs0hCrXw6K", // ⚠️ यहाँ अपनी असली Razorpay API Key पेस्ट करें
-        "amount": amountInPaise, 
+        "key": "rzp_test_SYcsMs0hCrXw6K",
+        "amount": amountInPaise,
         "currency": "INR",
         "name": "Agroain",
         "description": `${productOrPackageName} (${currentBigha} बीघा खेत के लिए)`,
-        "image": "https://via.placeholder.com/150?text=Agroain", // यहाँ अपना लोगो लिंक डाल सकते हैं
-        
-        // 👇 यह कॉन्फ़िगरेशन रेज़रपे को UPI ऑप्शन दिखाने के लिए मजबूर करेगा
-        "config": {
-            "display": {
-                "blocks": {
-                    "banks": {
-                        "name": "All Payment Options",
-                        "instruments": [
-                            { "method": "upi" }, // UPI को सबसे ऊपर प्राथमिकता देगा
-                            { "method": "card" },
-                            { "method": "netbanking" },
-                            { "method": "wallet" }
-                        ]
-                    }
-                },
-                "sequence": ["block.banks"],
-                "preferences": { "show_default_blocks": true }
-            }
-        },
-
+        "image": "https://via.placeholder.com/150?text=Agroain",
         "handler": function (response) {
-            // यह फंक्शन तब चलेगा जब पेमेंट सफलतापूर्वक पूरा हो जाएगा
-            alert(`🎉 भुगतान सफल रहा!\nपेमेंट ID: ${response.razorpay_payment_id}`);
-            
-            // पेमेंट सफल होने के बाद ऑर्डर डेटाबेस में सेव करने का फंक्शन
-            saveSuccessfulOrder(response.razorpay_payment_id, productOrPackageName, numericPrice, customerName, customerPhone);
+            alert(`🎉 भुगतान सफल!\nपेमेंट ID: ${response.razorpay_payment_id}`);
+            saveSuccessfulOrder(
+                response.razorpay_payment_id,
+                productOrPackageName,
+                numericPrice,
+                customerName,
+                customerPhone,
+                customerAddress,
+                customerPincode
+            );
         },
         "prefill": {
             "name": customerName,
             "contact": customerPhone
         },
         "theme": {
-            "color": "#4CAF50" // आपकी वेबसाइट की थीम के अनुसार ग्रीन कलर
+            "color": "#4CAF50"
         },
         "modal": {
             "ondismiss": function(){
@@ -1124,15 +1007,14 @@ function handleBuyNow(productOrPackageName, price) {
         }
     };
 
-    // 5. Razorpay का चेकआउट पॉपअप खोलें
     const rzp = new Razorpay(options);
     rzp.open();
 }
 
 // ==========================================
-// Firebase में सफल ऑर्डर सेव करने का फंक्शन
+// Firebase में सफल ऑर्डर सेव करना + एडमिन नोटिफिकेशन
 // ==========================================
-async function saveSuccessfulOrder(paymentId, itemName, finalPrice, name, phone) {
+async function saveSuccessfulOrder(paymentId, itemName, finalPrice, name, phone, address, pincode) {
     if (!db) {
         console.error("Firebase उपलब्ध नहीं है, लेकिन पेमेंट सफल रहा। ID:", paymentId);
         return;
@@ -1143,6 +1025,8 @@ async function saveSuccessfulOrder(paymentId, itemName, finalPrice, name, phone)
             paymentId: paymentId,
             customerName: name.trim(),
             customerPhone: phone.trim(),
+            customerAddress: address.trim(),
+            customerPincode: pincode.trim(),
             itemName: itemName,
             amountPaid: finalPrice,
             crop: currentCropHindi || "सामान्य",
@@ -1151,17 +1035,67 @@ async function saveSuccessfulOrder(paymentId, itemName, finalPrice, name, phone)
             timestamp: new Date().toISOString()
         };
 
-        // Firebase में 'successful_orders' नाम के नोड में डेटा सुरक्षित करना
         await db.ref('successful_orders').push(orderData);
-        console.log("✅ Order & Payment Details saved to Firebase!");
-        
+        console.log("✅ ऑर्डर Firebase में सुरक्षित हो गया!");
+
+        // 🔔 एडमिन को पुश नोटिफिकेशन भेजें
+        sendPushNotificationToAdmin(orderData);
+
     } catch (error) {
-        console.error("❌ डेटाबेस में ऑर्डर सेव करने में त्रुटि:", error);
+        console.error("❌ ऑर्डर सेव करने में त्रुटि:", error);
         alert("भुगतान सफल रहा, लेकिन डेटाबेस सिंक में समस्या आई। कृपया अपनी पेमेंट ID नोट रखें: " + paymentId);
     }
 }
 
+// ==========================================
+// FCM पुश नोटिफिकेशन भेजने का फंक्शन
+// ==========================================
+async function sendPushNotificationToAdmin(orderDetails) {
+    try {
+        const tokenSnap = await db.ref('admin_token').once('value');
+        const adminToken = tokenSnap.val();
+        if (!adminToken) {
+            console.warn('Admin token not available');
+            return;
+        }
 
+        // ⚠️ यहाँ अपनी असली Firebase Server Key डालें
+        const serverKey = "AIzaSyB4S45t4U6nU7Zgak99EuLBtC5fUY6u5BQ";
+
+        const payload = {
+            to: adminToken,
+            notification: {
+                title: "🔥 नया ऑर्डर!",
+                body: `${orderDetails.customerName} ने ${orderDetails.itemName} ऑर्डर किया। ₹${orderDetails.amountPaid}`,
+                click_action: "https://agroain.com/admin.html"
+            },
+            data: {
+                paymentId: orderDetails.paymentId,
+                customerName: orderDetails.customerName,
+                itemName: orderDetails.itemName
+            }
+        };
+
+        const response = await fetch('https://fcm.googleapis.com/fcm/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'key=' + serverKey
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            console.error('FCM error:', await response.text());
+        }
+    } catch (error) {
+        console.error('Push notification failed:', error);
+    }
+}
+
+// ==========================================
+// Image Zoom
+// ==========================================
 function openZoom(src) {
     const modal = document.getElementById('imageModal');
     const modalImg = document.getElementById('modalImg');
@@ -1177,34 +1111,3 @@ function closeZoom() {
         modal.style.display = "none";
     }
 }
-async function saveSuccessfulOrder(paymentId, itemName, finalPrice, name, phone) {
-    if (!db) {
-        console.error("Firebase उपलब्ध नहीं है, लेकिन पेमेंट सफल रहा। ID:", paymentId);
-        return;
-    }
-    
-    try {
-        const orderData = {
-            paymentId: paymentId,
-            customerName: name.trim(),
-            customerPhone: phone.trim(),
-            itemName: itemName,
-            amountPaid: finalPrice,
-            crop: currentCropHindi || "सामान्य",
-            bigha: currentBigha,
-            status: "Paid / Confirmed",
-            timestamp: new Date().toISOString()
-        };
-
-        // Firebase में 'successful_orders' नाम के नोड में डेटा सुरक्षित करना
-        await db.ref('successful_orders').push(orderData);
-        console.log("✅ Order & Payment Details saved to Firebase!");
-        
-        // चाहें तो यहाँ से किसान को किसी थैंक यू (Success) पेज पर भेज सकते हैं
-        // window.location.href = "success.html";
-    } catch (error) {
-        console.error("❌ डेटाबेस में ऑर्डर सेव करने में त्रुटि:", error);
-        alert("भुगतान सफल रहा, लेकिन डेटाबेस सिंक में समस्या आई। कृपया अपनी पेमेंट ID नोट रखें: " + paymentId);
-    }
-}
-
