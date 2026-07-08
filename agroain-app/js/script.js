@@ -975,7 +975,7 @@ function handleBuyNow(productOrPackageName, price) {
     }
 
     const options = {
-        "key": "rzp_test_SYcsMs0hCrXw6K",
+        "key": "rzp_live_TAZYvZkwibNMjy",   // ← यहाँ अपनी असली Live Key ID डालें
         "amount": amountInPaise,
         "currency": "INR",
         "name": "Agroain",
@@ -1010,8 +1010,7 @@ function handleBuyNow(productOrPackageName, price) {
     const rzp = new Razorpay(options);
     rzp.open();
 }
-
-// ==========================================
+//======================
 // Firebase में सफल ऑर्डर सेव करना + एडमिन नोटिफिकेशन
 // ==========================================
 async function saveSuccessfulOrder(paymentId, itemName, finalPrice, name, phone, address, pincode) {
@@ -1035,10 +1034,11 @@ async function saveSuccessfulOrder(paymentId, itemName, finalPrice, name, phone,
             timestamp: new Date().toISOString()
         };
 
-        await db.ref('successful_orders').push(orderData);
+        // ✅ नई लाइन – paymentId को Key के रूप में उपयोग करें
+        await db.ref('successful_orders/' + paymentId).set(orderData);
         console.log("✅ ऑर्डर Firebase में सुरक्षित हो गया!");
 
-        // 🔔 एडमिन को पुश नोटिफिकेशन भेजें
+        // एडमिन नोटिफिकेशन (वैकल्पिक)
         sendPushNotificationToAdmin(orderData);
 
     } catch (error) {
@@ -1046,9 +1046,6 @@ async function saveSuccessfulOrder(paymentId, itemName, finalPrice, name, phone,
         alert("भुगतान सफल रहा, लेकिन डेटाबेस सिंक में समस्या आई। कृपया अपनी पेमेंट ID नोट रखें: " + paymentId);
     }
 }
-
-// ==========================================
-// FCM पुश नोटिफिकेशन भेजने का फंक्शन
 // ==========================================
 async function sendPushNotificationToAdmin(orderDetails) {
     try {
