@@ -104,7 +104,9 @@ const itemsPerPage = 5;
 let currentCrop = '';
 let currentCropHindi = '';
 let currentBigha = 1;
-let currentSearchMode = ''; // 'day', 'name', 'technical'
+let currentSearchMode = ''; 
+let checkoutProduct = "";
+let checkoutPrice = 0;// 'day', 'name', 'technical'
 
 // ==========================================
 // Page Load Handler
@@ -945,66 +947,133 @@ function escapeHtml(str) {
 // Razorpay Payment Gateway Integration
 // ==========================================
 function handleBuyNow(productOrPackageName, price) {
-    let numericPrice = parseFloat(price.replace(/[^\d.]/g, ''));
-    if (isNaN(numericPrice) || numericPrice <= 0) {
+
+    checkoutProduct = productOrPackageName;
+    checkoutPrice = parseFloat(price.replace(/[^\d.]/g, ''));
+
+    if (isNaN(checkoutPrice) || checkoutPrice <= 0) {
         alert("❌ भुगतान राशि सही नहीं है।");
         return;
     }
 
-    let amountInPaise = Math.round(numericPrice * 100);
+    document.getElementById("custName").value = "";
+    document.getElementById("custPhone").value = "";
+    document.getElementById("custAddress").value = "";
+    document.getElementById("custPincode").value = "";
+    document.getElementById("checkoutProductName").innerText = checkoutProduct;
+document.getElementById("checkoutAmount").innerText = "₹ " + checkoutPrice;
 
-    let customerName = prompt("अपना नाम दर्ज करें:");
-    if (!customerName) return;
+    document.getElementById("checkoutModal").style.display = "flex";
+}
+function closeCheckout(){
+    document.getElementById("checkoutModal").style.display="none";
+}
+function generateOrderId() {
+    const now = new Date();
 
-    let customerPhone = prompt("अपना 10 अंकों का मोबाइल नंबर दर्ज करें:");
-    if (!customerPhone || customerPhone.length < 10) {
-        alert("⚠️ सही मोबाइल नंबर जरूरी है।");
+    const year = now.getFullYear();
+
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+
+    const day = String(now.getDate()).padStart(2, "0");
+
+    const random = Math.floor(1000 + Math.random() * 9000);
+
+    return `AGRO-${year}${month}${day}-${random}`;
+}
+
+function startPayment(){
+    
+    const payBtn = document.querySelector(".checkout-buttons button:first-child");
+
+payBtn.disabled = true;
+payBtn.innerHTML = "⏳ भुगतान हो रहा है...";
+
+    let customerName = document.getElementById("custName").value.trim();
+    let customerPhone = document.getElementById("custPhone").value.trim();
+    let customerAddress = document.getElementById("custAddress").value.trim();
+    let customerPincode = document.getElementById("custPincode").value.trim();
+
+    if(customerName==""){
+        alert("अपना नाम दर्ज करें");
+        payBtn.disabled = false;
+payBtn.innerHTML = "भुगतान करें";
         return;
     }
 
-    let customerAddress = prompt("अपना पूरा पता दर्ज करें (गाँव, ज़िला, राज्य):");
-    if (!customerAddress) {
-        alert("⚠️ डिलीवरी के लिए पता ज़रूरी है।");
+    if(customerPhone.length!=10){
+        alert("सही 10 अंकों का मोबाइल नंबर दर्ज करें");payBtn.disabled = false;
+payBtn.innerHTML = "भुगतान करें";
         return;
     }
 
-    let customerPincode = prompt("अपना 6 अंकों का पिन कोड दर्ज करें:");
-    if (!customerPincode || customerPincode.length !== 6 || isNaN(customerPincode)) {
-        alert("⚠️ सही 6 अंकों का पिन कोड जरूरी है।");
+    if(customerAddress==""){
+        alert("पूरा पता दर्ज करें");
+        payBtn.disabled = false;
+payBtn.innerHTML = "भुगतान करें";
         return;
     }
+
+    if(customerPincode.length!=6){
+        alert("सही 6 अंकों का पिनकोड दर्ज करें");
+        payBtn.disabled = false;
+payBtn.innerHTML = "भुगतान करें";
+        return;
+    }
+
+    document.getElementById("checkoutModal").style.display="none";
+    const agroOrderId = generateOrderId();
 
     const options = {
-        "key": "rzp_live_TAZYvZkwibNMjy",   // ← यहाँ अपनी असली Live Key ID डालें
-        "amount": amountInPaise,
-        "currency": "INR",
-        "name": "Agroain",
-        "description": `${productOrPackageName} (${currentBigha} बीघा खेत के लिए)`,
-        "image": "https://via.placeholder.com/150?text=Agroain",
-        "handler": function (response) {
-            alert(`🎉 भुगतान सफल!\nपेमेंट ID: ${response.razorpay_payment_id}`);
+        key: "rzp_live_TAZYvZkwibNMjy",
+        amount: Math.round(checkoutPrice*100),
+        currency: "INR",
+        name: "Agroain",
+        description: checkoutProduct,
+notes: {
+    agro_order_id: agroOrderId
+},
+
+        handler: function(response){
+
             saveSuccessfulOrder(
-                response.razorpay_payment_id,
-                productOrPackageName,
-                numericPrice,
+    agroOrderId,
+    response.razorpay_payment_id,
+                checkoutProduct,
+                checkoutPrice,
                 customerName,
                 customerPhone,
                 customerAddress,
                 customerPincode
             );
+payBtn.disabled = false;
+payBtn.innerHTML = "भुगतान करें";
+           alert(
+`🎉 भुगतान सफल!
+
+ऑर्डर ID: ${agroOrderId}
+
+पेमेंट ID: ${response.razorpay_payment_id}
+
+धन्यवाद! आपका ऑर्डर सफलतापूर्वक दर्ज हो गया है।`
+);
         },
-        "prefill": {
-            "name": customerName,
-            "contact": customerPhone
+
+        prefill:{
+            name:customerName,
+            contact:customerPhone
         },
-        "theme": {
-            "color": "#4CAF50"
-        },
-        "modal": {
-            "ondismiss": function(){
-                alert("❌ भुगतान रद्द कर दिया गया था।");
-            }
-        }
+theme:{
+    color:"#2e7d32"
+},
+
+modal:{
+    ondismiss:function(){
+        payBtn.disabled = false;
+        payBtn.innerHTML = "भुगतान करें";
+        alert("❌ भुगतान रद्द कर दिया गया।");
+    }
+}
     };
 
     const rzp = new Razorpay(options);
@@ -1013,7 +1082,7 @@ function handleBuyNow(productOrPackageName, price) {
 //======================
 // Firebase में सफल ऑर्डर सेव करना + एडमिन नोटिफिकेशन
 // ==========================================
-async function saveSuccessfulOrder(paymentId, itemName, finalPrice, name, phone, address, pincode) {
+async function saveSuccessfulOrder(orderId,paymentId, itemName, finalPrice, name, phone, address, pincode) {
     if (!db) {
         console.error("Firebase उपलब्ध नहीं है, लेकिन पेमेंट सफल रहा। ID:", paymentId);
         return;
@@ -1021,6 +1090,7 @@ async function saveSuccessfulOrder(paymentId, itemName, finalPrice, name, phone,
     
     try {
         const orderData = {
+            orderId:orderId,
             paymentId: paymentId,
             customerName: name.trim(),
             customerPhone: phone.trim(),
@@ -1035,7 +1105,7 @@ async function saveSuccessfulOrder(paymentId, itemName, finalPrice, name, phone,
         };
 
         // ✅ नई लाइन – paymentId को Key के रूप में उपयोग करें
-        await db.ref('successful_orders/' + paymentId).set(orderData);
+        await db.ref('successful_orders/' + orderId).set(orderData);
         console.log("✅ ऑर्डर Firebase में सुरक्षित हो गया!");
 
         // एडमिन नोटिफिकेशन (वैकल्पिक)

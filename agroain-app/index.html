@@ -17,13 +17,13 @@
     <meta name="robots" content="index, follow">
 
     <!-- Canonical URL (अपना असली डोमेन डालें) -->
-    <link rel="canonical" href="https://agroain.com/">
+   <link rel="canonical" href="https://agroain.in/">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:title" content="Agroain - स्मार्ट फसल सुरक्षा सलाह | दवा और पैकेज">
     <meta property="og:description" content="फसल के दिन और बीघा के अनुसार पाएं सटीक कीटनाशक व पैकेज। 20+ फसलों के लिए।">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://agroain.com/">
+    <meta property="og:url" content="https://agroain.in/">
     <!-- अस्थायी इमेज: बाद में अपनी खुद की इमेज का URL डालें -->
     <meta property="og:image" content="https://via.placeholder.com/1200x630/4CAF50/white?text=Agroain+Smart+Fasal+Salah">
     <meta property="og:site_name" content="Agroain">
@@ -144,18 +144,42 @@
       "@type": "WebSite",
       "name": "Agroain",
       "alternateName": ["Agroain स्मार्ट फसल सलाह", "किसान दवा पैकेज"],
-      "url": "https://agroain.com/",
+      "url": "https://agroain.in/",
       "description": "फसल के दिन और बीघा के अनुसार सटीक कीटनाशक, खरपतवारनाशी और सुरक्षा पैकेज की जानकारी देने वाला मंच।",
       "inLanguage": "hi",
       "potentialAction": {
         "@type": "SearchAction",
         "target": {
           "@type": "EntryPoint",
-          "urlTemplate": "https://agroain.com/?search={search_term_string}"
+          "urlTemplate": "https://agroain.in/?search={search_term_string}"
         },
         "query-input": "required name=search_term_string"
       }
     }
     </script>
+    <!-- Agroain Checkout Popup -->
+<div id="checkoutModal" class="checkout-modal">
+  <div class="checkout-box">
+    <h2>🌾 Agroain Checkout</h2>
+
+<div class="checkout-product-info">
+    <h3 id="checkoutProductName"></h3>
+    <p>कुल राशि: <strong id="checkoutAmount"></strong></p>
+</div>
+
+    <input type="text" id="custName" placeholder="पूरा नाम">
+
+    <input type="tel" id="custPhone" placeholder="मोबाइल नंबर">
+
+    <textarea id="custAddress" placeholder="पूरा पता"></textarea>
+
+    <input type="number" id="custPincode" placeholder="पिन कोड">
+
+    <div class="checkout-buttons">
+      <button onclick="startPayment()">भुगतान करें</button>
+      <button onclick="closeCheckout()">बंद करें</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

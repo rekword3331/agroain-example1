@@ -861,3 +861,100 @@ button:disabled {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0,0,0,0.12);
 }
+/* ===== Agroain Checkout Popup ===== */
+
+.checkout-modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.65);
+    z-index:99999;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
+
+.checkout-box{
+    width:100%;
+    max-width:420px;
+    background:#fff;
+    border-radius:16px;
+    padding:20px;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+    animation:popup .25s ease;
+}
+
+@keyframes popup{
+    from{
+        transform:scale(.9);
+        opacity:0;
+    }
+    to{
+        transform:scale(1);
+        opacity:1;
+    }
+}
+
+.checkout-box h2{
+    text-align:center;
+    margin-bottom:18px;
+    color:#2e7d32;
+}
+
+.checkout-box input,
+.checkout-box textarea{
+    width:100%;
+    box-sizing:border-box;
+    padding:12px;
+    margin:8px 0;
+    border:1px solid #ccc;
+    border-radius:10px;
+    font-size:16px;
+}
+
+.checkout-box textarea{
+    height:90px;
+    resize:none;
+}
+
+.checkout-buttons{
+    display:flex;
+    gap:10px;
+    margin-top:15px;
+}
+
+.checkout-buttons button{
+    flex:1;
+    border:none;
+    border-radius:10px;
+    padding:13px;
+    font-size:16px;
+    cursor:pointer;
+}
+
+.checkout-buttons button:first-child{
+    background:#2e7d32;
+    color:#fff;
+}
+
+.checkout-buttons button:last-child{
+    background:#e53935;
+    color:#fff;
+}.checkout-product-info{
+    background:#f1f8e9;
+    border-radius:10px;
+    padding:12px;
+    margin-bottom:15px;
+    text-align:center;
+}
+
+.checkout-product-info h3{
+    margin:0;
+    color:#1b5e20;
+    font-size:18px;
+}
+
+.checkout-product-info p{
+    margin:8px 0 0;
+    font-size:16px;
+}
