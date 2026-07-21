@@ -4,27 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
 
-    <!-- SEO Title (60-65 characters with primary keywords) -->
+    <!-- SEO Title -->
     <title>Agroain - सोयाबीन, मक्का, गेहूं की फसल सुरक्षा | स्मार्ट दवा व पैकेज सलाह</title>
 
-    <!-- Meta Description (155-160 characters) -->
+    <!-- Meta Description -->
     <meta name="description" content="Agroain आपके खेत की फसल के दिन और बीघा के हिसाब से सटीक कीटनाशक, खरपतवारनाशी और फसल सुरक्षा पैकेज सुझाता है। सोयाबीन, मक्का, गेहूं, धान, कपास, मूंगफली, चना, सरसों और 20+ फसलों के लिए स्मार्ट समाधान।">
 
-    <!-- Keywords (optional but helpful for Hindi audience) -->
-    <meta name="keywords" content="फसल सुरक्षा, कीटनाशक, खरपतवारनाशी, सोयाबीन दवा, मक्का की दवा, गेहूं का पैकेज, इमिडाक्लोप्रिड, एग्रोएन, किसान सलाह, crop protection,agroin,agro in,agroan,agro an,agro, agroain, parijat, upl, crystal, इमेज़ेथापायर">
-
-    <!-- Robots -->
+    <meta name="keywords" content="फसल सुरक्षा, कीटनाशक, खरपतवारनाशी, सोयाबीन दवा, मक्का की दवा, गेहूं का पैकेज, इमिडाक्लोप्रिड, एग्रोएन, किसान सलाह, crop protection, agroain">
     <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://agroain.in/">
 
-    <!-- Canonical URL (अपना असली डोमेन डालें) -->
-   <link rel="canonical" href="https://agroain.in/">
-
-    <!-- Open Graph / Facebook -->
+    <!-- Open Graph -->
     <meta property="og:title" content="Agroain - स्मार्ट फसल सुरक्षा सलाह | दवा और पैकेज">
     <meta property="og:description" content="फसल के दिन और बीघा के अनुसार पाएं सटीक कीटनाशक व पैकेज। 20+ फसलों के लिए।">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://agroain.in/">
-    <!-- अस्थायी इमेज: बाद में अपनी खुद की इमेज का URL डालें -->
     <meta property="og:image" content="https://via.placeholder.com/1200x630/4CAF50/white?text=Agroain+Smart+Fasal+Salah">
     <meta property="og:site_name" content="Agroain">
     <meta property="og:locale" content="hi_IN">
@@ -35,18 +29,75 @@
     <meta name="twitter:description" content="किसानों के लिए आसान फसल सुरक्षा ऐप। बीघा और दिन भरें, पाएं सटीक दवा व पैकेज।">
     <meta name="twitter:image" content="https://via.placeholder.com/1200x630/4CAF50/white?text=Agroain+Smart+Fasal+Salah">
 
-    <!-- Favicon (अपनी favicon.ico फ़ाइल root में रखें) -->
     <link rel="icon" type="image/x-icon" href="favicon.ico">
 
-    <!-- Firebase Scripts (पुराने जैसे ही) -->
+    <!-- Firebase & Razorpay -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <!-- Razorpay -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <!-- Font Awesome & Custom CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+
+    <!-- ===== HEADER FIX – HTML से संबंधित स्टाइल ===== -->
+    <style>
+        .header {
+            position: relative;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 2px solid var(--primary, #2e7d32);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            min-height: 50px;
+        }
+        .menu-btn {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 1.6rem;
+            color: var(--dark, #1b5e20);
+            cursor: pointer;
+            padding: 5px 10px 5px 0;
+            display: inline-flex;
+            align-items: center;
+            z-index: 5;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: var(--dark, #1b5e20);
+            text-align: center;
+            flex: 0 1 auto;
+        }
+        .header .crop-selector {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            min-width: 140px;
+            z-index: 5;
+        }
+        .subtitle {
+            text-align: center;
+            color: #555;
+            margin-top: 5px;
+            font-size: 0.9rem;
+            width: 100%;
+            order: 10;
+        }
+        @media (max-width: 480px) {
+            .header .crop-selector { min-width: 100px; }
+            .header .crop-selector select { font-size: 0.8rem; padding: 5px 8px; }
+            .header h1 { font-size: 1.4rem; }
+            .menu-btn { font-size: 1.3rem; }
+        }
+    </style>
 </head>
 <body>
 
@@ -57,9 +108,44 @@
         <div class="loader-subtext">कृपया थोड़ा प्रतीक्षा करें</div>
     </div>
 
+    <!-- Slide-out Sidebar Drawer -->
+    <div id="appSidebar" style="position: fixed; top: 0; left: -250px; width: 250px; height: 100%; background: white; box-shadow: 2px 0 10px rgba(0,0,0,0.2); z-index: 1100; transition: 0.3s; padding-top: 60px;">
+        <a href="javascript:void(0)" onclick="toggleSidebar()" style="position: absolute; top: 15px; right: 20px; font-size: 1.5rem; text-decoration: none; color: #333;">&times;</a>
+        <h3 style="padding: 0 20px; color: #2e7d32; margin-bottom: 20px;">Agroain Menu</h3>
+        
+        <!-- ⭐ Orders लिंक – अब orders.html खोलेगा -->
+        <a href="orders.html" onclick="toggleSidebar();" style="display: block; padding: 15px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee; font-weight: bold;">
+            <i class="fa-solid fa-receipt"></i> 📦 My Orders
+        </a>
+        
+        <!-- ⭐ Bills लिंक – अभी placeholder है, बाद में bills.html बनाएँगे -->
+        <!-- पुराना लिंक (placeholder) -->
+
+<!-- नया लिंक (अब bills.html खोलेगा) -->
+<a href="bills.html" onclick="toggleSidebar();" style="display: block; padding: 15px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee; font-weight: bold;">
+    <i class="fa-solid fa-file-invoice"></i> 🧾 My Bills
+</a> 
+    </div>
+
+    <!-- Order Lookup Modal (अब इसका इस्तेमाल नहीं होगा, लेकिन रखा हुआ है) -->
+    <div id="orderLookupModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1200; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 400px; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+            <span onclick="closeOrderLookup()" style="position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #666;">&times;</span>
+            <h3 style="color: #2e7d32; margin-top: 0;">अपने Orders / Bills देखें</h3>
+            <p style="font-size: 0.9rem; color: #666;">अपना 10-अकों का मोबाइल नंबर दर्ज करें:</p>
+            <input type="text" id="lookupPhone" placeholder="Mobile Number" maxlength="10" style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
+            <button onclick="fetchCustomerOrders()" style="width: 100%; background: #2e7d32; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer;">Order तलाश करें</button>
+            <div id="lookupResults" style="margin-top: 20px; max-height: 250px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
     <!-- Main Container -->
     <div class="container" id="mainContainer">
+      
         <div class="header">
+            <button class="menu-btn" onclick="toggleSidebar()">
+                <i class="fa-solid fa-bars"></i>
+            </button>
             <h1>Agroain</h1>
             <div class="crop-selector">
                 <select id="cropSelect">
@@ -85,7 +171,7 @@
                     <option value="pigeonpea">अरहर (तुअर)</option>
                 </select>
             </div>
-            <div class="subtitle">स्मार्ट सुरक्षा · पैकेज और दवाइयाँ</div>
+            <div class="subtitle">सही डोज सही मात्रा बेहतरीन क्वॉलिटी</div>
         </div>
 
         <div class="section">
@@ -100,7 +186,6 @@
                 <option value="other">अन्य (लिखें)</option>
             </select>
 
-            <!-- Custom Bigha Input -->
             <input type="number" id="customBigha" placeholder="कितने बीघा है?" style="display:none; margin-top: 10px;">
 
             <label style="margin-top: 15px;">📅 फसल कितने दिन की है? <span class="label-hint">(या दवाई / तकनीकी / कंपनी का नाम लिखें)</span></label>
@@ -121,10 +206,27 @@
         <img id="modalImg" src="" alt="Zoomed Product">
     </div>
 
-    <!-- मुख्य जावास्क्रिप्ट फ़ाइल (आपकी मौजूदा) -->
-    <script src="js/script.js"></script>
+    <!-- Agroain Checkout Popup -->
+    <div id="checkoutModal" class="checkout-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1200; justify-content:center; align-items:center;">
+      <div class="checkout-box" style="background:white; padding:25px; border-radius:8px; width:90%; max-width:400px;">
+        <h2>🌾 Agroain Checkout</h2>
+        <div class="checkout-product-info">
+            <h3 id="checkoutProductName"></h3>
+            <p>कुल राशि: <strong id="checkoutAmount"></strong></p>
+        </div>
+        <input type="text" id="custName" placeholder="पूरा नाम" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:5px;">
+        <input type="tel" id="custPhone" placeholder="मोबाइल नंबर" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:5px;">
+        <textarea id="custAddress" placeholder="पूरा पता" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:5px;"></textarea>
+        <input type="number" id="custPincode" placeholder="पिन कोड" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:5px;">
+        <div class="checkout-buttons" style="display:flex; gap:10px;">
+          <button onclick="startPayment()" style="flex:1; background:#2e7d32; color:white; border:none; padding:10px; border-radius:5px; font-weight:bold; cursor:pointer;">भुगतान करें</button>
+          <button onclick="closeCheckout()" style="flex:1; background:#ccc; color:#333; border:none; padding:10px; border-radius:5px; font-weight:bold; cursor:pointer;">बंद करें</button>
+        </div>
+      </div>
+    </div>
 
-    <!-- बीघा विकल्प चेक करने की उपयोगिता -->
+    <!-- JavaScript -->
+    <script src="js/script.js"></script>
     <script>
         function checkBighaOption() {
             const bighaSelect = document.getElementById('bigha');
@@ -135,9 +237,43 @@
                 customBigha.style.display = 'none';
             }
         }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById("appSidebar");
+            if (sidebar.style.left === "0px") {
+                sidebar.style.left = "-250px";
+            } else {
+                sidebar.style.left = "0px";
+            }
+        }
+
+        function openOrderLookup() {
+            document.getElementById("orderLookupModal").style.display = "flex";
+        }
+
+        function closeOrderLookup() {
+            document.getElementById("orderLookupModal").style.display = "none";
+        }
+
+        function closeCheckout() {
+            document.getElementById("checkoutModal").style.display = "none";
+        }
+
+        // ये पुराना फंक्शन अब इस्तेमाल नहीं होगा (Orders के लिए अलग पेज है)
+        // लेकिन रखा हुआ है ताकि कोई एरर न आए
+        function getLast10Digits(phone) {
+            let digits = (phone || '').replace(/\D/g, '');
+            if (digits.length > 10) return digits.slice(-10);
+            return digits;
+        }
+
+        async function fetchCustomerOrders() {
+            // अब यह सिर्फ एक placeholder है
+            alert('कृपया "My Orders" पेज पर जाएँ।');
+        }
     </script>
 
-    <!-- Structured Data (JSON-LD) for Website -->
+    <!-- Structured Data -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -157,29 +293,5 @@
       }
     }
     </script>
-    <!-- Agroain Checkout Popup -->
-<div id="checkoutModal" class="checkout-modal">
-  <div class="checkout-box">
-    <h2>🌾 Agroain Checkout</h2>
-
-<div class="checkout-product-info">
-    <h3 id="checkoutProductName"></h3>
-    <p>कुल राशि: <strong id="checkoutAmount"></strong></p>
-</div>
-
-    <input type="text" id="custName" placeholder="पूरा नाम">
-
-    <input type="tel" id="custPhone" placeholder="मोबाइल नंबर">
-
-    <textarea id="custAddress" placeholder="पूरा पता"></textarea>
-
-    <input type="number" id="custPincode" placeholder="पिन कोड">
-
-    <div class="checkout-buttons">
-      <button onclick="startPayment()">भुगतान करें</button>
-      <button onclick="closeCheckout()">बंद करें</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>

@@ -106,7 +106,9 @@ let currentCropHindi = '';
 let currentBigha = 1;
 let currentSearchMode = ''; 
 let checkoutProduct = "";
-let checkoutPrice = 0;// 'day', 'name', 'technical'
+let checkoutPrice = 0;
+let checkoutProductNames = []; // 👈 यह नई लाइन जोड़ें
+// 'day', 'name', 'technical'
 
 // ==========================================
 // Page Load Handler
@@ -379,10 +381,26 @@ function calculateOptimalCombination(totalRequired, currentProduct) {
 // ==========================================
 // Card Rendering Functions
 // ==========================================
+
 function renderPackageCard(pkg, bighaInput) {
     const bigha = parseFloat(bighaInput) || 1;
     const name = pkg.name || pkg.company || 'स्मार्ट सुरक्षा पैकेज';
     const safeName = escapeHtml(name).replace(/'/g, "\\'");
+
+    // ===== पैकेज के अंदर के सारे प्रोडक्ट्स के नाम इकट्ठा करें =====
+    let productNamesArray = [];
+    if (pkg.items && Array.isArray(pkg.items)) {
+        pkg.items.forEach(item => {
+            const prodName = (item.prodName || item.name || '').trim();
+            if (prodName) productNamesArray.push(prodName);
+        });
+    }
+    if (productNamesArray.length === 0) {
+        productNamesArray = [name];
+    }
+
+    // ===== 🔥 सुरक्षित JSON String – सिंगल कोट एस्केप =====
+    const productNamesJson = JSON.stringify(productNamesArray).replace(/'/g, "\\'");
 
     let itemsHtml = '';
     let packageTotalPrice = 0; 
@@ -400,7 +418,6 @@ function renderPackageCard(pkg, bighaInput) {
             const dosePerBigha = doseMatch ? parseFloat(doseMatch[1]) : 0;
             const totalDoseNeeded = dosePerBigha * bigha; 
 
-            // --- यूनिट डिटेक्शन फिक्स (gm/ml) ---
             let unitStr = 'ml';
             const rawDoseLower = rawDose.toLowerCase();
             const isGmByDose = rawDoseLower.includes('gm') || rawDoseLower.includes('ग्राम');
@@ -417,7 +434,6 @@ function renderPackageCard(pkg, bighaInput) {
                 }
             }
             const isGm = unitStr === 'gm';
-            // --------------------------------
 
             let finalPrice = (parseFloat(item.price) || 0) * bigha;
             let finalPackageSuggestion = item.packing || '—';
@@ -486,13 +502,13 @@ function renderPackageCard(pkg, bighaInput) {
                 <h4 style="margin: 0; color: #1b5e20; font-size: 1.15rem;">📦 ${bigha} बीघा पैकेज का कुल मूल्य: <span style="color: #e65100; font-size: 1.35rem; font-weight: bold;">₹${packageTotalPrice.toFixed(2)}</span></h4>
             </div>
             
-            <button class="buy-btn" onclick="handleBuyNow('${safeName}', '₹${packageTotalPrice.toFixed(2)}')" style="margin-top: 12px; width: 100%;">
+            <!-- ✅ बिल्कुल सही बटन – सभी पैरामीटर सिंगल कोट में -->
+            <button class="buy-btn" onclick="handleBuyNow('${safeName}', '₹${packageTotalPrice.toFixed(2)}', '${productNamesJson}')" style="margin-top: 12px; width: 100%;">
                 <i class="fa-solid fa-cart-shopping"></i> अभी पैकेज खरीदें
             </button>
         </div>
     `;
 }
-
 function renderProductCardWithPacks(docData, totalBigha) {
     if (Array.isArray(docData)) {
         docData = docData[0];
@@ -556,13 +572,13 @@ function renderProductCardWithPacks(docData, totalBigha) {
                     </div>
                 </div>
             </div>
+            <!-- ✅ Product Card के लिए सही बटन -->
             <button class="buy-btn" onclick="handleBuyNow('${safeName}', '₹${totalPriceDisplay}')">
                 <i class="fa-solid fa-cart-shopping"></i> अभी खरीदें
             </button>
         </div>
     `;
 }
-
 // ==========================================
 // Main Content Renderer (Unified)
 // ==========================================
@@ -945,11 +961,29 @@ function escapeHtml(str) {
 
 // ==========================================
 // Razorpay Payment Gateway Integration
-// ==========================================
-function handleBuyNow(productOrPackageName, price) {
-
+// ============
+function handleBuyNow(productOrPackageName, price, productNamesArray) {
+    console.log("🛒 handleBuyNow called with:", { productOrPackageName, price, productNamesArray });
+    
     checkoutProduct = productOrPackageName;
     checkoutPrice = parseFloat(price.replace(/[^\d.]/g, ''));
+    
+    // ✅ सुरक्षित तरीके से एरे या सिंगल प्रोडक्ट नाम सेट करें
+    if (productNamesArray) {
+        if (Array.isArray(productNamesArray)) {
+            checkoutProductNames = productNamesArray;
+        } else {
+            try {
+                checkoutProductNames = JSON.parse(productNamesArray);
+            } catch (e) {
+                checkoutProductNames = [productOrPackageName];
+            }
+        }
+    } else {
+        checkoutProductNames = [productOrPackageName];
+    }
+    
+    console.log("📦 checkoutProductNames set to:", checkoutProductNames);
 
     if (isNaN(checkoutPrice) || checkoutPrice <= 0) {
         alert("❌ भुगतान राशि सही नहीं है।");
@@ -961,8 +995,7 @@ function handleBuyNow(productOrPackageName, price) {
     document.getElementById("custAddress").value = "";
     document.getElementById("custPincode").value = "";
     document.getElementById("checkoutProductName").innerText = checkoutProduct;
-document.getElementById("checkoutAmount").innerText = "₹ " + checkoutPrice;
-
+    document.getElementById("checkoutAmount").innerText = "₹ " + checkoutPrice;
     document.getElementById("checkoutModal").style.display = "flex";
 }
 function closeCheckout(){
@@ -982,141 +1015,147 @@ function generateOrderId() {
     return `AGRO-${year}${month}${day}-${random}`;
 }
 
-function startPayment(){
-    
+function startPayment() {
     const payBtn = document.querySelector(".checkout-buttons button:first-child");
-
-payBtn.disabled = true;
-payBtn.innerHTML = "⏳ भुगतान हो रहा है...";
+    payBtn.disabled = true;
+    payBtn.innerHTML = "⏳ भुगतान हो रहा है...";
 
     let customerName = document.getElementById("custName").value.trim();
     let customerPhone = document.getElementById("custPhone").value.trim();
     let customerAddress = document.getElementById("custAddress").value.trim();
     let customerPincode = document.getElementById("custPincode").value.trim();
 
-    if(customerName==""){
+    if (customerName == "") {
         alert("अपना नाम दर्ज करें");
         payBtn.disabled = false;
-payBtn.innerHTML = "भुगतान करें";
+        payBtn.innerHTML = "भुगतान करें";
         return;
     }
 
-    if(customerPhone.length!=10){
-        alert("सही 10 अंकों का मोबाइल नंबर दर्ज करें");payBtn.disabled = false;
-payBtn.innerHTML = "भुगतान करें";
+    if (customerPhone.length != 10) {
+        alert("सही 10 अंकों का मोबाइल नंबर दर्ज करें");
+        payBtn.disabled = false;
+        payBtn.innerHTML = "भुगतान करें";
         return;
     }
 
-    if(customerAddress==""){
+    if (customerAddress == "") {
         alert("पूरा पता दर्ज करें");
         payBtn.disabled = false;
-payBtn.innerHTML = "भुगतान करें";
+        payBtn.innerHTML = "भुगतान करें";
         return;
     }
 
-    if(customerPincode.length!=6){
+    if (customerPincode.length != 6) {
         alert("सही 6 अंकों का पिनकोड दर्ज करें");
         payBtn.disabled = false;
-payBtn.innerHTML = "भुगतान करें";
+        payBtn.innerHTML = "भुगतान करें";
         return;
     }
 
-    document.getElementById("checkoutModal").style.display="none";
+    const bighaSelect = document.getElementById('bigha');
+    let bighaValue = bighaSelect.value;
+    if (bighaValue === 'other') {
+        bighaValue = document.getElementById('customBigha').value || '0';
+    }
+
+    const cropSelect = document.getElementById('cropSelect');
+    const cropValue = cropSelect.options[cropSelect.selectedIndex].text;
+
+    let allProductNames = '';
+    if (typeof checkoutProductNames !== 'undefined' && Array.isArray(checkoutProductNames) && checkoutProductNames.length > 0) {
+        allProductNames = checkoutProductNames.join(', ');
+    } else {
+        allProductNames = checkoutProduct || 'N/A';
+    }
+    console.log("📦 allProductNames final:", allProductNames);
+
+    document.getElementById("checkoutModal").style.display = "none";
     const agroOrderId = generateOrderId();
 
     const options = {
         key: "rzp_live_TAZYvZkwibNMjy",
-        amount: Math.round(checkoutPrice*100),
+        amount: Math.round(checkoutPrice * 100),
         currency: "INR",
         name: "Agroain",
         description: checkoutProduct,
-notes: {
-    agro_order_id: agroOrderId
-},
-
-        handler: function(response){
-
-            saveSuccessfulOrder(
-    agroOrderId,
-    response.razorpay_payment_id,
-                checkoutProduct,
-                checkoutPrice,
-                customerName,
-                customerPhone,
-                customerAddress,
-                customerPincode
-            );
-payBtn.disabled = false;
-payBtn.innerHTML = "भुगतान करें";
-           alert(
-`🎉 भुगतान सफल!
-
-ऑर्डर ID: ${agroOrderId}
-
-पेमेंट ID: ${response.razorpay_payment_id}
-
-धन्यवाद! आपका ऑर्डर सफलतापूर्वक दर्ज हो गया है।`
-);
+        notes: {
+            agro_order_id: agroOrderId,
+            bigha: bighaValue,
+            crop: cropValue,
+            product: allProductNames,
+            address: customerAddress,
+            pincode: customerPincode
         },
-
-        prefill:{
-            name:customerName,
-            contact:customerPhone
+        prefill: {
+            name: customerName,
+            contact: customerPhone
         },
-theme:{
-    color:"#2e7d32"
-},
+        theme: {
+            color: "#2e7d32"
+        },
+        handler: function(response) {
+            const orderData = {
+                bigha: bighaValue,
+                crop: cropValue,
+                customerName: customerName,
+                customerPhone: customerPhone,
+                customerAddress: customerAddress,
+                customerPincode: customerPincode,
+                itemName: allProductNames,
+                amountPaid: checkoutPrice,
+                orderId: agroOrderId,
+                paymentId: response.razorpay_payment_id,
+                phone: customerPhone,
+                status: 'Paid / Confirmed',
+                timestamp: new Date().toISOString(),
+                email: `${customerPhone}@agroain.in`
+            };
 
-modal:{
-    ondismiss:function(){
-        payBtn.disabled = false;
-        payBtn.innerHTML = "भुगतान करें";
-        alert("❌ भुगतान रद्द कर दिया गया।");
-    }
-}
+            // ✅ एक ही जगह सेव – ORDER ID को KEY बनाकर
+            firebase.database().ref('successful_orders/' + agroOrderId).set(orderData)
+                .then(() => console.log('✅ Order saved successfully!'))
+                .catch((error) => console.error('❌ Firebase Error:', error));
+
+            payBtn.disabled = false;
+            payBtn.innerHTML = "भुगतान करें";
+
+            const resultDiv = document.getElementById("result");
+            if (resultDiv) {
+                resultDiv.style.display = "block";
+                resultDiv.innerHTML = `
+                    <div class="success-box" style="background: #e8f5e9; border: 1px solid #4CAF50; padding: 20px; border-radius: 8px; text-align: center; margin: 20px auto; max-width: 500px;">
+                        <h2 style="color: #2e7d32; margin-top: 0;">🎉 भुगतान सफल!</h2>
+                        <p style="font-size: 1.1rem; color: #333;">धन्यवाद! आपका ऑर्डर सफलतापूर्वक दर्ज हो गया है।</p>
+                        <p><strong>ऑर्डर ID:</strong> ${agroOrderId}</p>
+                        <p><strong>पेमेंट ID:</strong> ${response.razorpay_payment_id}</p>
+                        <p><strong>फसल:</strong> ${cropValue}</p>
+                        <p><strong>बीघा:</strong> ${bighaValue}</p>
+                        <p><strong>उत्पाद:</strong> ${allProductNames}</p>
+                        <p><strong>राशि:</strong> ₹${checkoutPrice}</p>
+                    </div>
+                `;
+                resultDiv.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            setTimeout(() => {
+                window.location.href = 'bills.html';
+            }, 3000);
+        },
+        modal: {
+            ondismiss: function() {
+                payBtn.disabled = false;
+                payBtn.innerHTML = "भुगतान करें";
+                alert("❌ भुगतान रद्द कर दिया गया।");
+            }
+        }
     };
 
     const rzp = new Razorpay(options);
     rzp.open();
 }
-//======================
-// Firebase में सफल ऑर्डर सेव करना + एडमिन नोटिफिकेशन
-// ==========================================
-async function saveSuccessfulOrder(orderId,paymentId, itemName, finalPrice, name, phone, address, pincode) {
-    if (!db) {
-        console.error("Firebase उपलब्ध नहीं है, लेकिन पेमेंट सफल रहा। ID:", paymentId);
-        return;
-    }
-    
-    try {
-        const orderData = {
-            orderId:orderId,
-            paymentId: paymentId,
-            customerName: name.trim(),
-            customerPhone: phone.trim(),
-            customerAddress: address.trim(),
-            customerPincode: pincode.trim(),
-            itemName: itemName,
-            amountPaid: finalPrice,
-            crop: currentCropHindi || "सामान्य",
-            bigha: currentBigha,
-            status: "Paid / Confirmed",
-            timestamp: new Date().toISOString()
-        };
+//=========================
 
-        // ✅ नई लाइन – paymentId को Key के रूप में उपयोग करें
-        await db.ref('successful_orders/' + orderId).set(orderData);
-        console.log("✅ ऑर्डर Firebase में सुरक्षित हो गया!");
-
-        // एडमिन नोटिफिकेशन (वैकल्पिक)
-        sendPushNotificationToAdmin(orderData);
-
-    } catch (error) {
-        console.error("❌ ऑर्डर सेव करने में त्रुटि:", error);
-        alert("भुगतान सफल रहा, लेकिन डेटाबेस सिंक में समस्या आई। कृपया अपनी पेमेंट ID नोट रखें: " + paymentId);
-    }
-}
-// ==========================================
 async function sendPushNotificationToAdmin(orderDetails) {
     try {
         const tokenSnap = await db.ref('admin_token').once('value');
@@ -1176,5 +1215,73 @@ function closeZoom() {
     const modal = document.getElementById('imageModal');
     if (modal) {
         modal.style.display = "none";
+    }
+}
+// Sidebar toggle karne ke liye
+// Sidebar toggle karne ke liye
+function toggleSidebar() {
+    const sidebar = document.getElementById("appSidebar");
+    if (sidebar.style.left === "0px") {
+        sidebar.style.left = "-250px";
+    } else {
+        sidebar.style.left = "0px";
+    }
+}
+
+// Lookup modal kholne/band karne ke liye
+function openOrderLookup() {
+    document.getElementById("orderLookupModal").style.display = "flex";
+}
+function closeOrderLookup() {
+    document.getElementById("orderLookupModal").style.display = "none";
+}
+
+// Firebase se mobile number ke zariye orders fetch karne ka function
+async function fetchCustomerOrders() {
+    const phone = document.getElementById("lookupPhone").value.trim();
+    const resultsDiv = document.getElementById("lookupResults");
+
+    if (phone.length !== 10) {
+        alert("Kripya sahi 10-ankon ka mobile number darj karein.");
+        return;
+    }
+
+    resultsDiv.innerHTML = "<p style='text-align: center;'>Talash ki ja rahi hai...</p>";
+
+    try {
+        const dbUrl = "https://agroain-default-rtdb.firebaseio.com/successful_orders.json";
+        const response = await fetch(dbUrl);
+        const data = await response.json();
+
+        if (!data) {
+            resultsDiv.innerHTML = "<p style='color: red; text-align: center;'>Koi order nahi mila.</p>";
+            return;
+        }
+
+        let foundOrders = "";
+        for (let orderId in data) {
+            let order = data[orderId];
+            if (order.phone === phone || order.customerPhone === phone) {
+                foundOrders += `
+                    <div style="background: #f9f9f9; border: 1px solid #ddd; padding: 12px; border-radius: 6px; margin-bottom: 10px;">
+                        <p style="margin: 0 0 5px 0;"><strong>Order ID:</strong> ${order.orderId || orderId}</p>
+                        <p style="margin: 0 0 5px 0;"><strong>Product:</strong> ${order.itemName || order.product || 'Agroain Product'}</p>
+                        <p style="margin: 0 0 5px 0;"><strong>Amount:</strong> ₹${order.amountPaid || order.amount}</p>
+                        <p style="margin: 0 0 5px 0; color: #2e7d32;"><strong>Status:</strong> Successful</p>
+                        <small style="color: #777;">Date: ${new Date(order.timestamp).toLocaleDateString()}</small>
+                    </div>
+                `;
+            }
+        }
+
+        if (foundOrders === "") {
+            resultsDiv.innerHTML = "<p style='color: red; text-align: center;'>Is number par koi order darj nahi hai.</p>";
+        } else {
+            resultsDiv.innerHTML = foundOrders;
+        }
+
+    } catch (error) {
+        console.error(error);
+        resultsDiv.innerHTML = "<p style='color: red; text-align: center;'>Data laane mein samasya aayi.</p>";
     }
 }

@@ -45,7 +45,6 @@ body {
     display: none;
 }
 
-
 .spinner {
     width: 60px;
     height: 60px;
@@ -93,46 +92,76 @@ body {
 }
 
 /* ==========================================
-   Header
+   HEADER – (☰ बटन बायें, टाइटल सेंटर, ड्रॉपडाउन दायें)
    ========================================== */
 .header {
+    position: relative;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 2px solid var(--primary);
-    margin-bottom: 20px;
-    padding-bottom: 10px;
     flex-wrap: wrap;
+    align-items: center;
+    justify-content: center; /* टाइटल को सेंटर करने के लिए */
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    min-height: 50px;
 }
 
-.header h1 { 
-    margin: 0; 
-    color: var(--dark); 
-    font-size: 1.8rem; 
+/* ☰ मेन्यू बटन – बिल्कुल बायीं तरफ (Absolute) */
+.menu-btn {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    color: var(--dark);
+    cursor: pointer;
+    padding: 5px 10px 5px 0;
+    display: inline-flex;
+    align-items: center;
+    z-index: 5;
 }
 
-.header .crop-selector { 
-    min-width: 160px; 
+/* "Agroain" टाइटल – बिल्कुल बीच में */
+.header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: var(--dark);
+    text-align: center;
+    flex: 0 1 auto;
 }
 
-.header select { 
-    padding: 8px 12px; 
-    border-radius: 30px; 
-    border: 2px solid var(--primary); 
-    background-color: var(--light); 
-    font-weight: bold; 
-    color: var(--dark); 
-    font-size: 1rem; 
-    cursor: pointer; 
-    width: 100%; 
+/* फसल ड्रॉपडाउन – बिल्कुल दायीं तरफ (Absolute) */
+.header .crop-selector {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    min-width: 140px;
+    z-index: 5;
 }
 
-.subtitle { 
-    text-align: center; 
-    color: #555; 
-    margin-top: 5px; 
-    font-size: 0.9rem; 
-    width: 100%; 
+.header .crop-selector select {
+    padding: 8px 12px;
+    border-radius: 30px;
+    border: 2px solid var(--primary);
+    background-color: var(--light);
+    font-weight: bold;
+    color: var(--dark);
+    font-size: 1rem;
+    cursor: pointer;
+    width: 100%;
+}
+
+/* सबटाइटल – नीचे अलग लाइन */
+.subtitle {
+    text-align: center;
+    color: #555;
+    margin-top: 5px;
+    font-size: 0.9rem;
+    width: 100%;
+    order: 10;
 }
 
 /* ==========================================
@@ -794,57 +823,6 @@ button:disabled {
 }
 
 /* ==========================================
-   Responsive Design
-   ========================================== */
-@media (max-width: 480px) {
-    .container { 
-        padding: 15px; 
-    }
-    
-    .header h1 { 
-        font-size: 1.4rem; 
-    }
-    
-    .header .crop-selector { 
-        min-width: 130px; 
-    }
-    
-    .med-content-wrapper { 
-       flex-direction: row;
-       align-items: flex-start;
-    }
-    
-    .med-left {
-        flex: 0 0 65px;
-    }
-    
-    .med-photo { 
-        width: 65px; 
-        height: 65px; 
-    }
-    
-    .page-btn { 
-        padding: 8px 12px; 
-        min-width: 35px; 
-        font-size: 0.8rem; 
-    }
-    
-    .page-jump {
-        margin-left: 0;
-        margin-top: 5px;
-    }
-    
-    .package-main-header {
-        flex-direction: column;
-        gap: 5px;
-        text-align: center;
-    }
-    
-    .search-suggestions {
-        width: calc(100% - 30px);
-    }
-}
-/* ==========================================
    Package Card (for search results)
    ========================================== */
 .package-card {
@@ -861,8 +839,10 @@ button:disabled {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0,0,0,0.12);
 }
-/* ===== Agroain Checkout Popup ===== */
 
+/* ==========================================
+   Agroain Checkout Popup
+   ========================================== */
 .checkout-modal{
     display:none;
     position:fixed;
@@ -940,7 +920,9 @@ button:disabled {
 .checkout-buttons button:last-child{
     background:#e53935;
     color:#fff;
-}.checkout-product-info{
+}
+
+.checkout-product-info{
     background:#f1f8e9;
     border-radius:10px;
     padding:12px;
@@ -957,4 +939,64 @@ button:disabled {
 .checkout-product-info p{
     margin:8px 0 0;
     font-size:16px;
+}
+
+/* ==========================================
+   Responsive Design (Mobile First)
+   ========================================== */
+@media (max-width: 480px) {
+    .container { 
+        padding: 15px; 
+    }
+    
+    /* हेडर के लिए स्पेशल मोबाइल ट्वीक */
+    .header .crop-selector { 
+        min-width: 100px; 
+    }
+    .header .crop-selector select {
+        font-size: 0.8rem;
+        padding: 5px 8px;
+    }
+    .header h1 { 
+        font-size: 1.4rem; 
+    }
+    .menu-btn {
+        font-size: 1.3rem;
+        padding: 5px 5px 5px 0;
+    }
+    
+    .med-content-wrapper { 
+       flex-direction: row;
+       align-items: flex-start;
+    }
+    
+    .med-left {
+        flex: 0 0 65px;
+    }
+    
+    .med-photo { 
+        width: 65px; 
+        height: 65px; 
+    }
+    
+    .page-btn { 
+        padding: 8px 12px; 
+        min-width: 35px; 
+        font-size: 0.8rem; 
+    }
+    
+    .page-jump {
+        margin-left: 0;
+        margin-top: 5px;
+    }
+    
+    .package-main-header {
+        flex-direction: column;
+        gap: 5px;
+        text-align: center;
+    }
+    
+    .search-suggestions {
+        width: calc(100% - 30px);
+    }
 }

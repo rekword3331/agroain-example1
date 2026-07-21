@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Agroain - My Orders</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f4f7f4;
+            padding: 15px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        /* Header with Back Button */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #2e7d32;
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            color: #2e7d32;
+            cursor: pointer;
+            padding: 5px;
+            display: inline-flex;
+            align-items: center;
+            transition: 0.2s;
+        }
+        .back-btn:hover {
+            color: #1b5e20;
+            transform: scale(1.1);
+        }
+        .page-title {
+            font-size: 1.6rem;
+            color: #1b5e20;
+            margin: 0;
+        }
+        /* Search Section */
+        .search-section {
+            background: #f9fbf9;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .search-section label {
+            font-weight: 600;
+            color: #333;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .search-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .search-row input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+            font-size: 16px;
+            min-width: 200px;
+        }
+        .search-row button {
+            padding: 12px 24px;
+            background: #2e7d32;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+        .search-row button:hover {
+            background: #1b5e20;
+        }
+        /* Results */
+        .order-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .order-header {
+            background: #e8f5e9;
+            padding: 12px 18px;
+            border-bottom: 2px solid #c8e6c9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .order-header span {
+            font-weight: bold;
+            color: #2e7d32;
+            font-size: 1.05rem;
+        }
+        .order-date {
+            font-size: 0.85rem;
+            color: #555;
+        }
+        .order-body {
+            padding: 15px 18px;
+            background: #fafafa;
+        }
+        .order-body .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px dashed #eee;
+            flex-wrap: wrap;
+        }
+        .order-body .row:last-child {
+            border-bottom: none;
+        }
+        .order-body .label {
+            font-weight: 600;
+            color: #444;
+        }
+        .order-body .value {
+            color: #222;
+            text-align: right;
+        }
+        .order-total {
+            background: #fff3e0;
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border-top: 2px solid #ffe0b2;
+        }
+        .order-total .total-amount {
+            color: #d32f2f;
+            font-size: 1.2rem;
+        }
+        .no-orders {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+            font-size: 1rem;
+        }
+        .total-count {
+            background: #e8f5e9;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+        @media (max-width: 480px) {
+            .search-row input { min-width: 100%; }
+            .order-body .row { flex-direction: column; align-items: flex-start; }
+            .order-body .value { text-align: left; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ===== HEADER with Back Button ===== -->
+        <div class="page-header">
+            <button class="back-btn" onclick="goHome()">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h1 class="page-title">📦 My Orders</h1>
+        </div>
+
+        <!-- ===== SEARCH SECTION ===== -->
+        <div class="search-section">
+            <label>📱 अपना 10-अंकों का मोबाइल नंबर दर्ज करें:</label>
+            <div class="search-row">
+                <input type="text" id="orderPhone" placeholder="your contact number" maxlength="10">
+                <button onclick="fetchOrders()">🔍 Orders ढूँढें</button>
+            </div>
+        </div>
+
+        <!-- ===== RESULTS AREA ===== -->
+        <div id="ordersResult">
+            <p style="text-align: center; color: #888;">👆 ऊपर नंबर डालकर Orders खोजें</p>
+        </div>
+    </div>
+
+    <script>
+        // ===== BACK TO HOME =====
+        function goHome() {
+            window.location.href = 'index.html';
+        }
+
+        // ===== HELPER: सिर्फ आखिरी 10 अंक =====
+        function getLast10Digits(phone) {
+            let digits = (phone || '').replace(/\D/g, '');
+            if (digits.length > 10) return digits.slice(-10);
+            return digits;
+        }
+
+        // ===== FETCH ORDERS =====
+        async function fetchOrders() {
+            const phoneInput = document.getElementById('orderPhone').value.trim();
+            const resultsDiv = document.getElementById('ordersResult');
+
+            if (phoneInput.length !== 10) {
+                alert('कृपया सही 10-अंकों का मोबाइल नंबर दर्ज करें।');
+                return;
+            }
+
+            resultsDiv.innerHTML = '<p style="text-align: center;">⏳ तलाश की जा रही है...</p>';
+
+            try {
+                const dbUrl = 'https://agroain-default-rtdb.firebaseio.com/successful_orders.json';
+                const response = await fetch(dbUrl);
+                const data = await response.json();
+
+                if (!data) {
+                    resultsDiv.innerHTML = '<p style="color: red; text-align: center;">❌ कोई ऑर्डर नहीं मिला।</p>';
+                    return;
+                }
+
+                let html = '';
+                let counter = 0;
+                const inputDigits = getLast10Digits(phoneInput);
+
+                for (let key in data) {
+                    let order = data[key];
+                    let dbPhone = order.phone || order.customerPhone || '';
+                    let storedDigits = getLast10Digits(dbPhone);
+
+                    if (storedDigits === inputDigits) {
+                        counter++;
+
+                        // सभी फील्ड्स सुरक्षित रूप से निकालें
+                        let orderId = order.orderId || key;
+                        let date = order.timestamp ? new Date(order.timestamp).toLocaleDateString('hi-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A';
+                        let name = order.customerName || order.email || 'N/A';
+                        let phone = dbPhone || 'N/A';
+                        let address = order.customerAddress || 'N/A';
+                        let product = order.itemName || order.productName || 'N/A';
+                        let amount = order.amountPaid || order.amount || 0;
+
+                        html += `
+                            <div class="order-card">
+                                <div class="order-header">
+                                    <span>📦 Order #${counter}</span>
+                                    <span class="order-date">${date}</span>
+                                </div>
+                                <div class="order-body">
+                                    <div class="row"><span class="label">Order ID</span><span class="value">${orderId}</span></div>
+                                    <div class="row"><span class="label">नाम</span><span class="value">${name}</span></div>
+                                    <div class="row"><span class="label">फोन</span><span class="value">${phone}</span></div>
+                                    <div class="row"><span class="label">पता</span><span class="value">${address}</span></div>
+                                    <div class="row"><span class="label">Product</span><span class="value">${product}</span></div>
+                                </div>
+                                <div class="order-total">
+                                    <span>💰 Total Payment</span>
+                                    <span class="total-amount">₹${amount}</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
+                if (html === '') {
+                    resultsDiv.innerHTML = `
+                        <div style="background: #fff8e1; padding: 15px; border-radius: 8px; border-left: 5px solid #ff9800;">
+                            <p style="margin:0; color:#e65100; font-weight:bold;">⚠️ इस नंबर पर कोई ऑर्डर नहीं मिला।</p>
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="total-count">🎯 कुल ${counter} ऑर्डर मिले</div>
+                        ${html}
+                    `;
+                }
+
+            } catch (error) {
+                console.error(error);
+                resultsDiv.innerHTML = '<p style="color: red; text-align: center;">❌ डेटा लाने में समस्या आई।</p>';
+            }
+        }
+    </script>
+</body>
+</html>

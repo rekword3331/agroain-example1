@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Agroain - My Bills</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background: #f5f5f5; padding: 15px; min-height: 100vh; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+
+        .page-header { display: flex; align-items: center; gap: 15px; padding-bottom: 15px; border-bottom: 2px solid #2e7d32; margin-bottom: 20px; }
+        .back-btn { background: none; border: none; font-size: 1.8rem; color: #2e7d32; cursor: pointer; padding: 5px; transition: 0.2s; }
+        .back-btn:hover { color: #1b5e20; transform: scale(1.1); }
+        .page-title { font-size: 1.6rem; color: #1b5e20; margin: 0; }
+
+        .search-section { background: #f9fbf9; padding: 15px; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 20px; }
+        .search-section label { font-weight: 600; color: #333; display: block; margin-bottom: 8px; }
+        .search-row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .search-row input { flex: 1; padding: 12px; border-radius: 10px; border: 2px solid #ddd; font-size: 16px; min-width: 200px; }
+        .search-row button { padding: 12px 24px; background: #2e7d32; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .search-row button:hover { background: #1b5e20; }
+
+        .bill-display-wrapper { margin-top: 20px; }
+
+        .full-bill-display {
+            border: 2px solid #2e7d32;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+
+        .shop-header { text-align: center; border-bottom: 2px solid #2e7d32; padding-bottom: 12px; margin-bottom: 15px; }
+        .shop-header h1 { color: #2e7d32; font-size: 24px; margin-bottom: 5px; }
+        .shop-header .shop-details-row { display: flex; justify-content: space-between; font-size: 13px; color: #555; flex-wrap: wrap; gap: 5px; }
+
+        .bill-meta { display: flex; justify-content: space-between; border-bottom: 1px dashed #ddd; padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .customer-block { background: #e8f5e9; padding: 10px 14px; border-radius: 6px; margin-bottom: 15px; }
+        .customer-block p { margin: 3px 0; }
+
+        .bill-products-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .bill-products-table th { background: #4caf50; color: white; padding: 8px; border: 1px solid #ddd; text-align: left; }
+        .bill-products-table td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+        .bill-products-table th:last-child, .bill-products-table td:last-child { text-align: right; }
+
+        .bill-total-row { display: flex; justify-content: flex-end; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 2px solid #2e7d32; gap: 20px; flex-wrap: wrap; }
+        .bill-total-row .total-amount { font-size: 20px; background: #2e7d32; color: white; padding: 6px 18px; border-radius: 6px; font-weight: bold; }
+
+        .terms-block { background: #f9f9f9; padding: 12px; border-radius: 4px; margin-top: 15px; font-size: 12px; border: 1px solid #eee; }
+        .terms-block h4 { color: #4caf50; margin-bottom: 4px; }
+        .terms-block p { margin: 2px 0; }
+
+        .signatures { display: flex; justify-content: space-around; margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ddd; }
+        .signature-line { width: 150px; height: 1px; background: #333; margin: 8px auto; }
+
+        .action-buttons { display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+        .action-buttons button { padding: 10px 24px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        .btn-print { background: #007bff; color: white; }
+        .btn-print:hover { background: #0056b3; }
+        .btn-print-all { background: #28a745; color: white; }
+        .btn-print-all:hover { background: #1e7e34; }
+
+        .no-bill { text-align: center; padding: 40px; color: #888; font-size: 1.1rem; }
+        .bill-counter { background: #e8f5e9; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: bold; color: #2e7d32; }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; padding: 10px; border-radius: 0; }
+            .page-header, .search-section, .action-buttons, .back-btn, .bill-counter, .btn-print, .btn-print-all { display: none !important; }
+            .full-bill-display { border: 1px solid #ddd !important; padding: 10px; margin-bottom: 20px; page-break-inside: avoid; }
+            .bill-products-table th { background: #4caf50 !important; color: white !important; }
+        }
+
+        @media (max-width: 480px) {
+            .search-row input { min-width: 100%; }
+            .search-row button { width: 100%; }
+            .shop-details-row { flex-direction: column; text-align: center; }
+            .bill-meta { flex-direction: column; align-items: flex-start; }
+            .bill-total-row { flex-direction: column; align-items: stretch; }
+            .signatures { flex-direction: column; align-items: center; gap: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <button class="back-btn" onclick="goHome()">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h1 class="page-title">🧾 My Bills</h1>
+        </div>
+
+        <div class="search-section">
+            <label>📱 अपना 10-अंकों का मोबाइल नंबर दर्ज करें:</label>
+            <div class="search-row">
+                <input type="text" id="billPhone" placeholder="8319489418" maxlength="10">
+                <button onclick="fetchBills()">🔍 Bill ढूँढें</button>
+            </div>
+        </div>
+
+        <div id="billResult">
+            <p class="no-bill">👆 ऊपर नंबर डालकर Bill खोजें</p>
+        </div>
+    </div>
+
+    <script>
+        function goHome() {
+            window.location.href = 'index.html';
+        }
+
+        function getLast10Digits(phone) {
+            let digits = (phone || '').replace(/\D/g, '');
+            if (digits.length > 10) return digits.slice(-10);
+            return digits;
+        }
+
+        function printBill(elementId) {
+            const printContents = document.getElementById(elementId).outerHTML;
+            const originalTitle = document.title;
+            document.title = 'Agroain Bill';
+
+            const printWindow = window.open('', '', 'height=600,width=800');
+            printWindow.document.write('<html><head><title>Agroain Bill</title>');
+            printWindow.document.write(`
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+                    body { padding: 20px; background: white; }
+                    .full-bill-display { border: 1px solid #ddd; padding: 20px; max-width: 800px; margin: auto; }
+                    .shop-header { text-align: center; border-bottom: 2px solid #2e7d32; padding-bottom: 12px; margin-bottom: 15px; }
+                    .shop-header h1 { color: #2e7d32; font-size: 24px; }
+                    .shop-details-row { display: flex; justify-content: space-between; font-size: 13px; color: #555; flex-wrap: wrap; }
+                    .bill-meta { display: flex; justify-content: space-between; border-bottom: 1px dashed #ddd; padding-bottom: 10px; margin-bottom: 12px; }
+                    .customer-block { background: #e8f5e9; padding: 10px 14px; border-radius: 6px; margin-bottom: 15px; }
+                    .customer-block p { margin: 3px 0; }
+                    .bill-products-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                    .bill-products-table th { background: #4caf50; color: white; padding: 8px; border: 1px solid #ddd; text-align: left; }
+                    .bill-products-table td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+                    .bill-products-table th:last-child, .bill-products-table td:last-child { text-align: right; }
+                    .bill-total-row { display: flex; justify-content: flex-end; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 2px solid #2e7d32; gap: 20px; }
+                    .bill-total-row .total-amount { font-size: 20px; background: #2e7d32; color: white; padding: 6px 18px; border-radius: 6px; font-weight: bold; }
+                    .terms-block { background: #f9f9f9; padding: 12px; border-radius: 4px; margin-top: 15px; font-size: 12px; border: 1px solid #eee; }
+                    .terms-block h4 { color: #4caf50; margin-bottom: 4px; }
+                    .terms-block p { margin: 2px 0; }
+                    .signatures { display: flex; justify-content: space-around; margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ddd; }
+                    .signature-line { width: 150px; height: 1px; background: #333; margin: 8px auto; }
+                    @media print { body { padding: 0; } .full-bill-display { border: none !important; } }
+                </style>
+            `);
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(printContents);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+
+            document.title = originalTitle;
+        }
+
+        function printAllBills() {
+            window.print();
+        }
+
+        async function fetchBills() {
+            const phoneInput = document.getElementById('billPhone').value.trim();
+            const resultDiv = document.getElementById('billResult');
+
+            if (phoneInput.length !== 10) {
+                alert('कृपया सही 10-अंकों का मोबाइल नंबर दर्ज करें।');
+                return;
+            }
+
+            resultDiv.innerHTML = '<p style="text-align: center; color: #2e7d32;">⏳ Bill तलाश की जा रही है...</p>';
+
+            try {
+                const dbUrl = 'https://agroain-default-rtdb.firebaseio.com/successful_orders.json';
+                const response = await fetch(dbUrl);
+                const data = await response.json();
+
+                if (!data) {
+                    resultDiv.innerHTML = '<p class="no-bill">❌ कोई Bill नहीं मिला।</p>';
+                    return;
+                }
+
+                let allBillsHTML = '';
+                let counter = 0;
+                const inputDigits = getLast10Digits(phoneInput);
+
+                // === LOOP: सारे ऑर्डर चेक करें (break नहीं) ===
+                for (let key in data) {
+                    let order = data[key];
+                    let dbPhone = order.phone || order.customerPhone || '';
+                    let storedDigits = getLast10Digits(dbPhone);
+
+                    if (storedDigits === inputDigits) {
+                        counter++;
+
+                        let orderId = order.orderId || key;
+                        let customerName = order.customerName || order.email || 'N/A';
+                        let customerVillage = order.customerAddress || 'N/A';
+                        let customerPhone = order.phone || order.customerPhone || 'N/A';
+                        let billDate = order.timestamp ? new Date(order.timestamp).toLocaleDateString('hi-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A';
+                        let amount = order.amountPaid || order.amount || 0;
+                        let paymentType = order.status || 'Paid';
+                        let productName = order.itemName || order.productName || 'N/A';
+
+                        // === बिल का HTML (एक-एक करके) ===
+                        allBillsHTML += `
+                            <div class="full-bill-display" id="bill_${key}">
+
+                                <div class="shop-header">
+                                    <h1>🌾 Agroain</h1>
+                                    <p style="font-size:14px; color:#555;">सभी प्रकार की कृषि दवाईयों के विक्रेता</p>
+                                    <div class="shop-details-row">
+                                        <span><strong>Lic No:</strong> 1/8/910/25</span>
+                                        <span><strong>सचिन यादव:</strong> 8139489418</span>
+                                        <span><strong>दिनेश यादव:</strong> 9424511303</span>
+                                    </div>
+                                </div>
+
+                                <div class="bill-meta">
+                                    <span><strong>क्रमांक:</strong> ${orderId.slice(-6)}</span>
+                                    <span><strong>दिनांक:</strong> ${billDate}</span>
+                                </div>
+
+                                <div class="customer-block">
+                                    <p><strong>श्रीमान:</strong> ${customerName}</p>
+                                    <p><strong>ग्राम:</strong> ${customerVillage}</p>
+                                    <p><strong>कॉन्टैक्ट नंबर:</strong> ${customerPhone}</p>
+                                </div>
+
+                                <table class="bill-products-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:40px;">क्र.</th>
+                                            <th>विवरण</th>
+                                            <th style="width:60px;">नग</th>
+                                            <th style="width:80px;">दर (रु.)</th>
+                                            <th style="width:90px;">रकम</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>1</td>
+                                            <td>${productName}</td>
+                                            <td>1</td>
+                                            <td>₹${amount}</td>
+                                            <td>₹${amount}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <div class="bill-total-row">
+                                    <span><strong>भुगतान:</strong> ${paymentType}</span>
+                                    <span class="total-amount">कुल: ₹${amount}</span>
+                                </div>
+
+                                <div class="terms-block">
+                                    <h4>📜 हमारी शर्ते:</h4>
+                                    <p>हम विक्रेता है उत्पादक नहीं, दवाई पैक देखकर ही लेवें।</p>
+                                    <p>* किसी भी प्रकार की दवाई की ग्यारंटी कम्पनी की रहेगी, हमारी कोई जवाबदारी नहीं बेचा हुआ माल वापस नहीं होगा।</p>
+                                    <p>* कृषि दवाईयों के दुरूपयोग व बीज प्रतिकूल परिथितियों में न उगने पर हमारी कोई जवाबदारी नही रहेगी।</p>
+                                    <p>* भूल-चूक, लेनी-देनी किसी भी प्रकार का विवाद होने पर न्यायक्षेत्र उज्जैन रहेगा।</p>
+                                </div>
+
+                                <div class="signatures">
+                                    <div class="customer-sign">
+                                        <p><strong>हस्ताक्षर किसान</strong></p>
+                                        <div class="signature-line"></div>
+                                    </div>
+                                    <div class="shop-sign">
+                                        <p><strong>हस्ताक्षर (Agroain)</strong></p>
+                                        <div class="signature-line"></div>
+                                    </div>
+                                </div>
+
+                                <div style="text-align: right; margin-top: 10px; font-size: 12px; color: #999;">
+                                    Bill #${counter} | ${orderId.slice(-6)}
+                                </div>
+
+                                <!-- Individual Print Button for each bill -->
+                                <div style="text-align: center; margin-top: 10px;">
+                                    <button onclick="printBill('bill_${key}')" style="padding: 6px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                                        🖨️ इस बिल को प्रिंट करें
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
+                if (allBillsHTML === '') {
+                    resultDiv.innerHTML = `
+                        <div style="background: #fff8e1; padding: 15px; border-radius: 8px; border-left: 5px solid #ff9800;">
+                            <p style="margin:0; color:#e65100; font-weight:bold;">⚠️ इस नंबर पर कोई Bill नहीं मिला।</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="bill-counter">🎯 कुल ${counter} Bill${counter > 1 ? 's' : ''} मिले</div>
+                        <div style="text-align: center; margin-bottom: 15px;">
+                            <button class="btn-print-all" onclick="printAllBills()">
+                                <i class="fa-solid fa-print"></i> 🖨️ सभी Bills प्रिंट करें
+                            </button>
+                        </div>
+                        ${allBillsHTML}
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = '<p class="no-bill" style="color:red;">❌ डेटा लाने में समस्या आई।</p>';
+            }
+        }
+    </script>
+</body>
+</html>
