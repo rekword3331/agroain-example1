@@ -487,27 +487,27 @@ function renderPackageCard(pkg, bighaInput) {
         packageTotalPrice = (parseFloat(pkg.price) || 0) * bigha;
     }
 
-    return `
-        <div class="package-card" style="border: 1px solid #4CAF50; border-radius: 12px; padding: 12px; margin-bottom: 15px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-            <div class="med-content-wrapper" style="margin-bottom: 10px;">
-                <div class="med-right" style="width: 100%;">
-                    <h4 class="med-name" style="color: #1b5e20; margin: 0 0 4px 0; font-size: 1.25rem; font-weight: bold;">${escapeHtml(name)}</h4>
-                    ${pkg.noteAlert ? `<p style="margin: 4px 0; color: #d32f2f; font-size: 0.9rem;">⚠️ <strong>जरूरी सूचना:</strong> ${escapeHtml(pkg.noteAlert)}</p>` : ''}
-                </div>
+   return `
+    <div class="package-card" style="border: 1px solid #4CAF50; border-radius: 12px; padding: 12px; margin-bottom: 15px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+        <div class="med-content-wrapper" style="margin-bottom: 10px;">
+            <div class="med-right" style="width: 100%;">
+                <h4 class="med-name" style="color: #1b5e20; margin: 0 0 4px 0; font-size: 1.25rem; font-weight: bold;">${escapeHtml(name)}</h4>
+                ${pkg.noteAlert ? `<p style="margin: 4px 0; color: #d32f2f; font-size: 0.9rem;">⚠️ <strong>जरूरी सूचना:</strong> ${escapeHtml(pkg.noteAlert)}</p>` : ''}
             </div>
-            
-            ${itemsHtml}
-            
-            <div class="package-total-summary" style="margin-top: 15px; padding-top: 10px; border-top: 2px solid #4CAF50; text-align: right;">
-                <h4 style="margin: 0; color: #1b5e20; font-size: 1.15rem;">📦 ${bigha} बीघा पैकेज का कुल मूल्य: <span style="color: #e65100; font-size: 1.35rem; font-weight: bold;">₹${packageTotalPrice.toFixed(2)}</span></h4>
-            </div>
-            
-            <!-- ✅ बिल्कुल सही बटन – सभी पैरामीटर सिंगल कोट में -->
-            <button class="buy-btn" onclick="handleBuyNow('${safeName}', '₹${packageTotalPrice.toFixed(2)}', '${productNamesJson}')" style="margin-top: 12px; width: 100%;">
-                <i class="fa-solid fa-cart-shopping"></i> अभी पैकेज खरीदें
-            </button>
         </div>
-    `;
+        
+        ${itemsHtml}
+        
+        <div class="package-total-summary" style="margin-top: 15px; padding-top: 10px; border-top: 2px solid #4CAF50; text-align: right;">
+            <h4 style="margin: 0; color: #1b5e20; font-size: 1.15rem;">📦 ${bigha} बीघा पैकेज का कुल मूल्य: <span style="color: #e65100; font-size: 1.35rem; font-weight: bold;">₹${packageTotalPrice.toFixed(2)}</span></h4>
+        </div>
+        
+        <!-- ✅ नया और सही तरीका – data-attributes के साथ -->
+        <button class="buy-btn package-buy-btn" data-name="${safeName}" data-price="${packageTotalPrice.toFixed(2)}" data-items='${productNamesJson}' style="margin-top: 12px; width: 100%;">
+            <i class="fa-solid fa-cart-shopping"></i> अभी पैकेज खरीदें
+        </button>
+    </div>
+`;
 }
 function renderProductCardWithPacks(docData, totalBigha) {
     if (Array.isArray(docData)) {
@@ -676,8 +676,32 @@ function renderUnifiedContent() {
     }
 
     unifiedContent.innerHTML = html;
+
+    // ✅ नया Event Listener – बटन पर onclick की जगह
+    setTimeout(function() {
+        document.querySelectorAll('.package-buy-btn').forEach(btn => {
+            btn.removeEventListener('click', handlePackageBuy);
+            btn.addEventListener('click', handlePackageBuy);
+        });
+    }, 50);
 }
 
+// ✅ Event Listener फंक्शन
+function handlePackageBuy(e) {
+    const btn = e.currentTarget;
+    const name = btn.getAttribute('data-name');
+    const price = '₹' + btn.getAttribute('data-price');
+    const itemsJson = btn.getAttribute('data-items');
+    
+    let itemsArray = [];
+    try {
+        itemsArray = JSON.parse(itemsJson);
+    } catch (err) {
+        itemsArray = [name];
+    }
+    
+    handleBuyNow(name, price, itemsArray);
+}
 function renderPaginationHTML(totalItems, currentPage, itemsPerPage, goToPageFunction) {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     if (totalPages <= 1) return '';
@@ -1025,29 +1049,9 @@ function startPayment() {
     let customerAddress = document.getElementById("custAddress").value.trim();
     let customerPincode = document.getElementById("custPincode").value.trim();
 
-    if (customerName == "") {
-        alert("अपना नाम दर्ज करें");
-        payBtn.disabled = false;
-        payBtn.innerHTML = "भुगतान करें";
-        return;
-    }
-
-    if (customerPhone.length != 10) {
-        alert("सही 10 अंकों का मोबाइल नंबर दर्ज करें");
-        payBtn.disabled = false;
-        payBtn.innerHTML = "भुगतान करें";
-        return;
-    }
-
-    if (customerAddress == "") {
-        alert("पूरा पता दर्ज करें");
-        payBtn.disabled = false;
-        payBtn.innerHTML = "भुगतान करें";
-        return;
-    }
-
-    if (customerPincode.length != 6) {
-        alert("सही 6 अंकों का पिनकोड दर्ज करें");
+    // अगर नाम या फोन खाली है तो रोकें
+    if (!customerName || !customerPhone || !customerAddress || !customerPincode) {
+        alert("❌ कृपया अपनी सभी जानकारी (नाम, फोन, पूरा पता और पिनकोड) भरें।");
         payBtn.disabled = false;
         payBtn.innerHTML = "भुगतान करें";
         return;
@@ -1056,19 +1060,38 @@ function startPayment() {
     const bighaSelect = document.getElementById('bigha');
     let bighaValue = bighaSelect.value;
     if (bighaValue === 'other') {
-        bighaValue = document.getElementById('customBigha').value || '0';
+        bighaValue = document.getElementById('customBigha').value || '1';
     }
 
     const cropSelect = document.getElementById('cropSelect');
     const cropValue = cropSelect.options[cropSelect.selectedIndex].text;
 
-    let allProductNames = '';
+    // ✅ यहाँ दवाइयों और पैकेट की पूरी डिटेल तैयार की जा रही है
+    let detailedItemsSummary = [];
+    
+    // अगर सिंगल प्रोडक्ट है या पैकेज है, उसकी कैलकुलेटेड पैकिंग यहाँ से पकड़ेंगे
     if (typeof checkoutProductNames !== 'undefined' && Array.isArray(checkoutProductNames) && checkoutProductNames.length > 0) {
-        allProductNames = checkoutProductNames.join(', ');
+        checkoutProductNames.forEach(pName => {
+            detailedItemsSummary.push(pName);
+        });
     } else {
-        allProductNames = checkoutProduct || 'N/A';
+        detailedItemsSummary.push(checkoutProduct || 'N/A');
     }
-    console.log("📦 allProductNames final:", allProductNames);
+
+    // स्क्रीन पर दिख रही पैकिंग डिटेल्स (जैसे कितने ml/gram या पैकेट हैं) को भी साथ में जोड़ना
+    let calculatedPackingText = "";
+    document.querySelectorAll('.product-card, .package-card').forEach(card => {
+        const title = card.querySelector('.med-name')?.innerText || "";
+        const packInfo = card.querySelector('[id^="pack-"]')?.innerText || card.querySelector('.package-items-container')?.innerText || "";
+        if(title) {
+            calculatedPackingText += `[${title} -> ${packInfo.replace(/\s+/g, ' ').trim()}] `;
+        }
+    });
+
+    let finalItemDescription = detailedItemsSummary.join(', ');
+    if (calculatedPackingText) {
+        finalItemDescription += ` | पैकिंग विवरण: ${calculatedPackingText}`;
+    }
 
     document.getElementById("checkoutModal").style.display = "none";
     const agroOrderId = generateOrderId();
@@ -1083,7 +1106,8 @@ function startPayment() {
             agro_order_id: agroOrderId,
             bigha: bighaValue,
             crop: cropValue,
-            product: allProductNames,
+            product: finalItemDescription,
+            customer_name: customerName,
             address: customerAddress,
             pincode: customerPincode
         },
@@ -1095,26 +1119,34 @@ function startPayment() {
             color: "#2e7d32"
         },
         handler: function(response) {
+            console.log("✅ Razorpay Success Response:", response);
+
+            // ✅ यह पूरा डेटा अब Firebase में सही से सेव होगा
             const orderData = {
-                bigha: bighaValue,
-                crop: cropValue,
-                customerName: customerName,
-                customerPhone: customerPhone,
-                customerAddress: customerAddress,
-                customerPincode: customerPincode,
-                itemName: allProductNames,
-                amountPaid: checkoutPrice,
                 orderId: agroOrderId,
                 paymentId: response.razorpay_payment_id,
+                customerName: customerName,
+                customerPhone: customerPhone,
                 phone: customerPhone,
+                customerAddress: customerAddress,
+                customerPincode: customerPincode,
+                crop: cropValue,
+                bigha: bighaValue,
+                itemName: finalItemDescription,
+                amountPaid: checkoutPrice,
                 status: 'Paid / Confirmed',
                 timestamp: new Date().toISOString(),
                 email: `${customerPhone}@agroain.in`
             };
 
-            // ✅ एक ही जगह सेव – ORDER ID को KEY बनाकर
+            console.log("📦 Order Data being saved:", orderData);
+
+            // Firebase में आर्डर सेव करें
             firebase.database().ref('successful_orders/' + agroOrderId).set(orderData)
-                .then(() => console.log('✅ Order saved successfully!'))
+                .then(() => {
+                    console.log('✅ Order saved successfully with all details!');
+                    sendPushNotificationToAdmin(orderData);
+                })
                 .catch((error) => console.error('❌ Firebase Error:', error));
 
             payBtn.disabled = false;
@@ -1128,11 +1160,12 @@ function startPayment() {
                         <h2 style="color: #2e7d32; margin-top: 0;">🎉 भुगतान सफल!</h2>
                         <p style="font-size: 1.1rem; color: #333;">धन्यवाद! आपका ऑर्डर सफलतापूर्वक दर्ज हो गया है।</p>
                         <p><strong>ऑर्डर ID:</strong> ${agroOrderId}</p>
-                        <p><strong>पेमेंट ID:</strong> ${response.razorpay_payment_id}</p>
-                        <p><strong>फसल:</strong> ${cropValue}</p>
-                        <p><strong>बीघा:</strong> ${bighaValue}</p>
-                        <p><strong>उत्पाद:</strong> ${allProductNames}</p>
-                        <p><strong>राशि:</strong> ₹${checkoutPrice}</p>
+                        <p><strong>नाम:</strong> ${customerName}</p>
+                        <p><strong>फ़ोन:</strong> ${customerPhone}</p>
+                        <p><strong>पत्ता:</strong> ${customerAddress} (पिनकोड: ${customerPincode})</p>
+                        <p><strong>फसल & बीघा:</strong> ${cropValue} (${bighaValue} बीघा)</p>
+                        <p><strong>उत्पाद और मात्रा:</strong> ${finalItemDescription}</p>
+                        <p><strong>कुल राशि:</strong> ₹${checkoutPrice}</p>
                     </div>
                 `;
                 resultDiv.scrollIntoView({ behavior: 'smooth' });
@@ -1140,7 +1173,7 @@ function startPayment() {
 
             setTimeout(() => {
                 window.location.href = 'bills.html';
-            }, 3000);
+            }, 4000);
         },
         modal: {
             ondismiss: function() {
@@ -1154,6 +1187,7 @@ function startPayment() {
     const rzp = new Razorpay(options);
     rzp.open();
 }
+
 //=========================
 
 async function sendPushNotificationToAdmin(orderDetails) {
