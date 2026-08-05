@@ -1049,7 +1049,6 @@ function startPayment() {
     let customerAddress = document.getElementById("custAddress").value.trim();
     let customerPincode = document.getElementById("custPincode").value.trim();
 
-    // अगर नाम या फोन खाली है तो रोकें
     if (!customerName || !customerPhone || !customerAddress || !customerPincode) {
         alert("❌ कृपया अपनी सभी जानकारी (नाम, फोन, पूरा पता और पिनकोड) भरें।");
         payBtn.disabled = false;
@@ -1066,10 +1065,7 @@ function startPayment() {
     const cropSelect = document.getElementById('cropSelect');
     const cropValue = cropSelect.options[cropSelect.selectedIndex].text;
 
-    // ✅ यहाँ दवाइयों और पैकेट की पूरी डिटेल तैयार की जा रही है
     let detailedItemsSummary = [];
-    
-    // अगर सिंगल प्रोडक्ट है या पैकेज है, उसकी कैलकुलेटेड पैकिंग यहाँ से पकड़ेंगे
     if (typeof checkoutProductNames !== 'undefined' && Array.isArray(checkoutProductNames) && checkoutProductNames.length > 0) {
         checkoutProductNames.forEach(pName => {
             detailedItemsSummary.push(pName);
@@ -1078,7 +1074,6 @@ function startPayment() {
         detailedItemsSummary.push(checkoutProduct || 'N/A');
     }
 
-    // स्क्रीन पर दिख रही पैकिंग डिटेल्स (जैसे कितने ml/gram या पैकेट हैं) को भी साथ में जोड़ना
     let calculatedPackingText = "";
     document.querySelectorAll('.product-card, .package-card').forEach(card => {
         const title = card.querySelector('.med-name')?.innerText || "";
@@ -1095,6 +1090,9 @@ function startPayment() {
 
     document.getElementById("checkoutModal").style.display = "none";
     const agroOrderId = generateOrderId();
+
+    // ✅ Yeh track karne ke liye ki payment successful hua ya nahi
+    let paymentCompleted = false;
 
     const options = {
         key: "rzp_live_TAZYvZkwibNMjy",
@@ -1119,9 +1117,9 @@ function startPayment() {
             color: "#2e7d32"
         },
         handler: function(response) {
+            paymentCompleted = true; // 🟢 Payment successful mark kar diya
             console.log("✅ Razorpay Success Response:", response);
 
-            // ✅ यह पूरा डेटा अब Firebase में सही से सेव होगा
             const orderData = {
                 orderId: agroOrderId,
                 paymentId: response.razorpay_payment_id,
@@ -1139,9 +1137,6 @@ function startPayment() {
                 email: `${customerPhone}@agroain.in`
             };
 
-            console.log("📦 Order Data being saved:", orderData);
-
-            // Firebase में आर्डर सेव करें
             firebase.database().ref('successful_orders/' + agroOrderId).set(orderData)
                 .then(() => {
                     console.log('✅ Order saved successfully with all details!');
@@ -1179,7 +1174,11 @@ function startPayment() {
             ondismiss: function() {
                 payBtn.disabled = false;
                 payBtn.innerHTML = "भुगतान करें";
-                alert("❌ भुगतान रद्द कर दिया गया।");
+                
+                // ✅ Sirf tabhi alert dikhao jab payment actually complete na hui ho
+                if (!paymentCompleted) {
+                    alert("❌ भुगतान रद्द कर दिया गया।");
+                }
             }
         }
     };
