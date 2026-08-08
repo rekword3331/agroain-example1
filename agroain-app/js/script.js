@@ -1025,25 +1025,22 @@ function handleBuyNow(productOrPackageName, price, productNamesArray) {
 function closeCheckout(){
     document.getElementById("checkoutModal").style.display="none";
 }
-function generateOrderId() {
-    const now = new Date();
 
-    const year = now.getFullYear();
 
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-
-    const day = String(now.getDate()).padStart(2, "0");
-
-    const random = Math.floor(1000 + Math.random() * 9000);
-
-    return `AGRO-${year}${month}${day}-${random}`;
-}
-
+// ==========================================
+// ✅ SINGLE PAYMENT FUNCTION - UPDATED
+// ==========================================
 function startPayment() {
     const payBtn = document.querySelector(".checkout-buttons button:first-child");
+    if (!payBtn) {
+        alert("❌ Payment button not found!");
+        return;
+    }
+    
     payBtn.disabled = true;
     payBtn.innerHTML = "⏳ भुगतान हो रहा है...";
 
+    // 1️⃣ Get Customer Details
     let customerName = document.getElementById("custName").value.trim();
     let customerPhone = document.getElementById("custPhone").value.trim();
     let customerAddress = document.getElementById("custAddress").value.trim();
@@ -1056,24 +1053,25 @@ function startPayment() {
         return;
     }
 
+    // 2️⃣ Get Crop & Bigha
     const bighaSelect = document.getElementById('bigha');
-    let bighaValue = bighaSelect.value;
+    let bighaValue = bighaSelect?.value || '1';
     if (bighaValue === 'other') {
-        bighaValue = document.getElementById('customBigha').value || '1';
+        bighaValue = document.getElementById('customBigha')?.value || '1';
     }
 
     const cropSelect = document.getElementById('cropSelect');
-    const cropValue = cropSelect.options[cropSelect.selectedIndex].text;
+    const cropValue = cropSelect?.options[cropSelect.selectedIndex]?.text || 'Unknown';
 
+    // 3️⃣ Get Product Details
     let detailedItemsSummary = [];
     if (typeof checkoutProductNames !== 'undefined' && Array.isArray(checkoutProductNames) && checkoutProductNames.length > 0) {
-        checkoutProductNames.forEach(pName => {
-            detailedItemsSummary.push(pName);
-        });
+        detailedItemsSummary = checkoutProductNames;
     } else {
-        detailedItemsSummary.push(checkoutProduct || 'N/A');
+        detailedItemsSummary = [checkoutProduct || 'Product'];
     }
 
+    // 4️⃣ Get Packing Details
     let calculatedPackingText = "";
     document.querySelectorAll('.product-card, .package-card').forEach(card => {
         const title = card.querySelector('.med-name')?.innerText || "";
@@ -1088,18 +1086,77 @@ function startPayment() {
         finalItemDescription += ` | पैकिंग विवरण: ${calculatedPackingText}`;
     }
 
-    document.getElementById("checkoutModal").style.display = "none";
+    // 5️⃣ Close Modal & Generate Order ID
+    const modal = document.getElementById("checkoutModal");
+    if (modal) modal.style.display = "none";
+    
     const agroOrderId = generateOrderId();
 
-    // ✅ Yeh track karne ke liye ki payment successful hua ya nahi
-    let paymentCompleted = false;
+    console.log("🟢 ========== PAYMENT STARTED ==========");
+    console.log("🟢 Order ID:", agroOrderId);
+    console.log("🟢 Customer:", customerName, customerPhone);
+    console.log("🟢 Amount:", checkoutPrice);
+    console.log("🟢 Product:", finalItemDescription);
+
+    // 6️⃣ ✅ SAVE TO FIREBASE FIRST (Payment se pehle)
+    const initialOrderData = {
+        orderId: agroOrderId,
+        customerName: customerName,
+        customerPhone: customerPhone,
+        phone: customerPhone,
+        customerAddress: customerAddress,
+        customerPincode: customerPincode,
+        crop: cropValue,
+        bigha: bighaValue,
+        itemName: finalItemDescription,
+        amountPaid: checkoutPrice,
+        status: 'Pending / Initiated',
+        timestamp: new Date().toISOString(),
+        email: `${customerPhone}@agroain.in`
+    };
+
+    // 🔥 FIREBASE SAVE WITH CONFIRMATION
+    firebase.database().ref('successful_orders/' + agroOrderId).set(initialOrderData)
+        .then(() => {
+            console.log("✅ Initial order saved to Firebase!");
+            console.log("🔗 Path: successful_orders/" + agroOrderId);
+            
+            // ✅ Firebase save hone ke baad Razorpay open karo
+            openRazorpayPayment(agroOrderId, customerName, customerPhone, customerAddress, 
+                              customerPincode, cropValue, bighaValue, finalItemDescription, 
+                              checkoutPrice, payBtn);
+        })
+        .catch((err) => {
+            console.error("❌ Firebase Save Error:", err);
+            alert("⚠️ डेटाबेस में सेव करने में एरर: " + err.message + "\n\nकृपया इंटरनेट चेक करें और पुनः प्रयास करें।");
+            payBtn.disabled = false;
+            payBtn.innerHTML = "भुगतान करें";
+        });
+}
+
+// ==========================================
+// ✅ RAZORPAY OPEN FUNCTION
+// ==========================================
+function openRazorpayPayment(agroOrderId, customerName, customerPhone, customerAddress, 
+                            customerPincode, cropValue, bighaValue, finalItemDescription, 
+                            checkoutPrice, payBtn) {
+    
+    console.log("🟢 Opening Razorpay...");
+    
+    // Check if Razorpay is loaded
+    if (typeof Razorpay === 'undefined') {
+        alert("❌ Razorpay SDK load nahi hua. कृपया इंटरनेट कनेक्शन चेक करें।");
+        payBtn.disabled = false;
+        payBtn.innerHTML = "भुगतान करें";
+        return;
+    }
 
     const options = {
         key: "rzp_live_TAZYvZkwibNMjy",
         amount: Math.round(checkoutPrice * 100),
         currency: "INR",
         name: "Agroain",
-        description: checkoutProduct,
+        description: checkoutProduct || "Agroain Products",
         notes: {
             agro_order_id: agroOrderId,
             bigha: bighaValue,
@@ -1116,77 +1173,130 @@ function startPayment() {
         theme: {
             color: "#2e7d32"
         },
+        // ✅ REDIRECT - Mobile ke liye important
+        redirect: true,
+        callback_url: window.location.href,
+        // ✅ HANDLER - Payment success par yeh chalega
         handler: function(response) {
-            paymentCompleted = true; // 🟢 Payment successful mark kar diya
-            console.log("✅ Razorpay Success Response:", response);
-
-            const orderData = {
-                orderId: agroOrderId,
+            console.log("✅ ========== PAYMENT SUCCESS ==========");
+            console.log("✅ Payment ID:", response.razorpay_payment_id);
+            console.log("✅ Order ID:", response.razorpay_order_id);
+            
+            // 🔥 UPDATE FIREBASE WITH PAYMENT ID
+            const updateData = {
                 paymentId: response.razorpay_payment_id,
-                customerName: customerName,
-                customerPhone: customerPhone,
-                phone: customerPhone,
-                customerAddress: customerAddress,
-                customerPincode: customerPincode,
-                crop: cropValue,
-                bigha: bighaValue,
-                itemName: finalItemDescription,
-                amountPaid: checkoutPrice,
                 status: 'Paid / Confirmed',
-                timestamp: new Date().toISOString(),
-                email: `${customerPhone}@agroain.in`
+                paymentTimestamp: new Date().toISOString()
             };
 
-            firebase.database().ref('successful_orders/' + agroOrderId).set(orderData)
+            firebase.database().ref('successful_orders/' + agroOrderId).update(updateData)
                 .then(() => {
-                    console.log('✅ Order saved successfully with all details!');
-                    sendPushNotificationToAdmin(orderData);
+                    console.log("✅ Order updated with Payment ID in Firebase!");
+                    console.log("📦 Full Order Data:", {
+                        ...updateData,
+                        orderId: agroOrderId,
+                        customerName: customerName,
+                        amount: checkoutPrice
+                    });
+                    
+                    // ✅ Show Success Page
+                    showSuccessPage(agroOrderId, customerName, customerPhone, customerAddress, 
+                                  customerPincode, cropValue, bighaValue, finalItemDescription, checkoutPrice);
                 })
-                .catch((error) => console.error('❌ Firebase Error:', error));
+                .catch((error) => {
+                    console.error("❌ Firebase Update Error:", error);
+                    alert("⚠️ पेमेंट हो गया लेकिन डेटाबेस अपडेट नहीं हुआ!\nError: " + error.message);
+                });
 
+            // ✅ Reset Button
             payBtn.disabled = false;
             payBtn.innerHTML = "भुगतान करें";
 
-            const resultDiv = document.getElementById("result");
-            if (resultDiv) {
-                resultDiv.style.display = "block";
-                resultDiv.innerHTML = `
-                    <div class="success-box" style="background: #e8f5e9; border: 1px solid #4CAF50; padding: 20px; border-radius: 8px; text-align: center; margin: 20px auto; max-width: 500px;">
-                        <h2 style="color: #2e7d32; margin-top: 0;">🎉 भुगतान सफल!</h2>
-                        <p style="font-size: 1.1rem; color: #333;">धन्यवाद! आपका ऑर्डर सफलतापूर्वक दर्ज हो गया है।</p>
-                        <p><strong>ऑर्डर ID:</strong> ${agroOrderId}</p>
-                        <p><strong>नाम:</strong> ${customerName}</p>
-                        <p><strong>फ़ोन:</strong> ${customerPhone}</p>
-                        <p><strong>पत्ता:</strong> ${customerAddress} (पिनकोड: ${customerPincode})</p>
-                        <p><strong>फसल & बीघा:</strong> ${cropValue} (${bighaValue} बीघा)</p>
-                        <p><strong>उत्पाद और मात्रा:</strong> ${finalItemDescription}</p>
-                        <p><strong>कुल राशि:</strong> ₹${checkoutPrice}</p>
-                    </div>
-                `;
-                resultDiv.scrollIntoView({ behavior: 'smooth' });
-            }
-
+            // ✅ Redirect to bills page
             setTimeout(() => {
                 window.location.href = 'bills.html';
-            }, 4000);
+            }, 5000);
         },
         modal: {
             ondismiss: function() {
                 payBtn.disabled = false;
                 payBtn.innerHTML = "भुगतान करें";
-                
-                // ✅ Sirf tabhi alert dikhao jab payment actually complete na hui ho
-                if (!paymentCompleted) {
-                    alert("❌ भुगतान रद्द कर दिया गया।");
-                }
+                console.log("🟡 Payment modal closed by user.");
             }
         }
     };
 
-    const rzp = new Razorpay(options);
-    rzp.open();
+    try {
+        const rzp = new Razorpay(options);
+        
+        // ✅ Extra event listeners for debugging
+        rzp.on('payment.failed', function(response) {
+            console.error("🔴 Payment Failed:", response);
+            alert("❌ पेमेंट फेल हो गया: " + (response.error?.description || "Unknown error"));
+        });
+        
+        rzp.open();
+        console.log("✅ Razorpay modal opened successfully!");
+        
+    } catch(e) {
+        console.error("❌ Razorpay Error:", e);
+        alert("❌ Razorpay खोलने में एरर: " + e.message);
+        payBtn.disabled = false;
+        payBtn.innerHTML = "भुगतान करें";
+    }
 }
 
+// ==========================================
+// ✅ SUCCESS PAGE FUNCTION
+// ==========================================
+function showSuccessPage(agroOrderId, customerName, customerPhone, customerAddress, 
+                        customerPincode, cropValue, bighaValue, finalItemDescription, checkoutPrice) {
+    const resultDiv = document.getElementById("result");
+    if (!resultDiv) {
+        console.error("Result div not found!");
+        return;
+    }
+    
+    resultDiv.style.display = "block";
+    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    resultDiv.innerHTML = `
+        <div class="success-box" style="background: #e8f5e9; border: 3px solid #4CAF50; padding: 20px; border-radius: 12px; text-align: center; margin: 15px auto; max-width: 90%; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+            <h2 style="color: #2e7d32; margin-top: 0; font-size: 1.8rem;">🎉 भुगतान सफल!</h2>
+            <p style="font-size: 1.1rem; color: #333;">धन्यवाद! आपका ऑर्डर सफलतापूर्वक दर्ज हो गया है।</p>
+            <div style="background: #fff; padding: 15px; border-radius: 8px; text-align: left; margin: 15px 0; border: 1px solid #ddd;">
+                <p><strong>📋 ऑर्डर ID:</strong> <span style="color: #2e7d32; font-weight: bold;">${agroOrderId}</span></p>
+                <p><strong>👤 नाम:</strong> ${customerName}</p>
+                <p><strong>📱 फ़ोन:</strong> ${customerPhone}</p>
+                <p><strong>📍 पता:</strong> ${customerAddress} (${customerPincode})</p>
+                <p><strong>🌾 फसल:</strong> ${cropValue} (${bighaValue} बीघा)</p>
+                <p><strong>📦 उत्पाद:</strong> ${finalItemDescription}</p>
+                <p><strong>💰 कुल राशि:</strong> <span style="color: #e65100; font-weight: bold; font-size: 1.2rem;">₹${checkoutPrice}</span></p>
+            </div>
+            <p style="color: #666; font-size: 0.9rem;">⏳ कुछ सेकंड में बिल पेज पर रीडायरेक्ट हो रहे हैं...</p>
+        </div>
+    `;
+}
+
+// ==========================================
+// ✅ GENERATE ORDER ID
+// ==========================================
+function generateOrderId() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const random = Math.floor(1000 + Math.random() * 9000);
+    return `AGRO-${year}${month}${day}-${random}`;
+}
+
+// ==========================================
+// ✅ CLOSE CHECKOUT MODAL
+// ==========================================
+function closeCheckout() {
+    const modal = document.getElementById("checkoutModal");
+    if (modal) modal.style.display = "none";
+}
 //=========================
 
 async function sendPushNotificationToAdmin(orderDetails) {
